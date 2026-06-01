@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#D4560A">
+<title>Vajíčka</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@700;900&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--or:#D4560A;--or2:#F06820;--cr:#FDF6EE;--br:#2C1500;--gr:#2A6E35;--gr2:#E4F4E8;--card:#FFFFFF;--border:#EDD9C4;--text2:#9A7A65;--warn:#FFF0E8;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{width:100%;min-height:100vh;font-family:'Instrument Sans',sans-serif;background:var(--cr);-webkit-font-smoothing:antialiased;}
+.hdr{background:linear-gradient(135deg,var(--or) 0%,var(--or2) 100%);padding:env(safe-area-inset-top,0px) 0 0;text-align:center;position:sticky;top:0;z-index:100;box-shadow:0 4px 24px rgba(212,86,10,0.25);}
+.hdr-inner{padding:18px 20px 16px;}
+.hdr h1{font-family:'Fraunces',serif;font-size:clamp(24px,7vw,34px);color:white;font-weight:900;letter-spacing:-0.5px;line-height:1;}
+.hdr p{color:rgba(255,255,255,0.8);font-size:clamp(12px,3.5vw,14px);margin-top:3px;}
+.main{padding:16px 14px 40px;max-width:540px;margin:0 auto;}
+.card{background:var(--card);border-radius:22px;padding:clamp(18px,5vw,24px);box-shadow:0 2px 20px rgba(44,21,0,0.08);margin-bottom:16px;}
+.card-title{font-family:'Fraunces',serif;font-size:clamp(17px,5vw,21px);color:var(--br);margin-bottom:16px;font-weight:700;display:flex;align-items:center;gap:8px;}
+.cust-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(6px,2vw,10px);margin-bottom:16px;}
+.cust-btn{padding:clamp(12px,3.5vw,16px) 4px;border:2px solid var(--border);border-radius:14px;background:white;font-family:'Instrument Sans',sans-serif;font-size:clamp(13px,3.8vw,16px);font-weight:500;color:var(--br);cursor:pointer;text-align:center;transition:all 0.18s cubic-bezier(0.34,1.56,0.64,1);user-select:none;}
+.cust-btn:active{transform:scale(0.93);}
+.cust-btn.on{background:var(--or);border-color:var(--or);color:white;font-weight:600;box-shadow:0 4px 14px rgba(212,86,10,0.35);transform:scale(1.04);}
+.ks-wrap{position:relative;margin-bottom:16px;}
+.ks-wrap input{width:100%;border:2px solid var(--border);border-radius:14px;padding:clamp(14px,4vw,18px) 50px clamp(14px,4vw,18px) 18px;font-size:clamp(18px,5vw,22px);font-family:'Instrument Sans',sans-serif;color:var(--br);outline:none;background:white;transition:border-color 0.2s;font-weight:500;}
+.ks-wrap input:focus{border-color:var(--or);box-shadow:0 0 0 4px rgba(212,86,10,0.1);}
+.ks-wrap input::placeholder{color:#C9B09A;font-weight:400;}
+.ks-unit{position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:clamp(13px,3.5vw,15px);color:var(--text2);font-weight:500;pointer-events:none;}
+.dates-label{font-size:clamp(12px,3.2vw,13px);color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;}
+.dates-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:clamp(5px,1.5vw,8px);margin-bottom:16px;}
+.date-btn{padding:clamp(10px,3vw,14px) 2px;border:2px solid var(--border);border-radius:12px;background:white;font-family:'Instrument Sans',sans-serif;cursor:pointer;text-align:center;transition:all 0.18s cubic-bezier(0.34,1.56,0.64,1);user-select:none;line-height:1.3;}
+.date-btn:active{transform:scale(0.93);}
+.date-btn .dn{font-size:clamp(12px,3.5vw,14px);font-weight:600;color:var(--br);display:block;}
+.date-btn .dd{font-size:clamp(10px,3vw,12px);color:var(--text2);display:block;margin-top:2px;}
+.date-btn.on{background:var(--br);border-color:var(--br);color:white;box-shadow:0 4px 14px rgba(44,21,0,0.25);transform:scale(1.04);}
+.date-btn.on .dn,.date-btn.on .dd{color:white;}
+.preview{background:var(--warn);border-radius:14px;padding:clamp(13px,3.5vw,17px) 16px;font-size:clamp(14px,4vw,17px);color:var(--br);margin-bottom:16px;min-height:54px;line-height:1.6;border:1.5px solid #F5DDCC;transition:all 0.2s;}
+.preview.has-data{background:#FFF0E0;border-color:var(--or);}
+.preview b{color:var(--or);font-weight:600;}
+.preview .dot{color:var(--text2);margin:0 5px;}
+.submit-btn{width:100%;padding:clamp(16px,4.5vw,20px);background:linear-gradient(135deg,var(--or) 0%,var(--or2) 100%);color:white;border:none;border-radius:16px;font-size:clamp(17px,5vw,21px);font-family:'Fraunces',serif;font-weight:700;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 20px rgba(212,86,10,0.3);}
+.submit-btn:active{transform:scale(0.97);}
+.submit-btn:disabled{background:#DDD;box-shadow:none;cursor:not-allowed;}
+#msg{border-radius:13px;padding:14px 16px;font-size:clamp(14px,4vw,16px);display:none;margin-top:12px;font-weight:500;line-height:1.4;}
+#msg.ok{background:var(--gr2);color:var(--gr);display:block;}
+#msg.er{background:#FFEBEE;color:#C62828;display:block;}
+#msg.ld{background:var(--warn);color:var(--or);display:block;}
+.total-bar{display:flex;align-items:center;justify-content:space-between;background:var(--br);border-radius:14px;padding:14px 18px;margin-bottom:14px;color:white;}
+.total-bar span{font-size:clamp(13px,3.8vw,15px);opacity:0.8;}
+.total-bar strong{font-family:'Fraunces',serif;font-size:clamp(22px,6vw,28px);font-weight:900;}
+.total-bar .unit{font-size:clamp(12px,3vw,14px);opacity:0.6;margin-left:4px;}
+.obj-row{display:flex;align-items:center;padding:clamp(14px,4vw,18px);background:var(--cr);border-radius:16px;border:1.5px solid var(--border);margin-bottom:10px;cursor:pointer;transition:all 0.2s;position:relative;overflow:hidden;}
+.obj-row::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--or);border-radius:4px 0 0 4px;}
+.obj-row:active{transform:scale(0.97);opacity:0.8;}
+.obj-row.done{background:var(--gr2);border-color:#A5D6A7;}
+.obj-row.done::before{background:var(--gr);}
+.obj-info{flex:1;padding-left:10px;}
+.obj-info strong{font-size:clamp(15px,4.5vw,19px);color:var(--br);display:block;font-weight:600;}
+.obj-info span{font-size:clamp(12px,3.5vw,14px);color:var(--text2);margin-top:2px;display:block;}
+.obj-ks{font-family:'Fraunces',serif;font-size:clamp(26px,7vw,34px);font-weight:900;color:var(--or);min-width:60px;text-align:right;line-height:1;}
+.obj-ks-unit{font-size:clamp(11px,3vw,13px);color:var(--text2);font-weight:400;display:block;text-align:right;margin-top:2px;}
+.empty{color:#C9B09A;font-size:clamp(14px,4vw,16px);text-align:center;padding:20px;}
+.hint{font-size:clamp(12px,3.5vw,14px);color:var(--text2);text-align:center;margin-top:8px;}
+</style>
+</head>
+<body>
+<div class="hdr"><div class="hdr-inner"><h1>🥚 Vajíčka</h1><p>Správa objednávek</p></div></div>
+<div class="main">
+<div class="card">
+  <div class="card-title">🛒 Nová objednávka</div>
+  <div class="cust-grid" id="CB">
+    <button class="cust-btn" onclick="sC(this,'Danča')">Danča</button>
+    <button class="cust-btn" onclick="sC(this,'Kristýna')">Kristýna</button>
+    <button class="cust-btn" onclick="sC(this,'Renata')">Renata</button>
+    <button class="cust-btn" onclick="sC(this,'Andrea')">Andrea</button>
+    <button class="cust-btn" onclick="sC(this,'Marcela')">Marcela</button>
+    <button class="cust-btn" onclick="sC(this,'Dáša')">Dáša</button>
+    <button class="cust-btn" onclick="sC(this,'Ondra')">Ondra</button>
+  </div>
+  <div class="ks-wrap">
+    <input type="number" id="KS" placeholder="Počet kusů" min="1" max="999" oninput="uP()">
+    <span class="ks-unit">ks</span>
+  </div>
+  <div class="dates-label">Vyberte datum dodávky</div>
+  <div id="DG" class="dates-grid"></div>
+  <div class="preview" id="PV">Vyber zákazníka, počet ks a datum...</div>
+  <button class="submit-btn" onclick="odeslat()" id="SB">Přidat objednávku</button>
+  <div id="msg"></div>
+</div>
+<div class="card">
+  <div class="card-title">📋 Přehled k doručení</div>
+  <div id="TOTAL" style="display:none">
+    <div class="total-bar"><span>Celkem k doručení</span><div><strong id="TOTAL_NUM">0</strong><span class="unit">ks</span></div></div>
+  </div>
+  <div id="OL"><div class="empty">⏳ Načítám...</div></div>
+  <div class="hint" id="HT" style="display:none">👆 Klepnutím označíš jako doručeno</div>
+</div>
+</div>
+<script>
+const API='/.netlify/functions/api';
+const DNY=['Ne','Po','Út','St','Čt','Pá','So'];
+var sN=null,selDate=null;
+function buildDates(){var dg=document.getElementById('DG');var today=new Date();today.setHours(0,0,0,0);var btns=[],d=new Date(today),count=0;d.setDate(d.getDate()+1);while(count<10){var dow=d.getDay();if(dow>=1&&dow<=5){var dd=String(d.getDate()).padStart(2,'0');var mm=String(d.getMonth()+1).padStart(2,'0');var dateStr=dd+'.'+mm+'.'+d.getFullYear();btns.push('<button class="date-btn" onclick="sD(this,\''+dateStr+'\')"><span class="dn">'+DNY[dow]+'</span><span class="dd">'+dd+'.'+mm+'.</span></button>');count++;}d.setDate(d.getDate()+1);}dg.innerHTML=btns.join('');}
+function sC(b,n){document.querySelectorAll('#CB .cust-btn').forEach(x=>x.classList.remove('on'));b.classList.add('on');sN=n;uP();}
+function sD(b,ds){document.querySelectorAll('#DG .date-btn').forEach(x=>x.classList.remove('on'));b.classList.add('on');selDate=ds;uP();}
+function uP(){var k=document.getElementById('KS').value,p=document.getElementById('PV');if(!sN||!k||!selDate){p.className='preview';p.innerHTML='Vyber zákazníka, počet ks a datum...';return;}p.className='preview has-data';p.innerHTML='<b>'+sN+'</b><span class="dot">·</span><b>'+k+' ks</b><span class="dot">·</span><b>'+selDate+'</b>';}
+function mS(t,m){var e=document.getElementById('msg');e.className=t;e.innerHTML=m;}
+function apiFetch(params,cb){var qs=Object.keys(params).map(function(k){return k+'='+encodeURIComponent(params[k]);}).join('&');fetch(API+'?'+qs).then(function(r){return r.json();}).then(function(d){cb(null,d);}).catch(function(e){cb(e);});}
+function odeslat(){var k=document.getElementById('KS').value;if(!sN){mS('er','⚠️ Vyber zákazníka');return;}if(!k||k<1){mS('er','⚠️ Zadej počet kusů');return;}if(!selDate){mS('er','⚠️ Vyber datum');return;}document.getElementById('SB').disabled=true;mS('ld','⏳ Ukládám...');apiFetch({action:'add',jmeno:sN,kusy:k,datum:selDate},function(err,d){if(err||!d||d.status!=='ok'){mS('er','❌ '+(d&&d.error?d.error:err?err.message:'Chyba'));}else{mS('ok','✅ Uloženo: '+sN+' – '+k+' ks – '+selDate);sN=null;selDate=null;document.querySelectorAll('.cust-btn,.date-btn').forEach(b=>b.classList.remove('on'));document.getElementById('KS').value='';uP();setTimeout(loadO,800);}document.getElementById('SB').disabled=false;});}
+function loadO(){apiFetch({action:'list'},function(err,items){var l=document.getElementById('OL'),h=document.getElementById('HT'),tot=document.getElementById('TOTAL');if(err||!items||!Array.isArray(items)||items.length===0){l.innerHTML='<div class="empty">'+(err?'Nepodařilo se načíst 😕':'Žádné objednávky 🎉')+'</div>';h.style.display='none';tot.style.display='none';return;}var celkem=items.reduce(function(s,it){return s+(parseInt(it.kusy)||0);},0);document.getElementById('TOTAL_NUM').textContent=celkem;tot.style.display='block';h.style.display='block';l.innerHTML=items.map(function(it){return '<div class="obj-row" onclick="dorucit('+it.radek+','+it.sloupec+',this)"><div class="obj-info"><strong>'+it.jmeno+'</strong><span>📅 '+it.datum+'</span></div><div><div class="obj-ks">'+it.kusy+'</div><div class="obj-ks-unit">kusů</div></div></div>';}).join('');});}
+function dorucit(r,c,el){el.style.pointerEvents='none';el.style.opacity='0.5';apiFetch({action:'done',radek:r,sloupec:c},function(err,d){if(!err&&d&&d.status==='ok'){el.classList.add('done');setTimeout(function(){el.style.transition='all 0.4s ease';el.style.maxHeight='0';el.style.padding='0';el.style.margin='0';el.style.opacity='0';el.style.overflow='hidden';setTimeout(function(){el.remove();loadO();},420);},250);}else{el.style.pointerEvents='';el.style.opacity='1';}});}
+buildDates();
+loadO();
+</script>
+</body>
+</html>
