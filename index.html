@@ -13,10 +13,18 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{width:100%;min-height:100vh;font-family:'Instrument Sans',sans-serif;background:var(--cr);-webkit-font-smoothing:antialiased;}
 .hdr{background:linear-gradient(135deg,var(--or) 0%,var(--or2) 100%);padding:env(safe-area-inset-top,0px) 0 0;text-align:center;position:sticky;top:0;z-index:100;box-shadow:0 4px 24px rgba(212,86,10,0.25);}
-.hdr-inner{padding:18px 20px 16px;}
+.hdr-inner{padding:18px 20px 16px;display:flex;align-items:center;justify-content:space-between;}
+.hdr-arrow{background:none;border:none;color:white;font-size:22px;cursor:pointer;padding:8px;opacity:0.8;transition:opacity 0.2s;-webkit-tap-highlight-color:transparent;}
+.hdr-arrow:disabled{opacity:0.2;}
+.hdr-center{flex:1;text-align:center;}
 .hdr h1{font-family:'Fraunces',serif;font-size:clamp(24px,7vw,34px);color:white;font-weight:900;letter-spacing:-0.5px;line-height:1;}
-.hdr p{color:rgba(255,255,255,0.8);font-size:clamp(12px,3.5vw,14px);margin-top:3px;}
+.hdr-dots{display:flex;justify-content:center;gap:6px;margin-top:6px;padding-bottom:2px;}
+.hdr-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.35);transition:background 0.2s;}
+.hdr-dot.on{background:white;}
 .main{padding:16px 14px 40px;max-width:540px;margin:0 auto;}
+.slider{overflow:hidden;position:relative;}
+.slides{display:flex;transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);}
+.slide{min-width:100%;width:100%;}
 .card{background:var(--card);border-radius:22px;padding:clamp(18px,5vw,24px);box-shadow:0 2px 20px rgba(44,21,0,0.08);margin-bottom:16px;}
 .card-title{font-family:'Fraunces',serif;font-size:clamp(17px,5vw,21px);color:var(--br);margin-bottom:16px;font-weight:700;display:flex;align-items:center;gap:8px;}
 .cust-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(6px,2vw,10px);margin-bottom:16px;}
@@ -28,6 +36,10 @@ html,body{width:100%;min-height:100vh;font-family:'Instrument Sans',sans-serif;b
 .ks-wrap input:focus{border-color:var(--or);box-shadow:0 0 0 4px rgba(212,86,10,0.1);}
 .ks-wrap input::placeholder{color:#C9B09A;font-weight:400;}
 .ks-unit{position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:clamp(13px,3.5vw,15px);color:var(--text2);font-weight:500;pointer-events:none;}
+.ano-ne{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+.ano-ne-btn{padding:clamp(16px,4vw,20px);border:2px solid var(--border);border-radius:14px;background:white;font-family:'Fraunces',serif;font-size:clamp(18px,5vw,22px);font-weight:700;color:var(--br);cursor:pointer;text-align:center;transition:all 0.18s cubic-bezier(0.34,1.56,0.64,1);}
+.ano-ne-btn.on-ano{background:#2A6E35;border-color:#2A6E35;color:white;}
+.ano-ne-btn.on-ne{background:#C62828;border-color:#C62828;color:white;}
 .dates-label{font-size:clamp(12px,3.2vw,13px);color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;}
 .dates-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:clamp(5px,1.5vw,8px);margin-bottom:16px;}
 .date-btn{padding:clamp(10px,3vw,14px) 2px;border:2px solid var(--border);border-radius:12px;background:white;font-family:'Instrument Sans',sans-serif;cursor:pointer;text-align:center;transition:all 0.18s cubic-bezier(0.34,1.56,0.64,1);user-select:none;line-height:1.3;}
@@ -43,10 +55,10 @@ html,body{width:100%;min-height:100vh;font-family:'Instrument Sans',sans-serif;b
 .submit-btn{width:100%;padding:clamp(16px,4.5vw,20px);background:linear-gradient(135deg,var(--or) 0%,var(--or2) 100%);color:white;border:none;border-radius:16px;font-size:clamp(17px,5vw,21px);font-family:'Fraunces',serif;font-weight:700;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 20px rgba(212,86,10,0.3);}
 .submit-btn:active{transform:scale(0.97);}
 .submit-btn:disabled{background:#DDD;box-shadow:none;cursor:not-allowed;}
-#msg{border-radius:13px;padding:14px 16px;font-size:clamp(14px,4vw,16px);display:none;margin-top:12px;font-weight:500;line-height:1.4;}
-#msg.ok{background:var(--gr2);color:var(--gr);display:block;}
-#msg.er{background:#FFEBEE;color:#C62828;display:block;}
-#msg.ld{background:var(--warn);color:var(--or);display:block;}
+.msg{border-radius:13px;padding:14px 16px;font-size:clamp(14px,4vw,16px);display:none;margin-top:12px;font-weight:500;line-height:1.4;}
+.msg.ok{background:var(--gr2);color:var(--gr);display:block;}
+.msg.er{background:#FFEBEE;color:#C62828;display:block;}
+.msg.ld{background:var(--warn);color:var(--or);display:block;}
 .total-bar{display:flex;align-items:center;justify-content:space-between;background:var(--br);border-radius:14px;padding:14px 18px;margin-bottom:14px;color:white;}
 .total-bar span{font-size:clamp(13px,3.8vw,15px);opacity:0.8;}
 .total-bar strong{font-family:'Fraunces',serif;font-size:clamp(22px,6vw,28px);font-weight:900;}
@@ -66,54 +78,288 @@ html,body{width:100%;min-height:100vh;font-family:'Instrument Sans',sans-serif;b
 </style>
 </head>
 <body>
-<div class="hdr"><div class="hdr-inner"><h1>🥚 Vajíčka</h1><p>Správa objednávek</p></div></div>
+<div class="hdr">
+  <div class="hdr-inner">
+    <button class="hdr-arrow" id="ARR_L" onclick="goSlide(-1)">‹</button>
+    <div class="hdr-center">
+      <h1 id="HDR_TITLE">🥚 Vajíčka</h1>
+    </div>
+    <button class="hdr-arrow" id="ARR_R" onclick="goSlide(1)">›</button>
+  </div>
+  <div class="hdr-dots">
+    <div class="hdr-dot on" id="DOT_0"></div>
+    <div class="hdr-dot" id="DOT_1"></div>
+    <div class="hdr-dot" id="DOT_2"></div>
+  </div>
+</div>
+
 <div class="main">
-<div class="card">
-  <div class="card-title">🛒 Nová objednávka</div>
-  <div class="cust-grid" id="CB">
-    <button class="cust-btn" onclick="sC(this,'Danča')">Danča</button>
-    <button class="cust-btn" onclick="sC(this,'Kristýna')">Kristýna</button>
-    <button class="cust-btn" onclick="sC(this,'Renata')">Renata</button>
-    <button class="cust-btn" onclick="sC(this,'Andrea')">Andrea</button>
-    <button class="cust-btn" onclick="sC(this,'Marcela')">Marcela</button>
-    <button class="cust-btn" onclick="sC(this,'Dáša')">Dáša</button>
-    <button class="cust-btn" onclick="sC(this,'Regina')">Regina</button>
-    <button class="cust-btn" onclick="sC(this,'Ondra')">Ondra</button>
+  <div class="slider" id="SLIDER">
+    <div class="slides" id="SLIDES">
+
+      <!-- VAJÍČKA -->
+      <div class="slide">
+        <div class="card">
+          <div class="card-title">👤 Zákazník</div>
+          <div class="cust-grid" id="CB_0">
+            <button class="cust-btn" onclick="sC(0,this,'Danča')">Danča</button>
+            <button class="cust-btn" onclick="sC(0,this,'Kristýna')">Kristýna</button>
+            <button class="cust-btn" onclick="sC(0,this,'Renata')">Renata</button>
+            <button class="cust-btn" onclick="sC(0,this,'Andrea')">Andrea</button>
+            <button class="cust-btn" onclick="sC(0,this,'Marcela')">Marcela</button>
+            <button class="cust-btn" onclick="sC(0,this,'Dáša')">Dáša</button>
+            <button class="cust-btn" onclick="sC(0,this,'Regina')">Regina</button>
+            <button class="cust-btn" onclick="sC(0,this,'Ondra')">Ondra</button>
+          </div>
+          <div class="ks-wrap">
+            <input type="number" id="KS_0" placeholder="Počet kusů" min="1" max="999" oninput="uP(0)">
+            <span class="ks-unit">ks</span>
+          </div>
+          <div class="dates-label">Vyberte datum dodávky</div>
+          <div id="DG_0" class="dates-grid"></div>
+          <div class="preview" id="PV_0">Vyber zákazníka, počet ks a datum...</div>
+          <button class="submit-btn" onclick="odeslat(0)" id="SB_0">Přidat objednávku</button>
+          <div class="msg" id="MSG_0"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">📋 Přehled k doručení</div>
+          <div id="TOTAL_0" style="display:none">
+            <div class="total-bar"><span>Celkem k doručení</span><div><strong id="TOTAL_NUM_0">0</strong><span class="unit">ks</span></div></div>
+          </div>
+          <div id="OL_0"><div class="empty">⏳ Načítám...</div></div>
+          <div class="hint" id="HT_0" style="display:none">👆 Klepnutím označíš jako doručeno</div>
+        </div>
+      </div>
+
+      <!-- BEDÝNKA -->
+      <div class="slide">
+        <div class="card">
+          <div class="card-title">👤 Zákazník</div>
+          <div class="cust-grid" id="CB_1">
+            <button class="cust-btn" onclick="sC(1,this,'Danča')">Danča</button>
+            <button class="cust-btn" onclick="sC(1,this,'Kristýna')">Kristýna</button>
+            <button class="cust-btn" onclick="sC(1,this,'Renata')">Renata</button>
+            <button class="cust-btn" onclick="sC(1,this,'Andrea')">Andrea</button>
+            <button class="cust-btn" onclick="sC(1,this,'Marcela')">Marcela</button>
+            <button class="cust-btn" onclick="sC(1,this,'Dáša')">Dáša</button>
+            <button class="cust-btn" onclick="sC(1,this,'Regina')">Regina</button>
+            <button class="cust-btn" onclick="sC(1,this,'Ondra')">Ondra</button>
+          </div>
+          <div class="ano-ne" id="AN_1">
+            <button class="ano-ne-btn" onclick="sAnoNe(1,this,'1')">✅ Ano</button>
+            <button class="ano-ne-btn" onclick="sAnoNe(1,this,'0')">❌ Ne</button>
+          </div>
+          <div class="dates-label">Vyberte datum dodávky</div>
+          <div id="DG_1" class="dates-grid"></div>
+          <div class="preview" id="PV_1">Vyber zákazníka a datum...</div>
+          <button class="submit-btn" onclick="odeslat(1)" id="SB_1">Přidat objednávku</button>
+          <div class="msg" id="MSG_1"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">📋 Přehled k doručení</div>
+          <div id="TOTAL_1" style="display:none">
+            <div class="total-bar"><span>Celkem k doručení</span><div><strong id="TOTAL_NUM_1">0</strong><span class="unit">ks</span></div></div>
+          </div>
+          <div id="OL_1"><div class="empty">⏳ Načítám...</div></div>
+          <div class="hint" id="HT_1" style="display:none">👆 Klepnutím označíš jako doručeno</div>
+        </div>
+      </div>
+
+      <!-- SIRUP -->
+      <div class="slide">
+        <div class="card">
+          <div class="card-title">👤 Zákazník</div>
+          <div class="cust-grid" id="CB_2">
+            <button class="cust-btn" onclick="sC(2,this,'Danča')">Danča</button>
+            <button class="cust-btn" onclick="sC(2,this,'Kristýna')">Kristýna</button>
+            <button class="cust-btn" onclick="sC(2,this,'Renata')">Renata</button>
+            <button class="cust-btn" onclick="sC(2,this,'Andrea')">Andrea</button>
+            <button class="cust-btn" onclick="sC(2,this,'Marcela')">Marcela</button>
+            <button class="cust-btn" onclick="sC(2,this,'Dáša')">Dáša</button>
+            <button class="cust-btn" onclick="sC(2,this,'Regina')">Regina</button>
+            <button class="cust-btn" onclick="sC(2,this,'Ondra')">Ondra</button>
+          </div>
+          <div class="ks-wrap">
+            <input type="number" id="KS_2" placeholder="Počet lahví" min="1" max="999" oninput="uP(2)">
+            <span class="ks-unit">l</span>
+          </div>
+          <div class="dates-label">Vyberte datum dodávky</div>
+          <div id="DG_2" class="dates-grid"></div>
+          <div class="preview" id="PV_2">Vyber zákazníka, počet l a datum...</div>
+          <button class="submit-btn" onclick="odeslat(2)" id="SB_2">Přidat objednávku</button>
+          <div class="msg" id="MSG_2"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">📋 Přehled k doručení</div>
+          <div id="TOTAL_2" style="display:none">
+            <div class="total-bar"><span>Celkem k doručení</span><div><strong id="TOTAL_NUM_2">0</strong><span class="unit">l</span></div></div>
+          </div>
+          <div id="OL_2"><div class="empty">⏳ Načítám...</div></div>
+          <div class="hint" id="HT_2" style="display:none">👆 Klepnutím označíš jako doručeno</div>
+        </div>
+      </div>
+
+    </div>
   </div>
-  <div class="ks-wrap">
-    <input type="number" id="KS" placeholder="Počet kusů" min="1" max="999" oninput="uP()">
-    <span class="ks-unit">ks</span>
-  </div>
-  <div class="dates-label">Vyberte datum dodávky</div>
-  <div id="DG" class="dates-grid"></div>
-  <div class="preview" id="PV">Vyber zákazníka, počet ks a datum...</div>
-  <button class="submit-btn" onclick="odeslat()" id="SB">Přidat objednávku</button>
-  <div id="msg"></div>
 </div>
-<div class="card">
-  <div class="card-title">📋 Přehled k doručení</div>
-  <div id="TOTAL" style="display:none">
-    <div class="total-bar"><span>Celkem k doručení</span><div><strong id="TOTAL_NUM">0</strong><span class="unit">ks</span></div></div>
-  </div>
-  <div id="OL"><div class="empty">⏳ Načítám...</div></div>
-  <div class="hint" id="HT" style="display:none">👆 Klepnutím označíš jako doručeno</div>
-</div>
-</div>
+
 <script>
 const API='/.netlify/functions/api';
 const DNY=['Ne','Po','Út','St','Čt','Pá','So'];
-var sN=null,selDate=null;
-function buildDates(){var dg=document.getElementById('DG');var today=new Date();today.setHours(0,0,0,0);var btns=[],d=new Date(today),count=0;d.setDate(d.getDate()+1);while(count<10){var dow=d.getDay();if(dow>=1&&dow<=5){var dd=String(d.getDate()).padStart(2,'0');var mm=String(d.getMonth()+1).padStart(2,'0');var dateStr=dd+'.'+mm+'.'+d.getFullYear();btns.push('<button class="date-btn" onclick="sD(this,\''+dateStr+'\')"><span class="dn">'+DNY[dow]+'</span><span class="dd">'+dd+'.'+mm+'.</span></button>');count++;}d.setDate(d.getDate()+1);}dg.innerHTML=btns.join('');}
-function sC(b,n){document.querySelectorAll('#CB .cust-btn').forEach(x=>x.classList.remove('on'));b.classList.add('on');sN=n;uP();}
-function sD(b,ds){document.querySelectorAll('#DG .date-btn').forEach(x=>x.classList.remove('on'));b.classList.add('on');selDate=ds;uP();}
-function uP(){var k=document.getElementById('KS').value,p=document.getElementById('PV');if(!sN||!k||!selDate){p.className='preview';p.innerHTML='Vyber zákazníka, počet ks a datum...';return;}p.className='preview has-data';p.innerHTML='<b>'+sN+'</b><span class="dot">·</span><b>'+k+' ks</b><span class="dot">·</span><b>'+selDate+'</b>';}
-function mS(t,m){var e=document.getElementById('msg');e.className=t;e.innerHTML=m;}
-function apiFetch(params,cb){var qs=Object.keys(params).map(function(k){return k+'='+encodeURIComponent(params[k]);}).join('&');fetch(API+'?'+qs).then(function(r){return r.json();}).then(function(d){cb(null,d);}).catch(function(e){cb(e);});}
-function odeslat(){var k=document.getElementById('KS').value;if(!sN){mS('er','⚠️ Vyber zákazníka');return;}if(!k||k<1){mS('er','⚠️ Zadej počet kusů');return;}if(!selDate){mS('er','⚠️ Vyber datum');return;}document.getElementById('SB').disabled=true;mS('ld','⏳ Ukládám...');apiFetch({action:'add',jmeno:sN,kusy:k,datum:selDate},function(err,d){if(err||!d||d.status!=='ok'){mS('er','❌ '+(d&&d.error?d.error:err?err.message:'Chyba'));}else{mS('ok','✅ Uloženo: '+sN+' – '+k+' ks – '+selDate);sN=null;selDate=null;document.querySelectorAll('.cust-btn,.date-btn').forEach(b=>b.classList.remove('on'));document.getElementById('KS').value='';uP();setTimeout(loadO,800);}document.getElementById('SB').disabled=false;});}
-function loadO(){apiFetch({action:'list'},function(err,items){var l=document.getElementById('OL'),h=document.getElementById('HT'),tot=document.getElementById('TOTAL');if(err||!items||!Array.isArray(items)||items.length===0){l.innerHTML='<div class="empty">'+(err?'Nepodařilo se načíst 😕':'Žádné objednávky 🎉')+'</div>';h.style.display='none';tot.style.display='none';return;}var celkem=items.reduce(function(s,it){return s+(parseInt(it.kusy)||0);},0);document.getElementById('TOTAL_NUM').textContent=celkem;tot.style.display='block';h.style.display='block';l.innerHTML=items.map(function(it){return '<div class="obj-row" onclick="dorucit('+it.radek+','+it.sloupec+',this)"><div class="obj-info"><strong>'+it.jmeno+'</strong><span>📅 '+it.datum+'</span></div><div><div class="obj-ks">'+it.kusy+'</div><div class="obj-ks-unit">kusů</div></div></div>';}).join('');});}
-function dorucit(r,c,el){el.style.pointerEvents='none';el.style.opacity='0.5';apiFetch({action:'done',radek:r,sloupec:c},function(err,d){if(!err&&d&&d.status==='ok'){el.classList.add('done');setTimeout(function(){el.style.transition='all 0.4s ease';el.style.maxHeight='0';el.style.padding='0';el.style.margin='0';el.style.opacity='0';el.style.overflow='hidden';setTimeout(function(){el.remove();loadO();},420);},250);}else{el.style.pointerEvents='';el.style.opacity='1';}});}
+const PRODUKTY=['vajicka','bedynka','sirup'];
+const TITULY=['🥚 Vajíčka','🥦 Bedýnka','🍯 Sirup'];
+var curSlide=0;
+var state=[
+  {jmeno:null,kusy:null,datum:null},
+  {jmeno:null,kusy:null,datum:null},
+  {jmeno:null,kusy:null,datum:null}
+];
+
+// Touch swipe
+var touchStartX=0;
+document.getElementById('SLIDER').addEventListener('touchstart',function(e){touchStartX=e.touches[0].clientX;},{passive:true});
+document.getElementById('SLIDER').addEventListener('touchend',function(e){
+  var dx=e.changedTouches[0].clientX-touchStartX;
+  if(Math.abs(dx)>50){goSlide(dx<0?1:-1);}
+},{passive:true});
+
+function goSlide(dir){
+  var next=curSlide+dir;
+  if(next<0||next>2)return;
+  curSlide=next;
+  document.getElementById('SLIDES').style.transform='translateX(-'+curSlide*100+'%)';
+  document.getElementById('HDR_TITLE').textContent=TITULY[curSlide];
+  for(var i=0;i<3;i++){document.getElementById('DOT_'+i).className='hdr-dot'+(i===curSlide?' on':'');}
+  document.getElementById('ARR_L').disabled=curSlide===0;
+  document.getElementById('ARR_R').disabled=curSlide===2;
+}
+
+function buildDates(){
+  var today=new Date();today.setHours(0,0,0,0);
+  for(var s=0;s<3;s++){
+    var dg=document.getElementById('DG_'+s);
+    var btns=[],d=new Date(today),count=0;
+    d.setDate(d.getDate()+1);
+    while(count<10){
+      var dow=d.getDay();
+      if(dow>=1&&dow<=5){
+        var dd=String(d.getDate()).padStart(2,'0');
+        var mm=String(d.getMonth()+1).padStart(2,'0');
+        var dateStr=dd+'.'+mm+'.'+d.getFullYear();
+        btns.push('<button class="date-btn" onclick="sD('+s+',this,\''+dateStr+'\')"><span class="dn">'+DNY[dow]+'</span><span class="dd">'+dd+'.'+mm+'.</span></button>');
+        count++;
+      }
+      d.setDate(d.getDate()+1);
+    }
+    dg.innerHTML=btns.join('');
+  }
+}
+
+function sC(s,b,n){
+  document.querySelectorAll('#CB_'+s+' .cust-btn').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  state[s].jmeno=n;
+  uP(s);
+}
+
+function sD(s,b,ds){
+  document.querySelectorAll('#DG_'+s+' .date-btn').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  state[s].datum=ds;
+  uP(s);
+}
+
+function sAnoNe(s,b,val){
+  document.querySelectorAll('#AN_'+s+' .ano-ne-btn').forEach(x=>x.className='ano-ne-btn');
+  b.className='ano-ne-btn '+(val==='1'?'on-ano':'on-ne');
+  state[s].kusy=val;
+  uP(s);
+}
+
+function uP(s){
+  var p=document.getElementById('PV_'+s);
+  var st=state[s];
+  if(s===1){
+    if(!st.jmeno||!st.datum||st.kusy===null){p.className='preview';p.innerHTML='Vyber zákazníka a datum...';return;}
+    p.className='preview has-data';
+    p.innerHTML='<b>'+st.jmeno+'</b><span class="dot">·</span><b>'+(st.kusy==='1'?'Ano':'Ne')+'</b><span class="dot">·</span><b>'+st.datum+'</b>';
+  } else {
+    var ksEl=document.getElementById('KS_'+s);
+    var k=ksEl?ksEl.value:'';
+    state[s].kusy=k;
+    if(!st.jmeno||!k||!st.datum){p.className='preview';p.innerHTML='Vyber zákazníka, počet a datum...';return;}
+    p.className='preview has-data';
+    var unit=s===2?'l':'ks';
+    p.innerHTML='<b>'+st.jmeno+'</b><span class="dot">·</span><b>'+k+' '+unit+'</b><span class="dot">·</span><b>'+st.datum+'</b>';
+  }
+}
+
+function mS(s,t,m){var e=document.getElementById('MSG_'+s);e.className='msg '+t;e.innerHTML=m;}
+
+function apiFetch(params,cb){
+  var qs=Object.keys(params).map(function(k){return k+'='+encodeURIComponent(params[k]);}).join('&');
+  fetch(API+'?'+qs).then(function(r){return r.json();}).then(function(d){cb(null,d);}).catch(function(e){cb(e);});
+}
+
+function odeslat(s){
+  var st=state[s];
+  if(!st.jmeno){mS(s,'er','⚠️ Vyber zákazníka');return;}
+  if(!st.kusy&&st.kusy!=='0'){mS(s,'er','⚠️ Vyber množství');return;}
+  if(s===1&&st.kusy==='0'){mS(s,'er','⚠️ Zákazník si nepřeje bedýnku');return;}
+  if(!st.datum){mS(s,'er','⚠️ Vyber datum');return;}
+  document.getElementById('SB_'+s).disabled=true;
+  mS(s,'ld','⏳ Ukládám...');
+  apiFetch({action:'add',jmeno:st.jmeno,kusy:st.kusy,datum:st.datum,produkt:PRODUKTY[s]},function(err,d){
+    if(err||!d||d.status!=='ok'){mS(s,'er','❌ '+(d&&d.error?d.error:err?err.message:'Chyba'));}
+    else{
+      var unit=s===1?'bedýnka':s===2?'l':'ks';
+      var mnozstvi=s===1?'Ano':st.kusy+' '+unit;
+      mS(s,'ok','✅ Uloženo: '+st.jmeno+' – '+mnozstvi+' – '+st.datum);
+      state[s]={jmeno:null,kusy:null,datum:null};
+      document.querySelectorAll('#CB_'+s+' .cust-btn, #DG_'+s+' .date-btn').forEach(b=>b.classList.remove('on'));
+      if(s===1){document.querySelectorAll('#AN_'+s+' .ano-ne-btn').forEach(b=>b.className='ano-ne-btn');}
+      else{document.getElementById('KS_'+s).value='';}
+      uP(s);
+      setTimeout(function(){loadO(s);},800);
+    }
+    document.getElementById('SB_'+s).disabled=false;
+  });
+}
+
+function loadO(s){
+  apiFetch({action:'list',produkt:PRODUKTY[s]},function(err,items){
+    var l=document.getElementById('OL_'+s),h=document.getElementById('HT_'+s),tot=document.getElementById('TOTAL_'+s);
+    if(err||!items||!Array.isArray(items)||items.length===0){
+      l.innerHTML='<div class="empty">'+(err?'Nepodařilo se načíst 😕':'Žádné objednávky 🎉')+'</div>';
+      h.style.display='none';tot.style.display='none';return;
+    }
+    var unit=s===2?'l':'ks';
+    var celkem=items.reduce(function(sum,it){return sum+(parseInt(it.kusy)||0);},0);
+    document.getElementById('TOTAL_NUM_'+s).textContent=celkem;
+    tot.style.display='block';h.style.display='block';
+    l.innerHTML=items.map(function(it){
+      return '<div class="obj-row" onclick="dorucit(\''+PRODUKTY[s]+'\','+it.radek+','+it.sloupec+',this)"><div class="obj-info"><strong>'+it.jmeno+'</strong><span>📅 '+it.datum+'</span></div><div><div class="obj-ks">'+it.kusy+'</div><div class="obj-ks-unit">'+unit+'</div></div></div>';
+    }).join('');
+  });
+}
+
+function dorucit(produkt,r,c,el){
+  el.style.pointerEvents='none';el.style.opacity='0.5';
+  apiFetch({action:'done',radek:r,sloupec:c,produkt:produkt},function(err,d){
+    if(!err&&d&&d.status==='ok'){
+      el.classList.add('done');
+      setTimeout(function(){
+        el.style.transition='all 0.4s ease';el.style.maxHeight='0';el.style.padding='0';
+        el.style.margin='0';el.style.opacity='0';el.style.overflow='hidden';
+        setTimeout(function(){el.remove();loadO(PRODUKTY.indexOf(produkt));},420);
+      },250);
+    } else {el.style.pointerEvents='';el.style.opacity='1';}
+  });
+}
+
 buildDates();
-loadO();
+goSlide(0);
+for(var i=0;i<3;i++){loadO(i);}
 </script>
 </body>
 </html>
