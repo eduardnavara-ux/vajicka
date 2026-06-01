@@ -1,7 +1,7 @@
 const https = require('https');
 const http = require('http');
 
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqBirb-5vMuIpIpuy0MWIBBc-ZlwmLlfdHXIa-SqjtzAQFLZfqf26xyvBvmSqpT8_Ung/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzxMq-ai1t0Os1ErTPGeBlNNcb_9phW17ttkvcgYNJ-g7jQri-rjOUNWrPoEetwawmr5A/exec';
 
 function fetchWithRedirects(url, redirectCount, resolve) {
   if (redirectCount > 10) {
