@@ -1,6 +1,5 @@
 const https = require('https');
 const http = require('http');
-
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzxMq-ai1t0Os1ErTPGeBlNNcb_9phW17ttkvcgYNJ-g7jQri-rjOUNWrPoEetwawmr5A/exec';
 
 function fetchWithRedirects(url, redirectCount, resolve) {
@@ -9,7 +8,7 @@ function fetchWithRedirects(url, redirectCount, resolve) {
     return;
   }
   const lib = url.startsWith('https') ? https : http;
-  lib.get(url, { headers: { 'User-Agent': 'Mozilla/5.0' } }, (res) => {
+  const req = lib.get(url, { headers: { 'User-Agent': 'Mozilla/5.0' }, timeout: 26000 }, (res) => {
     if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
       fetchWithRedirects(res.headers.location, redirectCount + 1, resolve);
       return;
@@ -23,7 +22,12 @@ function fetchWithRedirects(url, redirectCount, resolve) {
         body: data
       });
     });
-  }).on('error', (e) => {
+  });
+  req.on('timeout', () => {
+    req.destroy();
+    resolve({ statusCode: 504, headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ status: 'error', error: 'Timeout' }) });
+  });
+  req.on('error', (e) => {
     resolve({ statusCode: 500, headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ status: 'error', error: e.message }) });
   });
 }
