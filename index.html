@@ -410,6 +410,9 @@ function loadCashflow(){
         '<span style="font-family:\'Fraunces\',serif;font-size:28px;font-weight:900;color:var(--or);">'+celkZisk.toLocaleString('cs')+' Kč</span>'+
       '</div>';
 
+    // Filtruj prázdné měsíce
+    data=data.filter(function(m){return m.trzba>0||m.naklady>0;});
+
     // Graf
     var labels=data.map(function(m){return m.nazev.split(' ')[0];});
     var trzby=data.map(function(m){return m.trzba;});
