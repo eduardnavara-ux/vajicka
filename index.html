@@ -12,6 +12,19 @@
 :root{--or:#D4560A;--or2:#F06820;--cr:#FDF6EE;--br:#2C1500;--gr:#2A6E35;--gr2:#E4F4E8;--card:#FFFFFF;--border:#EDD9C4;--text2:#9A7A65;--warn:#FFF0E8;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{width:100%;min-height:100vh;font-family:'Instrument Sans',sans-serif;background:var(--cr);-webkit-font-smoothing:antialiased;}
+
+/* ===== SPLASH ===== */
+#splash{position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:#FDF6EE;display:flex;flex-direction:column;overflow:hidden;transition:opacity 0.7s ease;}
+#splash.hide{opacity:0;pointer-events:none;}
+#splash-photo{display:none;}
+#splash-bottom{flex:1;background:#FDF6EE;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 32px 48px;}
+#splash-leaf{margin-bottom:8px;}
+#splash-title{font-family:'Fraunces',serif;font-size:clamp(36px,10vw,52px);font-weight:900;color:var(--br);line-height:1;letter-spacing:-1px;}
+#splash-subtitle{font-family:'Fraunces',serif;font-size:clamp(18px,5vw,24px);font-weight:700;color:var(--or);margin-bottom:24px;letter-spacing:0.5px;}
+#splash-btn{background:var(--or);color:white;font-family:'Fraunces',serif;font-size:18px;font-weight:700;padding:15px 48px;border-radius:50px;border:none;cursor:pointer;box-shadow:0 6px 24px rgba(212,86,10,0.4);transition:transform 0.15s,box-shadow 0.15s;letter-spacing:0.3px;}
+#splash-btn:active{transform:scale(0.96);}
+
+/* ===== APP ===== */
 .hdr{background:linear-gradient(135deg,var(--or) 0%,var(--or2) 100%);padding:env(safe-area-inset-top,0px) 0 0;text-align:center;position:sticky;top:0;z-index:100;box-shadow:0 4px 24px rgba(212,86,10,0.25);}
 .hdr-inner{padding:18px 20px 10px;display:flex;align-items:center;justify-content:space-between;}
 .hdr-arrow{background:none;border:none;color:white;font-size:38px;line-height:1;cursor:pointer;padding:4px 10px;opacity:0.9;transition:opacity 0.2s;-webkit-tap-highlight-color:transparent;font-weight:300;}
@@ -70,12 +83,32 @@ html,body{width:100%;min-height:100vh;font-family:'Instrument Sans',sans-serif;b
 </style>
 </head>
 <body>
+
+<!-- ===== SPLASH ===== -->
+<div id="splash">
+  <div id="splash-photo"></div>
+  <div id="splash-bottom">
+    <svg id="splash-leaf" width="52" height="52" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+      <path d="M32,4 C32,4 28,10 24,12 C20,14 14,12 12,16 C10,20 14,24 12,28 C10,32 6,32 6,36 C6,40 10,42 12,46 C14,50 20,50 24,52 C26,53 28,54 30,56 L32,60 L34,56 C36,54 38,53 40,52 C44,50 50,50 52,46 C54,42 58,40 58,36 C58,32 54,32 52,28 C50,24 54,20 52,16 C50,12 44,14 40,12 C36,10 32,4 32,4 Z" fill="#3B6D11" stroke="#27500A" stroke-width="1.5"/>
+      <line x1="32" y1="10" x2="32" y2="58" stroke="#27500A" stroke-width="1" opacity="0.5"/>
+      <line x1="32" y1="22" x2="20" y2="30" stroke="#27500A" stroke-width="0.8" opacity="0.4"/>
+      <line x1="32" y1="22" x2="44" y2="30" stroke="#27500A" stroke-width="0.8" opacity="0.4"/>
+      <line x1="32" y1="32" x2="18" y2="38" stroke="#27500A" stroke-width="0.8" opacity="0.4"/>
+      <line x1="32" y1="32" x2="46" y2="38" stroke="#27500A" stroke-width="0.8" opacity="0.4"/>
+      <line x1="32" y1="42" x2="22" y2="47" stroke="#27500A" stroke-width="0.8" opacity="0.4"/>
+      <line x1="32" y1="42" x2="42" y2="47" stroke="#27500A" stroke-width="0.8" opacity="0.4"/>
+    </svg>
+    <div id="splash-title">Statek</div>
+    <div id="splash-subtitle">Pod Dubem</div>
+    <button id="splash-btn" onclick="hideSplash()">Vstoupit</button>
+  </div>
+</div>
+
+<!-- ===== APP ===== -->
 <div class="hdr">
   <div class="hdr-inner">
     <button class="hdr-arrow" id="ARR_L" onclick="goSlide(-1)">‹</button>
-    <div class="hdr-center">
-      <h1 id="HDR_TITLE">🥚 Vajíčka 🐔</h1>
-    </div>
+    <div class="hdr-center"><h1 id="HDR_TITLE">🥚 Vajíčka 🐔</h1></div>
     <button class="hdr-arrow" id="ARR_R" onclick="goSlide(1)">›</button>
   </div>
   <div class="hdr-dots">
@@ -114,7 +147,7 @@ html,body{width:100%;min-height:100vh;font-family:'Instrument Sans',sans-serif;b
         <div class="card">
           <div class="card-title">📋 Přehled k doručení</div>
           <div id="TOTAL_0" style="display:none">
-            <div class="total-bar"><span>Celkem k doručení</span><div><strong id="TOTAL_NUM_0">0</strong><span class="unit">ks</span></div></div>
+            <div class="total-bar"><span>Celkem vajíček k doručení</span><div><strong id="TOTAL_NUM_0">0</strong><span class="unit">ks</span></div></div>
           </div>
           <div id="OL_0"><div class="empty">⏳ Načítám...</div></div>
           <div class="hint" id="HT_0" style="display:none">👆 Klepnutím označíš jako doručeno</div>
@@ -146,7 +179,7 @@ html,body{width:100%;min-height:100vh;font-family:'Instrument Sans',sans-serif;b
         <div class="card">
           <div class="card-title">📋 Přehled k doručení</div>
           <div id="TOTAL_1" style="display:none">
-            <div class="total-bar"><span>Celkem k doručení</span><div><strong id="TOTAL_NUM_1">0</strong><span class="unit">ks</span></div></div>
+            <div class="total-bar"><span>Celkem bedýnek k doručení</span><div><strong id="TOTAL_NUM_1">0</strong><span class="unit">ks</span></div></div>
           </div>
           <div id="OL_1"><div class="empty">⏳ Načítám...</div></div>
           <div class="hint" id="HT_1" style="display:none">👆 Klepnutím označíš jako doručeno</div>
@@ -178,7 +211,7 @@ html,body{width:100%;min-height:100vh;font-family:'Instrument Sans',sans-serif;b
         <div class="card">
           <div class="card-title">📋 Přehled k doručení</div>
           <div id="TOTAL_2" style="display:none">
-            <div class="total-bar"><span>Celkem k doručení</span><div><strong id="TOTAL_NUM_2">0</strong><span class="unit">ks</span></div></div>
+            <div class="total-bar"><span>Celkem sirupu k doručení</span><div><strong id="TOTAL_NUM_2">0</strong><span class="unit">ks</span></div></div>
           </div>
           <div id="OL_2"><div class="empty">⏳ Načítám...</div></div>
           <div class="hint" id="HT_2" style="display:none">👆 Klepnutím označíš jako doručeno</div>
@@ -190,6 +223,13 @@ html,body{width:100%;min-height:100vh;font-family:'Instrument Sans',sans-serif;b
 </div>
 
 <script>
+function hideSplash(){
+  var s=document.getElementById('splash');
+  s.classList.add('hide');
+  setTimeout(function(){s.style.display='none';},700);
+}
+setTimeout(hideSplash,4000);
+
 const API='/.netlify/functions/api';
 const DNY=['Ne','Po','Út','St','Čt','Pá','So'];
 const PRODUKTY=['vajicka','bedynka','sirup'];
@@ -241,34 +281,20 @@ function buildDates(){
 }
 
 function sC(s,b,n){
-  if(b.classList.contains('on')){
-    b.classList.remove('on');
-    state[s].jmeno=null;
-  } else {
-    document.querySelectorAll('#CB_'+s+' .cust-btn').forEach(x=>x.classList.remove('on'));
-    b.classList.add('on');
-    state[s].jmeno=n;
-  }
+  if(b.classList.contains('on')){b.classList.remove('on');state[s].jmeno=null;}
+  else{document.querySelectorAll('#CB_'+s+' .cust-btn').forEach(x=>x.classList.remove('on'));b.classList.add('on');state[s].jmeno=n;}
   uP(s);
 }
 
 function sD(s,b,ds){
-  if(b.classList.contains('on')){
-    b.classList.remove('on');
-    state[s].datum=null;
-  } else {
-    document.querySelectorAll('#DG_'+s+' .date-btn').forEach(x=>x.classList.remove('on'));
-    b.classList.add('on');
-    state[s].datum=ds;
-  }
+  if(b.classList.contains('on')){b.classList.remove('on');state[s].datum=null;}
+  else{document.querySelectorAll('#DG_'+s+' .date-btn').forEach(x=>x.classList.remove('on'));b.classList.add('on');state[s].datum=ds;}
   uP(s);
 }
 
 function uP(s){
-  var st=state[s];
   var ksEl=document.getElementById('KS_'+s);
-  var k=ksEl?ksEl.value:'';
-  state[s].kusy=k;
+  state[s].kusy=ksEl?ksEl.value:'';
 }
 
 function mS(s,t,m){var e=document.getElementById('MSG_'+s);e.className='msg '+t;e.innerHTML=m;}
@@ -306,12 +332,11 @@ function loadO(s){
       l.innerHTML='<div class="empty">'+(err?'Nepodařilo se načíst 😕':'Žádné objednávky 🎉')+'</div>';
       h.style.display='none';tot.style.display='none';return;
     }
-    var unit='ks';
     var celkem=items.reduce(function(sum,it){return sum+(parseInt(it.kusy)||0);},0);
     document.getElementById('TOTAL_NUM_'+s).textContent=celkem;
     tot.style.display='block';h.style.display='block';
     l.innerHTML=items.map(function(it){
-      return '<div class="obj-row" onclick="dorucit(\''+PRODUKTY[s]+'\','+it.radek+','+it.sloupec+',this)"><div class="obj-info"><strong>'+it.jmeno+'</strong><span>📅 '+it.datum+'</span></div><div><div class="obj-ks">'+it.kusy+'</div><div class="obj-ks-unit">'+unit+'</div></div></div>';
+      return '<div class="obj-row" onclick="dorucit(\''+PRODUKTY[s]+'\','+it.radek+','+it.sloupec+',this)"><div class="obj-info"><strong>'+it.jmeno+'</strong><span>📅 '+it.datum+'</span></div><div><div class="obj-ks">'+it.kusy+'</div><div class="obj-ks-unit">ks</div></div></div>';
     }).join('');
   });
 }
