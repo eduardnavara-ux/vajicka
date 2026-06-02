@@ -115,6 +115,7 @@ html,body{width:100%;min-height:100vh;font-family:'Instrument Sans',sans-serif;b
     <div class="hdr-dot on" id="DOT_0"></div>
     <div class="hdr-dot" id="DOT_1"></div>
     <div class="hdr-dot" id="DOT_2"></div>
+    <div class="hdr-dot" id="DOT_3"></div>
   </div>
 </div>
 
@@ -218,10 +219,26 @@ html,body{width:100%;min-height:100vh;font-family:'Instrument Sans',sans-serif;b
         </div>
       </div>
 
+      <!-- CASHFLOW -->
+      <div class="slide">
+        <div class="card">
+          <div class="card-title">💰 Celkový přehled</div>
+          <div id="CF_SUMMARY"><div class="empty">⏳ Načítám...</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">📈 Měsíční přehled</div>
+          <div style="position:relative;height:180px;margin-bottom:16px;">
+            <canvas id="CF_CHART"></canvas>
+          </div>
+          <div id="CF_TABLE"><div class="empty">⏳ Načítám...</div></div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
 function hideSplash(){
   var s=document.getElementById('splash');
@@ -233,7 +250,7 @@ setTimeout(hideSplash,4000);
 const API='/.netlify/functions/api';
 const DNY=['Ne','Po','Út','St','Čt','Pá','So'];
 const PRODUKTY=['vajicka','bedynka','sirup'];
-const TITULY=['🥚 Vajíčka 🐔','🥕 Bedýnka 🫛','🫐 Sirup 🌸'];
+const TITULY=['🥚 Vajíčka 🐔','🥕 Bedýnka 🫛','🫐 Sirup 🌸','💰 Cashflow'];
 var curSlide=0;
 var state=[
   {jmeno:null,kusy:null,datum:null},
@@ -250,13 +267,14 @@ document.getElementById('SLIDER').addEventListener('touchend',function(e){
 
 function goSlide(dir){
   var next=curSlide+dir;
-  if(next<0||next>2)return;
+  if(next<0||next>3)return;
   curSlide=next;
   document.getElementById('SLIDES').style.transform='translateX(-'+curSlide*100+'%)';
   document.getElementById('HDR_TITLE').textContent=TITULY[curSlide];
-  for(var i=0;i<3;i++){document.getElementById('DOT_'+i).className='hdr-dot'+(i===curSlide?' on':'');}
+  for(var i=0;i<4;i++){document.getElementById('DOT_'+i).className='hdr-dot'+(i===curSlide?' on':'');}
   document.getElementById('ARR_L').disabled=curSlide===0;
-  document.getElementById('ARR_R').disabled=curSlide===2;
+  document.getElementById('ARR_R').disabled=curSlide===3;
+  if(curSlide===3){loadCashflow();}
 }
 
 function buildDates(){
@@ -352,6 +370,89 @@ function dorucit(produkt,r,c,el){
         setTimeout(function(){el.remove();loadO(PRODUKTY.indexOf(produkt));},420);
       },250);
     } else {el.style.pointerEvents='';el.style.opacity='1';}
+  });
+}
+
+var cfChart=null;
+var cfLoaded=false;
+
+function loadCashflow(){
+  if(cfLoaded)return;
+  apiFetch({action:'cashflow'},function(err,data){
+    if(err||!data||!Array.isArray(data)){
+      document.getElementById('CF_SUMMARY').innerHTML='<div class="empty">Nepodařilo se načíst 😕</div>';
+      document.getElementById('CF_TABLE').innerHTML='';
+      return;
+    }
+    cfLoaded=true;
+
+    // Celkový součet
+    var celkTrzba=data.reduce(function(s,m){return s+m.trzba;},0);
+    var celkNaklady=data.reduce(function(s,m){return s+m.naklady;},0);
+    var celkZisk=celkTrzba-celkNaklady;
+    var posledni=data[data.length-1]||{};
+
+    document.getElementById('CF_SUMMARY').innerHTML=
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">'+
+        '<div style="background:var(--gr2);border-radius:14px;padding:14px;text-align:center;">'+
+          '<div style="font-size:12px;color:var(--gr);font-weight:600;margin-bottom:4px;">Celkem tržby</div>'+
+          '<div style="font-family:\'Fraunces\',serif;font-size:22px;font-weight:900;color:var(--gr);">'+celkTrzba.toLocaleString('cs')+'</div>'+
+          '<div style="font-size:11px;color:var(--gr);opacity:0.7;">Kč</div>'+
+        '</div>'+
+        '<div style="background:#FFEBEE;border-radius:14px;padding:14px;text-align:center;">'+
+          '<div style="font-size:12px;color:#C62828;font-weight:600;margin-bottom:4px;">Celkem náklady</div>'+
+          '<div style="font-family:\'Fraunces\',serif;font-size:22px;font-weight:900;color:#C62828;">'+celkNaklady.toLocaleString('cs')+'</div>'+
+          '<div style="font-size:11px;color:#C62828;opacity:0.7;">Kč</div>'+
+        '</div>'+
+      '</div>'+
+      '<div style="background:var(--warn);border-radius:14px;padding:14px;display:flex;justify-content:space-between;align-items:center;">'+
+        '<span style="font-size:14px;color:var(--or);font-weight:600;">Celkový zisk</span>'+
+        '<span style="font-family:\'Fraunces\',serif;font-size:28px;font-weight:900;color:var(--or);">'+celkZisk.toLocaleString('cs')+' Kč</span>'+
+      '</div>';
+
+    // Graf
+    var labels=data.map(function(m){return m.nazev.split(' ')[0];});
+    var trzby=data.map(function(m){return m.trzba;});
+    var naklady=data.map(function(m){return m.naklady;});
+    var zisky=data.map(function(m){return m.zisk;});
+
+    if(cfChart){cfChart.destroy();}
+    var ctx=document.getElementById('CF_CHART').getContext('2d');
+    cfChart=new Chart(ctx,{
+      type:'bar',
+      data:{
+        labels:labels,
+        datasets:[
+          {label:'Tržby',data:trzby,backgroundColor:'rgba(212,86,10,0.7)',borderRadius:6},
+          {label:'Náklady',data:naklady,backgroundColor:'rgba(198,40,40,0.5)',borderRadius:6},
+          {label:'Zisk',data:zisky,backgroundColor:'rgba(42,110,53,0.8)',borderRadius:6}
+        ]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{labels:{font:{size:11},boxWidth:12}}},
+        scales:{
+          y:{ticks:{font:{size:10},callback:function(v){return v.toLocaleString('cs');}},grid:{color:'rgba(0,0,0,0.05)'}},
+          x:{ticks:{font:{size:10}},grid:{display:false}}
+        }
+      }
+    });
+
+    // Tabulka měsíců
+    var rows=data.slice().reverse().map(function(m){
+      var ziskColor=m.zisk>=0?'var(--gr)':'#C62828';
+      return '<div style="border:1.5px solid var(--border);border-radius:14px;padding:14px;margin-bottom:8px;background:var(--cr);">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'+
+          '<strong style="font-size:15px;color:var(--br);">'+m.nazev+'</strong>'+
+          '<span style="font-family:\'Fraunces\',serif;font-size:18px;font-weight:900;color:'+ziskColor+';">'+m.zisk.toLocaleString('cs')+' Kč</span>'+
+        '</div>'+
+        '<div style="display:flex;gap:12px;">'+
+          '<span style="font-size:12px;color:var(--gr);">↑ '+m.trzba.toLocaleString('cs')+' Kč</span>'+
+          '<span style="font-size:12px;color:#C62828;">↓ '+m.naklady.toLocaleString('cs')+' Kč</span>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+    document.getElementById('CF_TABLE').innerHTML=rows||'<div class="empty">Žádná data</div>';
   });
 }
 
