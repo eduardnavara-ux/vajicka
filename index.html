@@ -225,6 +225,13 @@ html,body{width:100%;min-height:100vh;font-family:'Instrument Sans',sans-serif;b
           </div>
           <div id="CF_TABLE"><div class="empty">⏳ Načítám...</div></div>
         </div>
+        <div class="card">
+          <div class="card-title">🥚 Prodeje podle produktu</div>
+          <div style="position:relative;height:180px;margin-bottom:16px;">
+            <canvas id="CF_PRODUCTS_CHART"></canvas>
+          </div>
+          <div id="CF_PRODUCTS_TOTALS"></div>
+        </div>
       </div>
 
     </div>
@@ -434,7 +441,51 @@ function loadCashflow(){
       }
     });
 
-    // Tabulka měsíců
+    // Graf prodejů podle produktu
+    var totalVajicka = data.reduce(function(s,m){return s+(m.vajicka||0);},0);
+    var totalBedynky = data.reduce(function(s,m){return s+(m.bedynky||0);},0);
+    var totalSirup   = data.reduce(function(s,m){return s+(m.sirup||0);},0);
+
+    var ctx2 = document.getElementById('CF_PRODUCTS_CHART').getContext('2d');
+    new Chart(ctx2, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          {label:'Vajíčka 🥚', data: data.map(function(m){return m.vajicka||0;}), backgroundColor:'rgba(212,86,10,0.75)', borderRadius:6},
+          {label:'Bedýnky 🥕', data: data.map(function(m){return m.bedynky||0;}), backgroundColor:'rgba(42,110,53,0.75)', borderRadius:6},
+          {label:'Sirup 🫐',   data: data.map(function(m){return m.sirup||0;}),   backgroundColor:'rgba(90,60,150,0.75)', borderRadius:6}
+        ]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{labels:{font:{size:11},boxWidth:12}}},
+        scales:{
+          y:{ticks:{font:{size:10}}, grid:{color:'rgba(0,0,0,0.05)'}},
+          x:{ticks:{font:{size:10}}, grid:{display:false}}
+        }
+      }
+    });
+
+    // Celkové součty produktů
+    document.getElementById('CF_PRODUCTS_TOTALS').innerHTML=
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px;">'+
+        '<div style="background:var(--warn);border-radius:12px;padding:12px;text-align:center;">'+
+          '<div style="font-size:11px;color:var(--or);font-weight:600;margin-bottom:4px;">Vajíčka 🥚</div>'+
+          '<div style="font-family:\'Fraunces\',serif;font-size:22px;font-weight:900;color:var(--or);">'+totalVajicka+'</div>'+
+          '<div style="font-size:10px;color:var(--or);opacity:0.7;">ks celkem</div>'+
+        '</div>'+
+        '<div style="background:var(--gr2);border-radius:12px;padding:12px;text-align:center;">'+
+          '<div style="font-size:11px;color:var(--gr);font-weight:600;margin-bottom:4px;">Bedýnky 🥕</div>'+
+          '<div style="font-family:\'Fraunces\',serif;font-size:22px;font-weight:900;color:var(--gr);">'+totalBedynky+'</div>'+
+          '<div style="font-size:10px;color:var(--gr);opacity:0.7;">ks celkem</div>'+
+        '</div>'+
+        '<div style="background:#F0EAF8;border-radius:12px;padding:12px;text-align:center;">'+
+          '<div style="font-size:11px;color:#5A3C96;font-weight:600;margin-bottom:4px;">Sirup 🫐</div>'+
+          '<div style="font-family:\'Fraunces\',serif;font-size:22px;font-weight:900;color:#5A3C96;">'+totalSirup+'</div>'+
+          '<div style="font-size:10px;color:#5A3C96;opacity:0.7;">ks celkem</div>'+
+        '</div>'+
+      '</div>';
     var rows=data.slice().reverse().map(function(m){
       var ziskColor=m.zisk>=0?'var(--gr)':'#C62828';
       return '<div style="border:1.5px solid var(--border);border-radius:14px;padding:14px;margin-bottom:8px;background:var(--cr);">'+
