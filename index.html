@@ -80,7 +80,16 @@ html,body{width:100%;min-height:100vh;font-family:'Instrument Sans',sans-serif;b
 .obj-info span{font-size:clamp(12px,3.5vw,14px);color:var(--text2);margin-top:2px;display:block;}
 .obj-ks{font-family:'Fraunces',serif;font-size:clamp(26px,7vw,34px);font-weight:900;color:var(--or);min-width:60px;text-align:right;line-height:1;}
 .obj-ks-unit{font-size:clamp(11px,3vw,13px);color:var(--text2);font-weight:400;display:block;text-align:right;margin-top:2px;}
-.empty{color:#C9B09A;font-size:clamp(14px,4vw,16px);text-align:center;padding:20px;}
+.edit-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;}
+.edit-dialog{background:white;border-radius:22px;padding:24px;width:calc(100% - 48px);max-width:320px;box-shadow:0 8px 40px rgba(0,0,0,0.2);}
+.edit-dialog h3{font-family:'Fraunces',serif;font-size:20px;color:var(--br);margin-bottom:6px;}
+.edit-dialog p{font-size:14px;color:var(--text2);margin-bottom:16px;}
+.edit-dialog input{width:100%;border:2px solid var(--border);border-radius:14px;padding:14px 18px;font-size:22px;font-family:'Instrument Sans',sans-serif;color:var(--br);outline:none;margin-bottom:16px;font-weight:500;}
+.edit-dialog input:focus{border-color:var(--or);}
+.edit-btns{display:flex;gap:10px;}
+.edit-btns button{flex:1;padding:14px;border:none;border-radius:14px;font-family:'Fraunces',serif;font-size:16px;font-weight:700;cursor:pointer;}
+.edit-btn-save{background:var(--or);color:white;}
+.edit-btn-cancel{background:var(--cr);color:var(--br);border:2px solid var(--border) !important;}
 .hint{font-size:clamp(12px,3.5vw,14px);color:var(--text2);text-align:center;margin-top:8px;}
 </style>
 </head>
@@ -238,6 +247,20 @@ html,body{width:100%;min-height:100vh;font-family:'Instrument Sans',sans-serif;b
   </div>
 </div>
 
+<!-- Edit dialog -->
+<div id="EDIT_OVERLAY" class="edit-overlay" style="display:none;" onclick="if(event.target===this)closeEdit()">
+  <div class="edit-dialog">
+    <h3 id="EDIT_TITLE">Upravit objednávku</h3>
+    <p id="EDIT_DESC"></p>
+    <input type="number" id="EDIT_INPUT" min="1" max="999">
+    <div class="edit-btns">
+      <button class="edit-btns edit-btn-cancel" onclick="closeEdit()">Zrušit</button>
+      <button class="edit-btns edit-btn-delete" onclick="deleteItem()" style="background:#FFEBEE;color:#C62828;border:2px solid #FFCDD2 !important;">🗑️ Smazat</button>
+      <button class="edit-btns edit-btn-save" onclick="saveEdit()">Uložit</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
 function hideSplash(){
@@ -354,12 +377,36 @@ function loadO(s){
     document.getElementById('TOTAL_NUM_'+s).textContent=celkem;
     tot.style.display='block';h.style.display='block';
     l.innerHTML=items.map(function(it){
-      return '<div class="obj-row" onclick="dorucit(\''+PRODUKTY[s]+'\','+it.radek+','+it.sloupec+',this)"><div class="obj-info"><strong>'+it.jmeno+'</strong><span>📅 '+it.datum+'</span></div><div><div class="obj-ks">'+it.kusy+'</div><div class="obj-ks-unit">ks</div></div></div>';
+      return '<div class="obj-row" '+
+        'onclick="dorucit(\''+PRODUKTY[s]+'\','+it.radek+','+it.sloupec+',this)" '+
+        'onmousedown="startLongPress(event,\''+PRODUKTY[s]+'\','+it.radek+','+it.sloupec+',\''+it.jmeno+'\','+it.kusy+',\''+it.datum+'\')" '+
+        'ontouchstart="startLongPress(event,\''+PRODUKTY[s]+'\','+it.radek+','+it.sloupec+',\''+it.jmeno+'\','+it.kusy+',\''+it.datum+'\')" '+
+        'onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()" ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()"'+
+        '><div class="obj-info"><strong>'+it.jmeno+'</strong><span>📅 '+it.datum+'</span></div><div><div class="obj-ks">'+it.kusy+'</div><div class="obj-ks-unit">ks</div></div></div>';
     }).join('');
   });
 }
 
+var lpTimer=null;
+var lpActive=false;
+var editState={};
+
+function startLongPress(e,produkt,radek,sloupec,jmeno,kusy,datum){
+  lpActive=false;
+  if(lpTimer)clearTimeout(lpTimer);
+  lpTimer=setTimeout(function(){
+    lpActive=true;
+    if(navigator.vibrate)navigator.vibrate(40);
+    openEdit(produkt,radek,sloupec,jmeno,kusy,datum);
+  },500);
+}
+
+function cancelLongPress(){
+  if(lpTimer){clearTimeout(lpTimer);lpTimer=null;}
+}
+
 function dorucit(produkt,r,c,el){
+  if(lpActive){lpActive=false;return;}
   el.style.pointerEvents='none';el.style.opacity='0.5';
   apiFetch({action:'done',radek:r,sloupec:c,produkt:produkt},function(err,d){
     if(!err&&d&&d.status==='ok'){
@@ -371,6 +418,39 @@ function dorucit(produkt,r,c,el){
       },250);
     } else {el.style.pointerEvents='';el.style.opacity='1';}
   });
+}
+
+function openEdit(produkt,radek,sloupec,jmeno,kusy,datum){
+  editState={produkt:produkt,radek:radek,sloupec:sloupec};
+  document.getElementById('EDIT_TITLE').textContent=jmeno+' – '+datum;
+  document.getElementById('EDIT_DESC').textContent='Uprav počet kusů:';
+  document.getElementById('EDIT_INPUT').value=kusy;
+  document.getElementById('EDIT_OVERLAY').style.display='flex';
+  setTimeout(function(){document.getElementById('EDIT_INPUT').focus();},100);
+}
+
+function closeEdit(){
+  document.getElementById('EDIT_OVERLAY').style.display='none';
+  editState={};
+}
+
+function deleteItem(){
+  var s=PRODUKTY.indexOf(editState.produkt);
+  if(!confirm('Opravdu smazat tuto objednávku?'))return;
+  apiFetch({action:'delete',radek:editState.radek,sloupec:editState.sloupec,produkt:editState.produkt},function(err,d){
+    if(!err&&d&&d.status==='ok'){loadO(s);}
+  });
+  closeEdit();
+}
+
+function saveEdit(){
+  var novyPocet=parseInt(document.getElementById('EDIT_INPUT').value);
+  if(!novyPocet||novyPocet<1)return;
+  var s=PRODUKTY.indexOf(editState.produkt);
+  apiFetch({action:'edit',radek:editState.radek,sloupec:editState.sloupec,produkt:editState.produkt,kusy:novyPocet},function(err,d){
+    if(!err&&d&&d.status==='ok'){loadO(s);}
+  });
+  closeEdit();
 }
 
 var cfChart=null;
