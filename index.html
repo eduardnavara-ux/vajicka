@@ -398,12 +398,11 @@ var editState={};
 function startLongPress(e,produkt,radek,sloupec,jmeno,kusy,datum){
   lpActive=false;
   if(lpTimer)clearTimeout(lpTimer);
-  e.preventDefault();
   lpTimer=setTimeout(function(){
     lpActive=true;
     if(navigator.vibrate)navigator.vibrate(40);
     openEdit(produkt,radek,sloupec,jmeno,kusy,datum);
-  },500);
+  },600);
 }
 
 function cancelLongPress(){
@@ -411,6 +410,7 @@ function cancelLongPress(){
 }
 
 function dorucit(produkt,r,c,el){
+  cancelLongPress();
   if(lpActive){lpActive=false;return;}
   el.style.pointerEvents='none';el.style.opacity='0.5';
   apiFetch({action:'done',radek:r,sloupec:c,produkt:produkt},function(err,d){
