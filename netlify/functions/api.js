@@ -23,10 +23,33 @@ function colLetter(n) {
 function fmtDate(val) {
   if (!val) return '';
   const s = val.toString().trim();
+  // Již ve formátu DD.MM.YYYY
   if (s.match(/^\d{1,2}\.\d{1,2}\.\d{4}$/)) return s;
+  // Excel sériové číslo (číslo bez teček)
+  if (s.match(/^\d+$/) && parseInt(s) > 1000) {
+    const serial = parseInt(s);
+    // Excel epoch: 1. 1. 1900 = 1, ale s bug na den 60 (29.2.1900 neexistuje)
+    const date = new Date((serial - 25569) * 86400 * 1000);
+    if (!isNaN(date)) return date.getUTCDate() + '.' + (date.getUTCMonth() + 1) + '.' + date.getUTCFullYear();
+  }
+  // ISO string
   const d = new Date(s);
   if (!isNaN(d)) return d.getUTCDate() + '.' + (d.getUTCMonth() + 1) + '.' + d.getUTCFullYear();
   return s;
+}
+
+function parseDate(val) {
+  if (!val) return null;
+  const s = val.toString().trim();
+  // DD.MM.YYYY
+  const m = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if (m) return new Date(parseInt(m[3]), parseInt(m[2]) - 1, parseInt(m[1]));
+  // Excel sériové číslo
+  if (s.match(/^\d+$/) && parseInt(s) > 1000) {
+    return new Date((parseInt(s) - 25569) * 86400 * 1000);
+  }
+  const d = new Date(s);
+  return isNaN(d) ? null : d;
 }
 
 function sendNtfy(jmeno, datum, vajicka, bedynka, sirup) {
@@ -45,7 +68,11 @@ function sendNtfy(jmeno, datum, vajicka, bedynka, sirup) {
 }
 
 async function getSheetData(sheets, sheetName) {
-  const res = await sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range: `${sheetName}!A:Z` });
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `${sheetName}!A:Z`,
+    valueRenderOption: 'FORMATTED_VALUE',
+  });
   return res.data.values || [];
 }
 
@@ -229,6 +256,7 @@ exports.handler = async function(event) {
           const dc = data[i][0]; if (!dc) continue;
           if (typeof dc === 'string' && isNaN(Date.parse(dc)) && !dc.match(/^\d/)) continue;
           const ds = fmtDate(dc);
+          if (!ds) continue;
           for (const c of customers) {
             const val = data[i][c.col]; if (!val || val === '') continue;
             const bg = colorRows[i]?.values?.[c.col]?.userEnteredFormat?.backgroundColor;
@@ -240,7 +268,7 @@ exports.handler = async function(event) {
       }
       case 'cashflow': {
         const mesice = {};
-        const gm = d => { const x = new Date(d); if (isNaN(x)) return null; return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0'); };
+        const gm = d => { const x = parseDate(d); if (!x || isNaN(x)) return null; return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0'); };
         const im = m => { if (!mesice[m]) mesice[m] = { trzba:0, naklady:0, vajicka:0, bedynky:0, sirup:0 }; };
         const dV = await getSheetData(sheets,'Vajíčka'); const zV = getCustomers(dV[HEADER_ROW-1]||[]);
         for (let i=DATA_START_ROW-1;i<dV.length;i++) {
