@@ -4,9 +4,12 @@
 <meta charset="UTF-8">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dvůr Pod Dubem">
 <meta name="theme-color" content="#D4560A">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Dvůr Pod Dubem – Objednávky</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/leaf.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -158,6 +161,28 @@
   .loading { text-align: center; padding: 32px; color: var(--text-muted); font-size: 14px; }
   .spinner { width: 24px; height: 24px; border: 2px solid var(--border); border-top-color: var(--orange); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 12px; }
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* CONFIRM DIALOG */
+  .dialog-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 300; display: flex; align-items: flex-end; justify-content: center; padding: 16px; animation: fadeIn 0.2s ease; }
+  .dialog-overlay.hide { display: none; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .dialog-box { background: var(--white); border-radius: 24px; padding: 24px; width: 100%; max-width: 420px; box-shadow: var(--shadow-lg); animation: slideUp 0.25s ease; }
+  @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .dialog-title { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--text); margin-bottom: 8px; }
+  .dialog-body { font-size: 14px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5; }
+  .dialog-summary { background: var(--orange-pale); border-radius: 12px; padding: 12px; margin-bottom: 20px; font-size: 14px; }
+  .dialog-summary-row { display: flex; justify-content: space-between; padding: 3px 0; color: var(--text); }
+  .dialog-summary-row.total { font-weight: 600; border-top: 1px solid rgba(212,86,10,0.2); margin-top: 6px; padding-top: 8px; }
+  .dialog-summary-row.total span:last-child { color: var(--orange); }
+  .dialog-btns { display: flex; gap: 10px; }
+  .dialog-btn { flex: 1; padding: 14px; border: none; border-radius: 12px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
+  .dialog-btn:active { transform: scale(0.97); }
+  .dialog-btn-cancel { background: var(--cream); color: var(--text-muted); border: 1.5px solid var(--border) !important; }
+  .dialog-btn-confirm { background: var(--orange); color: white; }
+
+  /* CANCEL ORDER BUTTON */
+  .btn-cancel-order { width: 100%; padding: 10px; background: none; border: 1.5px solid #FFCDD2; border-radius: 10px; color: #C62828; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; margin-top: 10px; transition: all 0.15s; }
+  .btn-cancel-order:active { background: #FFEBEE; }
 </style>
 </head>
 <body>
@@ -167,6 +192,19 @@
   <div class="splash-logo"><img src="leaf.png" alt="list"></div>
   <div class="splash-title">Dvůr<br>Pod Dubem</div>
   <div class="splash-sub">Čerstvé z naší farmy</div>
+</div>
+
+<!-- POTVRZOVACÍ DIALOG -->
+<div class="dialog-overlay hide" id="confirm-dialog">
+  <div class="dialog-box">
+    <div class="dialog-title">Potvrdit objednávku?</div>
+    <div class="dialog-body">Zkontrolujte prosím svou objednávku:</div>
+    <div class="dialog-summary" id="dialog-summary"></div>
+    <div class="dialog-btns">
+      <button class="dialog-btn dialog-btn-cancel" onclick="closeConfirmDialog()">Zpět</button>
+      <button class="dialog-btn dialog-btn-confirm" onclick="confirmAndSubmit()">Odeslat ✓</button>
+    </div>
+  </div>
 </div>
 
 <!-- LOGIN -->
@@ -562,6 +600,8 @@ function updateSummary() {
   document.getElementById('btn-order').disabled = total === 0;
 }
 
+let pendingOrder = null;
+
 async function submitOrder() {
   const eggs = parseInt(document.getElementById('qty-eggs').value || 0);
   const box = parseInt(document.getElementById('qty-box').value || 0);
@@ -571,8 +611,33 @@ async function submitOrder() {
 
   const [y,m,d] = date.split('-');
   const datumCZ = d + '.' + m + '.' + y;
+  const eggPrice = getEggPrice();
+  const total = eggs*eggPrice + box*490 + Math.round(syrupLiters*190);
 
-  // Okamžitě zobraz potvrzení zákazníkovi
+  pendingOrder = { eggs, box, sirup: syrupLiters, datumCZ, total };
+
+  let summaryHtml = '';
+  if (eggs > 0) summaryHtml += `<div class="dialog-summary-row"><span>🥚 Vajíčka ${eggs} ks</span><span>${eggs*eggPrice} Kč</span></div>`;
+  if (box > 0) summaryHtml += `<div class="dialog-summary-row"><span>🥦 Bedýnka ${box} ks</span><span>${box*490} Kč</span></div>`;
+  if (syrupLiters > 0) summaryHtml += `<div class="dialog-summary-row"><span>🍶 Sirup ${syrupLiters} l</span><span>${Math.round(syrupLiters*190)} Kč</span></div>`;
+  summaryHtml += `<div class="dialog-summary-row" style="font-size:12px;color:var(--text-muted);padding-top:6px;">📅 Doručení: ${datumCZ}</div>`;
+  summaryHtml += `<div class="dialog-summary-row total"><span>Celkem</span><span>${total} Kč</span></div>`;
+
+  document.getElementById('dialog-summary').innerHTML = summaryHtml;
+  document.getElementById('confirm-dialog').classList.remove('hide');
+}
+
+function closeConfirmDialog() {
+  document.getElementById('confirm-dialog').classList.add('hide');
+  pendingOrder = null;
+}
+
+function confirmAndSubmit() {
+  if (!pendingOrder) return;
+  const { eggs, box, sirup, datumCZ, total } = pendingOrder;
+  pendingOrder = null;
+  closeConfirmDialog();
+
   const btn = document.getElementById('btn-order');
   btn.disabled = true;
   showToast('✓ Objednávka odeslána! Čeká na potvrzení.');
@@ -580,42 +645,35 @@ async function submitOrder() {
   document.getElementById('qty-box').value = 0;
   setSyrup(0); updateSummary();
 
-  // Přidej objednávku optimisticky do historie okamžitě
-  const eggPrice = getEggPrice();
   const tempOrder = {
     datumPozadavku: new Date().getDate() + '.' + (new Date().getMonth()+1) + '.' + new Date().getFullYear(),
     datumDoruceni: datumCZ,
-    vajicka: eggs, bedynka: box, sirup: syrupLiters,
-    celkem: eggs*eggPrice + box*490 + Math.round(syrupLiters*190),
-    stav: 'čeká na potvrzení', navrzenyTermin: ''
+    vajicka: eggs, bedynka: box, sirup: sirup,
+    celkem: total, stav: 'čeká na potvrzení', navrzenyTermin: ''
   };
   setTimeout(() => {
     switchTab('history');
-    // Zobraz optimisticky bez čekání na server
     const container = document.getElementById('history-content');
     const tempEl = document.createElement('div');
-    tempEl.id = 'temp-order';
     renderOrderItem(tempEl, tempOrder);
     if (container.firstChild) container.insertBefore(tempEl, container.firstChild);
     else container.appendChild(tempEl);
-  }, 800);
+  }, 600);
 
-  // Pošli na server na pozadí
-  api({
-    action: 'addRequest',
-    jmeno: currentUser,
-    datum: datumCZ,
-    vajicka: eggs,
-    bedynka: box,
-    sirup: syrupLiters
-  }).then(() => {
-    btn.disabled = false;
-    // Načti skutečná data ze serveru
+  api({ action: 'addRequest', jmeno: currentUser, datum: datumCZ, vajicka: eggs, bedynka: box, sirup: sirup })
+    .then(() => { btn.disabled = false; setTimeout(() => loadHistory(), 2000); })
+    .catch(() => { btn.disabled = false; showToast('⚠️ Objednávka se neuložila. Zkuste znovu.'); });
+}
+
+async function cancelOrder(radek) {
+  if (!confirm('Opravdu chcete zrušit tuto objednávku?')) return;
+  try {
+    await api({ action: 'rejectRequest', radek: radek });
+    showToast('Objednávka zrušena');
     loadHistory();
-  }).catch(() => {
-    btn.disabled = false;
-    showToast('⚠️ Objednávka se neuložila. Zkuste znovu.');
-  });
+  } catch(e) {
+    showToast('Chyba při rušení objednávky');
+  }
 }
 
 function renderOrderItem(el, order) {
@@ -635,6 +693,10 @@ function renderOrderItem(el, order) {
   if (order.stav === 'navržen jiný termín' && order.navrzenyTermin) {
     suggestedHtml = `<div class="order-suggested-date">📅 Navržené doručení: <strong>${formatDatum(order.navrzenyTermin)}</strong></div>`;
   }
+  let cancelHtml = '';
+  if (order.stav === 'čeká na potvrzení' && order.radek) {
+    cancelHtml = `<button class="btn-cancel-order" onclick="cancelOrder(${order.radek})">✕ Zrušit objednávku</button>`;
+  }
   el.className = 'order-item';
   el.innerHTML = `
     <div class="order-item-header">
@@ -648,7 +710,8 @@ function renderOrderItem(el, order) {
       ${productsHtml}
       <div class="order-total"><span>Celkem</span><span>${order.celkem} Kč</span></div>
     </div>
-    ${suggestedHtml}`;
+    ${suggestedHtml}
+    ${cancelHtml}`;
 }
 
 // ── HISTORY ──
