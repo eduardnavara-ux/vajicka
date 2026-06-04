@@ -538,6 +538,15 @@ function loadRequests() {
   });
 }
 
+function fmtD(val) {
+  if (!val) return '';
+  var s = val.toString().trim();
+  if (s.match(/^\d{1,2}\.\d{1,2}\.\d{4}$/)) return s;
+  var d = new Date(s);
+  if (!isNaN(d)) return d.getUTCDate() + '.' + (d.getUTCMonth()+1) + '.' + d.getUTCFullYear();
+  return s;
+}
+
 function renderRequests() {
   var filtered = allRequests;
   if (reqFilter === 'pending') {
@@ -581,21 +590,21 @@ function renderRequests() {
 
     var suggestedHtml = '';
     if (req.stav === 'navržen jiný termín' && req.navrzenyTermin) {
-      suggestedHtml = '<div style="margin-bottom:10px;padding:8px 12px;background:#FFF3E0;border-radius:10px;font-size:13px;color:#7D3A00;">📅 Navrženo: <strong>'+req.navrzenyTermin+'</strong></div>';
+      suggestedHtml = '<div style="margin-bottom:10px;padding:8px 12px;background:#FFF3E0;border-radius:10px;font-size:13px;color:#7D3A00;">📅 Navrženo: <strong>'+fmtD(req.navrzenyTermin)+'</strong></div>';
     }
 
     return '<div class="req-card '+cardCls+'" id="req-card-'+req.radek+'">'+
       '<div class="req-header">'+
         '<div>'+
           '<div class="req-name">'+req.jmeno+'</div>'+
-          '<div class="req-date">Objednáno: '+req.datumPozadavku+'</div>'+
+          '<div class="req-date">Objednáno: '+fmtD(req.datumPozadavku)+'</div>'+
         '</div>'+
         '<span class="req-status '+st.cls+'">'+st.label+'</span>'+
       '</div>'+
       '<div class="req-products">'+products+
         '<div class="req-total"><span>Celkem</span><span>'+req.celkem+' Kč</span></div>'+
       '</div>'+
-      '<div class="req-delivery">Požadované doručení: <strong>'+req.datumDoruceni+'</strong></div>'+
+      '<div class="req-delivery">Požadované doručení: <strong>'+fmtD(req.datumDoruceni)+'</strong></div>'+
       suggestedHtml +
       actions +
     '</div>';
