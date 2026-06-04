@@ -381,7 +381,7 @@ async function loadCustomerList() {
 function populateSelect() {
   const sel = document.getElementById('name-select');
   sel.innerHTML = '<option value="">— vyberte —</option>';
-  customerList.filter(c => c.maPin).forEach(c => {
+  customerList.forEach(c => {
     const o = document.createElement('option');
     o.value = c.jmeno; o.textContent = c.jmeno;
     sel.appendChild(o);
