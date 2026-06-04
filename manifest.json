@@ -1,0 +1,22 @@
+{
+  "name": "Dvůr Pod Dubem – Objednávky",
+  "short_name": "Dvůr Pod Dubem",
+  "description": "Objednejte čerstvé produkty z farmy Dvůr Pod Dubem",
+  "start_url": "/zakaznik",
+  "display": "standalone",
+  "background_color": "#3D1F0A",
+  "theme_color": "#D4560A",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/leaf.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/leaf.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
