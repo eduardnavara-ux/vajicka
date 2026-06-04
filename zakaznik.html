@@ -609,12 +609,17 @@ async function loadHistory() {
 
 function formatDatum(val) {
   if (!val) return '';
-  // Pokud je to ISO string (2026-06-03T22:00:00.000Z nebo 2026-06-03)
-  const d = new Date(val);
+  // Převede jakýkoliv formát na DD.M.YYYY
+  const s = val.toString().trim();
+  // Již ve formátu DD.MM.YYYY nebo D.M.YYYY
+  if (s.match(/^\d{1,2}\.\d{1,2}\.\d{4}$/)) return s;
+  // ISO string nebo datum objekt
+  const d = new Date(s);
   if (!isNaN(d)) {
-    return d.getDate() + '.' + (d.getMonth()+1) + '.' + d.getFullYear();
+    // Použij UTC aby se zabránilo posunu o den kvůli časové zóně
+    return d.getUTCDate() + '.' + (d.getUTCMonth()+1) + '.' + d.getUTCFullYear();
   }
-  return val; // už je ve formátu DD.MM.YYYY
+  return s;
 }
 
 function renderHistory(orders) {
@@ -639,7 +644,7 @@ function renderHistory(orders) {
     if (order.sirup > 0) productsHtml += `<div class="order-product-row"><span>🍶 Sirup ${order.sirup} l</span><span>${Math.round(order.sirup * 190)} Kč</span></div>`;
     let suggestedHtml = '';
     if (order.stav === 'navržen jiný termín' && order.navrzenyTermin) {
-      suggestedHtml = `<div class="order-suggested-date">📅 Navržené doručení: <strong>${order.navrzenyTermin}</strong></div>`;
+      suggestedHtml = `<div class="order-suggested-date">📅 Navržené doručení: <strong>${formatDatum(order.navrzenyTermin)}</strong></div>`;
     }
     const el = document.createElement('div');
     el.className = 'order-item';
