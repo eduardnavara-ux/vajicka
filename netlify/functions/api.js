@@ -151,10 +151,14 @@ async function zpracujObjednavku(sheets, jmeno, kusy, datum, produkt) {
   const sn = { vajicka: 'Vajíčka', bedynka: 'Bedýnky', sirup: 'Sirup' }[produkt];
   const col = await getOrCreateCustomerCol(sheets, sn, jmeno);
   const data = await getSheetData(sheets, sn);
-  let targetRow = data.length + 1;
-  for (let r = DATA_START_ROW; r <= data.length + 1; r++) {
-    if (!data[r - 1]?.[0]) { targetRow = r; break; }
+  // Hledej první prázdný řádek v datové oblasti (DATA_START_ROW až SUMA_ROW-1)
+  let targetRow = -1;
+  for (let r = DATA_START_ROW; r < SUMA_ROW; r++) {
+    const cellVal = data[r - 1]?.[0];
+    if (!cellVal || cellVal === '') { targetRow = r; break; }
   }
+  if (targetRow === -1) targetRow = SUMA_ROW - 1;
+  
   await sheets.spreadsheets.values.batchUpdate({
     spreadsheetId: SPREADSHEET_ID,
     requestBody: { valueInputOption: 'USER_ENTERED', data: [
@@ -324,14 +328,18 @@ exports.handler = async function(event) {
       case 'confirmRequest': {
         const data = await getPozadavkyData(sheets);
         const radek = parseInt(p.radek);
-        const row = data[radek-1]; if(!row){result={status:'error',error:'Not found'};break;}
+        const row = data[radek-1]; 
+        if(!row){result={status:'error',error:'Not found row '+radek+' in '+data.length};break;}
         const pd = fmtDate(row[3]), nd = fmtDate(p.navrzenyDatum);
         const isCounter = nd && nd !== '' && nd !== pd;
         if (isCounter) {
           await sheets.spreadsheets.values.update({ spreadsheetId: SPREADSHEET_ID, range: `Požadavky!I${radek}:J${radek}`, valueInputOption: 'USER_ENTERED', requestBody: { values: [['navržen jiný termín', nd]] } });
         } else {
           const datum = nd||pd;
-          const v=parseInt(row[4])||0, b=parseInt(row[5])||0, s=parseFloat(row[6])||0;
+          const v=parseInt((row[4]||'0').toString().replace(/\s/g,''))||0;
+          const b=parseInt((row[5]||'0').toString().replace(/\s/g,''))||0;
+          const s=parseFloat((row[6]||'0').toString().replace(/\s/g,'').replace(',','.'))||0;
+          console.log('confirmRequest: jmeno='+row[1]+' v='+v+' b='+b+' s='+s+' datum='+datum);
           if(v>0) await zpracujObjednavku(sheets,row[1],v,datum,'vajicka');
           if(b>0) await zpracujObjednavku(sheets,row[1],b,datum,'bedynka');
           if(s>0) await zpracujObjednavku(sheets,row[1],s,datum,'sirup');
