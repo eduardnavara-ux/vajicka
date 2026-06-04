@@ -268,26 +268,34 @@ exports.handler = async function(event) {
       }
       case 'cashflow': {
         const mesice = {};
-        const gm = d => { const x = parseDate(d); if (!x || isNaN(x)) return null; return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0'); };
+        const gm = d => {
+          if (!d) return null;
+          const s = d.toString().trim();
+          // Přeskoč textové záhlavíčky jako "Květen 2026"
+          if (!s.match(/^\d/)) return null;
+          const x = parseDate(s); 
+          if (!x || isNaN(x)) return null; 
+          return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0'); 
+        };
         const im = m => { if (!mesice[m]) mesice[m] = { trzba:0, naklady:0, vajicka:0, bedynky:0, sirup:0 }; };
         const dV = await getSheetData(sheets,'Vajíčka'); const zV = getCustomers(dV[HEADER_ROW-1]||[]);
         for (let i=DATA_START_ROW-1;i<dV.length;i++) {
-          const d=dV[i][0]; if(!d) continue; if(typeof d==='string'&&isNaN(Date.parse(d))&&!d.match(/^\d/)) continue;
+          const d=dV[i][0]; if(!d) continue;
           const m=gm(d); if(!m) continue; im(m);
-          zV.forEach(z=>{const v=parseInt(dV[i][z.col])||0;if(v>0){mesice[m].trzba+=v*(DISCOUNT_NAMES.includes(z.jmeno)?9:10);mesice[m].vajicka+=v;}});
-          const dz=dV[i][13],cz=dV[i][14]; if(dz&&cz){const mz=gm(dz);if(mz){im(mz);mesice[mz].naklady+=parseFloat(cz)||0;}}
+          zV.forEach(z=>{const v=parseInt((dV[i][z.col]||'').toString().replace(/\s/g,''))||0;if(v>0){mesice[m].trzba+=v*(DISCOUNT_NAMES.includes(z.jmeno)?9:10);mesice[m].vajicka+=v;}});
+          const dz=dV[i][13],cz=dV[i][14]; if(dz&&cz){const mz=gm(dz);if(mz){im(mz);mesice[mz].naklady+=parseFloat((cz||'').toString().replace(/\s/g,'').replace(',','.'))||0;}}
         }
         const dB = await getSheetData(sheets,'Bedýnky'); const zB = getCustomers(dB[HEADER_ROW-1]||[]);
         for (let i=DATA_START_ROW-1;i<dB.length;i++) {
-          const d=dB[i][0]; if(!d) continue; if(typeof d==='string'&&isNaN(Date.parse(d))&&!d.match(/^\d/)) continue;
+          const d=dB[i][0]; if(!d) continue;
           const m=gm(d); if(!m) continue; im(m);
-          zB.forEach(z=>{const v=parseInt(dB[i][z.col])||0;if(v>0){mesice[m].trzba+=v*490;mesice[m].bedynky+=v;}});
+          zB.forEach(z=>{const v=parseInt((dB[i][z.col]||'').toString().replace(/\s/g,''))||0;if(v>0){mesice[m].trzba+=v*490;mesice[m].bedynky+=v;}});
         }
         const dS = await getSheetData(sheets,'Sirup'); const zS = getCustomers(dS[HEADER_ROW-1]||[]);
         for (let i=DATA_START_ROW-1;i<dS.length;i++) {
-          const d=dS[i][0]; if(!d) continue; if(typeof d==='string'&&isNaN(Date.parse(d))&&!d.match(/^\d/)) continue;
+          const d=dS[i][0]; if(!d) continue;
           const m=gm(d); if(!m) continue; im(m);
-          zS.forEach(z=>{const v=parseInt(dS[i][z.col])||0;if(v>0){mesice[m].trzba+=v*190;mesice[m].sirup+=v;}});
+          zS.forEach(z=>{const v=parseInt((dS[i][z.col]||'').toString().replace(/\s/g,''))||0;if(v>0){mesice[m].trzba+=v*190;mesice[m].sirup+=v;}});
         }
         const nz=['','Leden','Únor','Březen','Duben','Květen','Červen','Červenec','Srpen','Září','Říjen','Listopad','Prosinec'];
         result = Object.keys(mesice).sort().map(m=>{const pts=m.split('-');return{klic:m,nazev:nz[parseInt(pts[1])]+' '+pts[0],trzba:Math.round(mesice[m].trzba),naklady:Math.round(mesice[m].naklady),zisk:Math.round(mesice[m].trzba-mesice[m].naklady),vajicka:mesice[m].vajicka,bedynky:mesice[m].bedynky,sirup:mesice[m].sirup};});
