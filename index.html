@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="cs">
 <head>
@@ -32,8 +31,9 @@ html,body{width:100%;min-height:100vh;font-family:'Instrument Sans',sans-serif;b
 .hdr-inner{padding:18px 20px 10px;display:flex;align-items:center;justify-content:space-between;}
 .hdr-arrow{background:none;border:none;color:white;font-size:38px;line-height:1;cursor:pointer;padding:4px 10px;opacity:0.9;transition:opacity 0.2s;-webkit-tap-highlight-color:transparent;font-weight:300;}
 .hdr-arrow:disabled{opacity:0.2;}
-.hdr-center{flex:1;text-align:center;}
+.hdr-center{flex:1;text-align:center;position:relative;}
 .hdr h1{font-family:'Fraunces',serif;font-size:clamp(22px,6vw,30px);color:white;font-weight:900;letter-spacing:-0.5px;line-height:1;}
+.hdr-badge{position:absolute;top:-6px;right:calc(50% - 60px);background:#FF3B30;color:white;font-size:11px;font-weight:700;width:20px;height:20px;border-radius:50%;display:none;align-items:center;justify-content:center;font-family:'Instrument Sans',sans-serif;}
 .hdr-dots{display:flex;justify-content:center;gap:7px;padding:8px 0 12px;}
 .hdr-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.35);transition:background 0.2s;}
 .hdr-dot.on{background:white;}
@@ -92,6 +92,42 @@ html,body{width:100%;min-height:100vh;font-family:'Instrument Sans',sans-serif;b
 .edit-btn-save{background:var(--or);color:white;}
 .edit-btn-cancel{background:var(--cr);color:var(--br);border:2px solid var(--border) !important;}
 .hint{font-size:clamp(12px,3.5vw,14px);color:var(--text2);text-align:center;margin-top:8px;}
+
+/* ===== POŽADAVKY ===== */
+.req-card{background:white;border-radius:18px;padding:18px;margin-bottom:12px;box-shadow:0 2px 16px rgba(44,21,0,0.08);border-left:4px solid var(--or);}
+.req-card.confirmed{border-left-color:var(--gr);}
+.req-card.suggested{border-left-color:#F59E0B;}
+.req-card.cancelled{border-left-color:#C62828;opacity:0.6;}
+.req-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.req-name{font-family:'Fraunces',serif;font-size:18px;font-weight:900;color:var(--br);}
+.req-date{font-size:12px;color:var(--text2);margin-top:2px;}
+.req-status{font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;white-space:nowrap;}
+.req-status.pending{background:#FEF3CD;color:#856404;}
+.req-status.confirmed{background:#D1ECF1;color:#0C5460;}
+.req-status.suggested{background:#FFE5D0;color:#7D3A00;}
+.req-status.cancelled{background:#FFCDD2;color:#B71C1C;}
+.req-products{background:var(--cr);border-radius:12px;padding:12px;margin-bottom:12px;}
+.req-product-row{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;color:var(--br);}
+.req-total{display:flex;justify-content:space-between;font-size:14px;font-weight:600;margin-top:8px;padding-top:8px;border-top:1.5px solid var(--border);}
+.req-total span:last-child{color:var(--or);}
+.req-delivery{font-size:13px;color:var(--text2);margin-bottom:12px;}
+.req-delivery strong{color:var(--br);}
+.req-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.req-btn{flex:1;min-width:80px;padding:10px 8px;border:none;border-radius:12px;font-family:'Fraunces',serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.15s;text-align:center;}
+.req-btn:active{transform:scale(0.96);}
+.req-btn-confirm{background:var(--gr);color:white;}
+.req-btn-suggest{background:#F59E0B;color:white;}
+.req-btn-cancel{background:#FFEBEE;color:#C62828;}
+.req-suggest-form{margin-top:10px;padding:12px;background:var(--warn);border-radius:12px;display:none;}
+.req-suggest-form label{font-size:12px;color:var(--text2);display:block;margin-bottom:6px;font-weight:600;}
+.req-suggest-form input{width:100%;border:2px solid var(--border);border-radius:10px;padding:10px 12px;font-size:15px;font-family:'Instrument Sans',sans-serif;color:var(--br);outline:none;margin-bottom:8px;}
+.req-suggest-form input:focus{border-color:var(--or);}
+.req-suggest-send{width:100%;padding:10px;background:var(--or);color:white;border:none;border-radius:10px;font-family:'Fraunces',serif;font-size:15px;font-weight:700;cursor:pointer;}
+.req-empty{text-align:center;padding:40px 20px;color:var(--text2);}
+.req-empty .icon{font-size:40px;margin-bottom:10px;}
+.req-tabs{display:flex;gap:8px;margin-bottom:16px;}
+.req-tab{flex:1;padding:10px;border:2px solid var(--border);border-radius:12px;background:white;font-family:'Instrument Sans',sans-serif;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;text-align:center;transition:all 0.15s;}
+.req-tab.active{background:var(--or);border-color:var(--or);color:white;}
 </style>
 </head>
 <body>
@@ -111,7 +147,10 @@ html,body{width:100%;min-height:100vh;font-family:'Instrument Sans',sans-serif;b
 <div class="hdr">
   <div class="hdr-inner">
     <button class="hdr-arrow" id="ARR_L" onclick="goSlide(-1)">‹</button>
-    <div class="hdr-center"><h1 id="HDR_TITLE">🥚 Vajíčka 🐔</h1></div>
+    <div class="hdr-center">
+      <h1 id="HDR_TITLE">🥚 Vajíčka 🐔</h1>
+      <div class="hdr-badge" id="REQ_BADGE">0</div>
+    </div>
     <button class="hdr-arrow" id="ARR_R" onclick="goSlide(1)">›</button>
   </div>
   <div class="hdr-dots">
@@ -119,6 +158,7 @@ html,body{width:100%;min-height:100vh;font-family:'Instrument Sans',sans-serif;b
     <div class="hdr-dot" id="DOT_1"></div>
     <div class="hdr-dot" id="DOT_2"></div>
     <div class="hdr-dot" id="DOT_3"></div>
+    <div class="hdr-dot" id="DOT_4"></div>
   </div>
 </div>
 
@@ -244,6 +284,18 @@ html,body{width:100%;min-height:100vh;font-family:'Instrument Sans',sans-serif;b
         </div>
       </div>
 
+      <!-- POŽADAVKY -->
+      <div class="slide">
+        <div class="card">
+          <div class="card-title">📬 Příchozí objednávky</div>
+          <div class="req-tabs">
+            <button class="req-tab active" onclick="filterReq('pending',this)">⏳ Čekající</button>
+            <button class="req-tab" onclick="filterReq('all',this)">Všechny</button>
+          </div>
+          <div id="REQ_LIST"><div class="req-empty"><div class="icon">⏳</div><p>Načítám...</p></div></div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -264,7 +316,6 @@ html,body{width:100%;min-height:100vh;font-family:'Instrument Sans',sans-serif;b
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
 <script>
 Chart.register(ChartDataLabels);
 function hideSplash(){
@@ -277,13 +328,15 @@ setTimeout(hideSplash,4000);
 const API='/.netlify/functions/api';
 const DNY=['Ne','Po','Út','St','Čt','Pá','So'];
 const PRODUKTY=['vajicka','bedynka','sirup'];
-const TITULY=['🥚 Vajíčka 🐔','🥕 Bedýnka 🫛','🫐 Sirup 🌸','💰 Cashflow'];
+const TITULY=['🥚 Vajíčka 🐔','🥕 Bedýnka 🫛','🫐 Sirup 🌸','💰 Cashflow','📬 Požadavky'];
 var curSlide=0;
 var state=[
   {jmeno:null,kusy:null,datum:null},
   {jmeno:null,kusy:null,datum:null},
   {jmeno:null,kusy:null,datum:null}
 ];
+var allRequests=[];
+var reqFilter='pending';
 
 var touchStartX=0;
 document.getElementById('SLIDER').addEventListener('touchstart',function(e){touchStartX=e.touches[0].clientX;},{passive:true});
@@ -294,14 +347,15 @@ document.getElementById('SLIDER').addEventListener('touchend',function(e){
 
 function goSlide(dir){
   var next=curSlide+dir;
-  if(next<0||next>3)return;
+  if(next<0||next>4)return;
   curSlide=next;
   document.getElementById('SLIDES').style.transform='translateX(-'+curSlide*100+'%)';
   document.getElementById('HDR_TITLE').textContent=TITULY[curSlide];
-  for(var i=0;i<4;i++){document.getElementById('DOT_'+i).className='hdr-dot'+(i===curSlide?' on':'');}
+  for(var i=0;i<5;i++){document.getElementById('DOT_'+i).className='hdr-dot'+(i===curSlide?' on':'');}
   document.getElementById('ARR_L').disabled=curSlide===0;
-  document.getElementById('ARR_R').disabled=curSlide===3;
+  document.getElementById('ARR_R').disabled=curSlide===4;
   if(curSlide===3){loadCashflow();}
+  if(curSlide===4){loadRequests();}
 }
 
 function buildDates(){
@@ -458,6 +512,158 @@ function saveEdit(){
   closeEdit();
 }
 
+// ===== POŽADAVKY =====
+
+function filterReq(f, btn) {
+  reqFilter = f;
+  document.querySelectorAll('.req-tab').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  renderRequests();
+}
+
+function loadRequests() {
+  document.getElementById('REQ_LIST').innerHTML = '<div class="req-empty"><div class="icon">⏳</div><p>Načítám...</p></div>';
+  apiFetch({action:'listRequests'}, function(err, data) {
+    if (err || !Array.isArray(data)) {
+      document.getElementById('REQ_LIST').innerHTML = '<div class="req-empty"><div class="icon">😕</div><p>Nepodařilo se načíst</p></div>';
+      return;
+    }
+    allRequests = data.slice().reverse();
+    // Badge - počet čekajících
+    var pending = data.filter(function(r){return r.stav==='čeká na potvrzení';}).length;
+    var badge = document.getElementById('REQ_BADGE');
+    if (pending > 0) { badge.textContent = pending; badge.style.display = 'flex'; }
+    else { badge.style.display = 'none'; }
+    renderRequests();
+  });
+}
+
+function renderRequests() {
+  var filtered = allRequests;
+  if (reqFilter === 'pending') {
+    filtered = allRequests.filter(function(r){ return r.stav === 'čeká na potvrzení'; });
+  }
+  var container = document.getElementById('REQ_LIST');
+  if (filtered.length === 0) {
+    container.innerHTML = '<div class="req-empty"><div class="icon">' + (reqFilter==='pending'?'✅':'📭') + '</div><p>' + (reqFilter==='pending'?'Žádné čekající požadavky':'Žádné požadavky') + '</p></div>';
+    return;
+  }
+
+  var statusMap = {
+    'čeká na potvrzení': {cls:'pending', label:'⏳ Čeká'},
+    'potvrzeno': {cls:'confirmed', label:'✓ Potvrzeno'},
+    'navržen jiný termín': {cls:'suggested', label:'📅 Jiný termín'},
+    'zrušeno': {cls:'cancelled', label:'✗ Zrušeno'}
+  };
+
+  container.innerHTML = filtered.map(function(req) {
+    var st = statusMap[req.stav] || {cls:'pending', label: req.stav};
+    var cardCls = req.stav==='potvrzeno'?'confirmed':req.stav==='navržen jiný termín'?'suggested':req.stav==='zrušeno'?'cancelled':'';
+
+    var products = '';
+    if (req.vajicka > 0) products += '<div class="req-product-row"><span>🥚 Vajíčka '+req.vajicka+' ks</span><span>'+req.celkem+' Kč</span></div>';
+    if (req.bedynka > 0) products += '<div class="req-product-row"><span>🧺 Bedýnka '+req.bedynka+' ks</span></div>';
+    if (req.sirup > 0) products += '<div class="req-product-row"><span>🫙 Sirup '+req.sirup+' l</span></div>';
+
+    var actions = '';
+    if (req.stav === 'čeká na potvrzení') {
+      actions = '<div class="req-actions">'+
+        '<button class="req-btn req-btn-confirm" onclick="confirmReq('+req.radek+')">✓ Potvrdit</button>'+
+        '<button class="req-btn req-btn-suggest" onclick="toggleSuggest('+req.radek+')">📅 Jiný termín</button>'+
+        '<button class="req-btn req-btn-cancel" onclick="cancelReq('+req.radek+')">✗ Zrušit</button>'+
+      '</div>'+
+      '<div class="req-suggest-form" id="suggest-form-'+req.radek+'">'+
+        '<label>Navrhni jiný termín doručení:</label>'+
+        '<input type="date" id="suggest-date-'+req.radek+'" min="">'+
+        '<button class="req-suggest-send" onclick="sendSuggest('+req.radek+')">Odeslat návrh</button>'+
+      '</div>';
+    }
+
+    var suggestedHtml = '';
+    if (req.stav === 'navržen jiný termín' && req.navrzenyTermin) {
+      suggestedHtml = '<div style="margin-bottom:10px;padding:8px 12px;background:#FFF3E0;border-radius:10px;font-size:13px;color:#7D3A00;">📅 Navrženo: <strong>'+req.navrzenyTermin+'</strong></div>';
+    }
+
+    return '<div class="req-card '+cardCls+'" id="req-card-'+req.radek+'">'+
+      '<div class="req-header">'+
+        '<div>'+
+          '<div class="req-name">'+req.jmeno+'</div>'+
+          '<div class="req-date">Objednáno: '+req.datumPozadavku+'</div>'+
+        '</div>'+
+        '<span class="req-status '+st.cls+'">'+st.label+'</span>'+
+      '</div>'+
+      '<div class="req-products">'+products+
+        '<div class="req-total"><span>Celkem</span><span>'+req.celkem+' Kč</span></div>'+
+      '</div>'+
+      '<div class="req-delivery">Požadované doručení: <strong>'+req.datumDoruceni+'</strong></div>'+
+      suggestedHtml +
+      actions +
+    '</div>';
+  }).join('');
+
+  // Nastav min datum pro suggest inputy
+  var tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate()+1);
+  var minDate = tomorrow.toISOString().split('T')[0];
+  document.querySelectorAll('.req-suggest-form input[type=date]').forEach(function(el){
+    el.min = minDate;
+  });
+}
+
+function confirmReq(radek) {
+  apiFetch({action:'confirmRequest', radek:radek, navrzenyDatum:''}, function(err,d){
+    if (!err && d && d.status==='ok') {
+      showToast('✓ Objednávka potvrzena a zapsána do Sheets');
+      loadRequests();
+    } else {
+      showToast('❌ Chyba při potvrzování');
+    }
+  });
+}
+
+function toggleSuggest(radek) {
+  var form = document.getElementById('suggest-form-'+radek);
+  form.style.display = form.style.display === 'block' ? 'none' : 'block';
+}
+
+function sendSuggest(radek) {
+  var dateEl = document.getElementById('suggest-date-'+radek);
+  if (!dateEl.value) { showToast('Vyberte datum'); return; }
+  var parts = dateEl.value.split('-');
+  var datumCZ = parts[2]+'.'+parts[1]+'.'+parts[0];
+  apiFetch({action:'confirmRequest', radek:radek, navrzenyDatum:datumCZ}, function(err,d){
+    if (!err && d && d.status==='ok') {
+      showToast('📅 Návrh termínu odeslán a zapsán do Sheets');
+      loadRequests();
+    } else {
+      showToast('❌ Chyba');
+    }
+  });
+}
+
+function cancelReq(radek) {
+  if (!confirm('Opravdu zrušit tuto objednávku?')) return;
+  apiFetch({action:'rejectRequest', radek:radek}, function(err,d){
+    if (!err && d && d.status==='ok') {
+      showToast('Objednávka zrušena');
+      loadRequests();
+    }
+  });
+}
+
+function showToast(msg) {
+  var t = document.getElementById('TOAST');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'TOAST';
+    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#2C1500;color:#FDF6EE;padding:12px 20px;border-radius:24px;font-size:14px;font-weight:500;transition:transform 0.3s ease;z-index:2000;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.2);';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.transform = 'translateX(-50%) translateY(0)';
+  setTimeout(function(){ t.style.transform = 'translateX(-50%) translateY(80px)'; }, 2800);
+}
+
+// ===== CASHFLOW (beze změny) =====
 var cfChart=null;
 var cfLoaded=false;
 
@@ -470,13 +676,9 @@ function loadCashflow(){
       return;
     }
     cfLoaded=true;
-
-    // Celkový součet
     var celkTrzba=data.reduce(function(s,m){return s+m.trzba;},0);
     var celkNaklady=data.reduce(function(s,m){return s+m.naklady;},0);
     var celkZisk=celkTrzba-celkNaklady;
-    var posledni=data[data.length-1]||{};
-
     document.getElementById('CF_SUMMARY').innerHTML=
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">'+
         '<div style="background:var(--gr2);border-radius:14px;padding:14px;text-align:center;">'+
@@ -494,121 +696,43 @@ function loadCashflow(){
         '<span style="font-size:14px;color:var(--or);font-weight:600;">Celkový zisk</span>'+
         '<span style="font-family:\'Fraunces\',serif;font-size:28px;font-weight:900;color:var(--or);">'+celkZisk.toLocaleString('cs')+' Kč</span>'+
       '</div>';
-
-    // Filtruj prázdné měsíce
     data=data.filter(function(m){return m.trzba>0||m.naklady>0;});
-
-    // Graf
     var labels=data.map(function(m){return m.nazev.split(' ')[0];});
     var trzby=data.map(function(m){return m.trzba;});
     var naklady=data.map(function(m){return m.naklady;});
     var zisky=data.map(function(m){return m.zisk;});
-
     if(cfChart){cfChart.destroy();}
     var ctx=document.getElementById('CF_CHART').getContext('2d');
     cfChart=new Chart(ctx,{
       type:'bar',
-      data:{
-        labels:labels,
-        datasets:[
-          {label:'Tržby',data:trzby,backgroundColor:'rgba(212,86,10,0.7)',borderRadius:6},
-          {label:'Náklady',data:naklady,backgroundColor:'rgba(198,40,40,0.5)',borderRadius:6},
-          {label:'Zisk',data:zisky,backgroundColor:'rgba(42,110,53,0.8)',borderRadius:6}
-        ]
-      },
-      options:{
-        responsive:true,maintainAspectRatio:false,
-        plugins:{
-          legend:{labels:{font:{size:11},boxWidth:12}},
-          datalabels:{display:false}
-        },
-        scales:{
-          y:{
-            ticks:{font:{size:10},callback:function(v){return v.toLocaleString('cs');}},
-            grid:{
-              color:function(c){return c.tick.value===0?'rgba(0,0,0,0.5)':'rgba(0,0,0,0.05)';},
-              lineWidth:function(c){return c.tick.value===0?2:1;}
-            }
-          },
-          x:{ticks:{font:{size:10}},grid:{display:false}}
-        }
-      },
+      data:{labels:labels,datasets:[
+        {label:'Tržby',data:trzby,backgroundColor:'rgba(212,86,10,0.7)',borderRadius:6},
+        {label:'Náklady',data:naklady,backgroundColor:'rgba(198,40,40,0.5)',borderRadius:6},
+        {label:'Zisk',data:zisky,backgroundColor:'rgba(42,110,53,0.8)',borderRadius:6}
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:11},boxWidth:12}},datalabels:{display:false}},scales:{y:{ticks:{font:{size:10},callback:function(v){return v.toLocaleString('cs');}},grid:{color:function(c){return c.tick.value===0?'rgba(0,0,0,0.5)':'rgba(0,0,0,0.05)';},lineWidth:function(c){return c.tick.value===0?2:1;}}},x:{ticks:{font:{size:10}},grid:{display:false}}}},
       plugins:[ChartDataLabels]
     });
-
-    // Graf prodejů podle produktu
-    var totalVajicka = data.reduce(function(s,m){return s+(m.vajicka||0);},0);
-    var totalBedynky = data.reduce(function(s,m){return s+(m.bedynky||0);},0);
-    var totalSirup   = data.reduce(function(s,m){return s+(m.sirup||0);},0);
-
-    var ctx2 = document.getElementById('CF_PRODUCTS_CHART').getContext('2d');
-    new Chart(ctx2, {
-      type: 'bar',
-      data: {
-        labels: labels,
-        datasets: [
-          {label:'Vajíčka 🥚', data: data.map(function(m){return m.vajicka||0;}), backgroundColor:'rgba(212,86,10,0.75)', borderRadius:6},
-          {label:'Bedýnky 🥕', data: data.map(function(m){return m.bedynky||0;}), backgroundColor:'rgba(42,110,53,0.75)', borderRadius:6},
-          {label:'Sirup 🫐',   data: data.map(function(m){return m.sirup||0;}),   backgroundColor:'rgba(90,60,150,0.75)', borderRadius:6}
-        ]
-      },
-      options:{
-        responsive:true, maintainAspectRatio:false,
-        layout:{padding:{top:24}},
-        plugins:{
-          legend:{labels:{font:{size:11},boxWidth:12}},
-          datalabels:{
-            display:function(ctx){return ctx.dataset.data[ctx.dataIndex]>0;},
-            color:'#2C1500',
-            font:{size:13,weight:'700'},
-            rotation:0,
-            anchor:'end',
-            align:'top',
-            offset:2,
-            formatter:function(v){return v+' ks';}
-          }
-        },
-        scales:{
-          y:{ticks:{font:{size:10}}, grid:{
-            color:function(c){return c.tick.value===0?'rgba(0,0,0,0.5)':'rgba(0,0,0,0.05)';},
-            lineWidth:function(c){return c.tick.value===0?2:1;}
-          }},
-          x:{ticks:{font:{size:10}}, grid:{display:false}}
-        }
-      },
-      plugins:[ChartDataLabels]
-    });
-
-    // Celkové součty produktů
+    var totalVajicka=data.reduce(function(s,m){return s+(m.vajicka||0);},0);
+    var totalBedynky=data.reduce(function(s,m){return s+(m.bedynky||0);},0);
+    var totalSirup=data.reduce(function(s,m){return s+(m.sirup||0);},0);
+    var ctx2=document.getElementById('CF_PRODUCTS_CHART').getContext('2d');
+    new Chart(ctx2,{type:'bar',data:{labels:labels,datasets:[
+      {label:'Vajíčka 🥚',data:data.map(function(m){return m.vajicka||0;}),backgroundColor:'rgba(212,86,10,0.75)',borderRadius:6},
+      {label:'Bedýnky 🥕',data:data.map(function(m){return m.bedynky||0;}),backgroundColor:'rgba(42,110,53,0.75)',borderRadius:6},
+      {label:'Sirup 🫐',data:data.map(function(m){return m.sirup||0;}),backgroundColor:'rgba(90,60,150,0.75)',borderRadius:6}
+    ]},options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:24}},plugins:{legend:{labels:{font:{size:11},boxWidth:12}},datalabels:{display:function(ctx){return ctx.dataset.data[ctx.dataIndex]>0;},color:'#2C1500',font:{size:13,weight:'700'},anchor:'end',align:'top',offset:2,formatter:function(v){return v+' ks';}}},scales:{y:{ticks:{font:{size:10}},grid:{color:function(c){return c.tick.value===0?'rgba(0,0,0,0.5)':'rgba(0,0,0,0.05)';},lineWidth:function(c){return c.tick.value===0?2:1;}}},x:{ticks:{font:{size:10}},grid:{display:false}}}},plugins:[ChartDataLabels]});
     document.getElementById('CF_PRODUCTS_TOTALS').innerHTML=
       '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px;">'+
-        '<div style="background:var(--warn);border-radius:12px;padding:12px;text-align:center;">'+
-          '<div style="font-size:11px;color:var(--or);font-weight:600;margin-bottom:4px;">Vajíčka 🥚</div>'+
-          '<div style="font-family:\'Fraunces\',serif;font-size:22px;font-weight:900;color:var(--or);">'+totalVajicka+'</div>'+
-          '<div style="font-size:10px;color:var(--or);opacity:0.7;">ks celkem</div>'+
-        '</div>'+
-        '<div style="background:var(--gr2);border-radius:12px;padding:12px;text-align:center;">'+
-          '<div style="font-size:11px;color:var(--gr);font-weight:600;margin-bottom:4px;">Bedýnky 🥕</div>'+
-          '<div style="font-family:\'Fraunces\',serif;font-size:22px;font-weight:900;color:var(--gr);">'+totalBedynky+'</div>'+
-          '<div style="font-size:10px;color:var(--gr);opacity:0.7;">ks celkem</div>'+
-        '</div>'+
-        '<div style="background:#F0EAF8;border-radius:12px;padding:12px;text-align:center;">'+
-          '<div style="font-size:11px;color:#5A3C96;font-weight:600;margin-bottom:4px;">Sirup 🫐</div>'+
-          '<div style="font-family:\'Fraunces\',serif;font-size:22px;font-weight:900;color:#5A3C96;">'+totalSirup+'</div>'+
-          '<div style="font-size:10px;color:#5A3C96;opacity:0.7;">ks celkem</div>'+
-        '</div>'+
+        '<div style="background:var(--warn);border-radius:12px;padding:12px;text-align:center;"><div style="font-size:11px;color:var(--or);font-weight:600;margin-bottom:4px;">Vajíčka 🥚</div><div style="font-family:\'Fraunces\',serif;font-size:22px;font-weight:900;color:var(--or);">'+totalVajicka+'</div><div style="font-size:10px;color:var(--or);opacity:0.7;">ks celkem</div></div>'+
+        '<div style="background:var(--gr2);border-radius:12px;padding:12px;text-align:center;"><div style="font-size:11px;color:var(--gr);font-weight:600;margin-bottom:4px;">Bedýnky 🥕</div><div style="font-family:\'Fraunces\',serif;font-size:22px;font-weight:900;color:var(--gr);">'+totalBedynky+'</div><div style="font-size:10px;color:var(--gr);opacity:0.7;">ks celkem</div></div>'+
+        '<div style="background:#F0EAF8;border-radius:12px;padding:12px;text-align:center;"><div style="font-size:11px;color:#5A3C96;font-weight:600;margin-bottom:4px;">Sirup 🫐</div><div style="font-family:\'Fraunces\',serif;font-size:22px;font-weight:900;color:#5A3C96;">'+totalSirup+'</div><div style="font-size:10px;color:#5A3C96;opacity:0.7;">ks celkem</div></div>'+
       '</div>';
     var rows=data.slice().reverse().map(function(m){
       var ziskColor=m.zisk>=0?'var(--gr)':'#C62828';
       return '<div style="border:1.5px solid var(--border);border-radius:14px;padding:14px;margin-bottom:8px;background:var(--cr);">'+
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'+
-          '<strong style="font-size:15px;color:var(--br);">'+m.nazev+'</strong>'+
-          '<span style="font-family:\'Fraunces\',serif;font-size:18px;font-weight:900;color:'+ziskColor+';">'+m.zisk.toLocaleString('cs')+' Kč</span>'+
-        '</div>'+
-        '<div style="display:flex;gap:12px;">'+
-          '<span style="font-size:12px;color:var(--gr);">↑ '+m.trzba.toLocaleString('cs')+' Kč</span>'+
-          '<span style="font-size:12px;color:#C62828;">↓ '+m.naklady.toLocaleString('cs')+' Kč</span>'+
-        '</div>'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><strong style="font-size:15px;color:var(--br);">'+m.nazev+'</strong><span style="font-family:\'Fraunces\',serif;font-size:18px;font-weight:900;color:'+ziskColor+';">'+m.zisk.toLocaleString('cs')+' Kč</span></div>'+
+        '<div style="display:flex;gap:12px;"><span style="font-size:12px;color:var(--gr);">↑ '+m.trzba.toLocaleString('cs')+' Kč</span><span style="font-size:12px;color:#C62828;">↓ '+m.naklady.toLocaleString('cs')+' Kč</span></div>'+
       '</div>';
     }).join('');
     document.getElementById('CF_TABLE').innerHTML=rows||'<div class="empty">Žádná data</div>';
@@ -618,6 +742,18 @@ function loadCashflow(){
 buildDates();
 goSlide(0);
 for(var i=0;i<3;i++){loadO(i);}
+
+// Zkontroluj badge při načtení
+apiFetch({action:'listRequests'}, function(err, data) {
+  if (!err && Array.isArray(data)) {
+    var pending = data.filter(function(r){return r.stav==='čeká na potvrzení';}).length;
+    if (pending > 0) {
+      var badge = document.getElementById('REQ_BADGE');
+      badge.textContent = pending;
+      badge.style.display = 'flex';
+    }
+  }
+});
 </script>
 </body>
 </html>
