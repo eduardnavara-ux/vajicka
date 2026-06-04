@@ -569,30 +569,86 @@ async function submitOrder() {
   if (!date) { showToast('Vyberte datum doručení'); return; }
   if (eggs === 0 && box === 0 && syrupLiters === 0) { showToast('Přidejte alespoň jeden produkt'); return; }
 
-  const btn = document.getElementById('btn-order');
-  btn.disabled = true; btn.textContent = 'Odesílám…';
-
   const [y,m,d] = date.split('-');
   const datumCZ = d + '.' + m + '.' + y;
 
-  try {
-    await api({
-      action: 'addRequest',
-      jmeno: currentUser,
-      datum: datumCZ,
-      vajicka: eggs,
-      bedynka: box,
-      sirup: syrupLiters
-    });
-    showToast('✓ Objednávka odeslána! Čeká na potvrzení.');
-    document.getElementById('qty-eggs').value = 0;
-    document.getElementById('qty-box').value = 0;
-    setSyrup(0); updateSummary();
-    setTimeout(() => switchTab('history'), 1200);
-  } catch(e) {
-    showToast('Chyba při odesílání. Zkuste znovu.');
+  // Okamžitě zobraz potvrzení zákazníkovi
+  const btn = document.getElementById('btn-order');
+  btn.disabled = true;
+  showToast('✓ Objednávka odeslána! Čeká na potvrzení.');
+  document.getElementById('qty-eggs').value = 0;
+  document.getElementById('qty-box').value = 0;
+  setSyrup(0); updateSummary();
+
+  // Přidej objednávku optimisticky do historie okamžitě
+  const eggPrice = getEggPrice();
+  const tempOrder = {
+    datumPozadavku: new Date().getDate() + '.' + (new Date().getMonth()+1) + '.' + new Date().getFullYear(),
+    datumDoruceni: datumCZ,
+    vajicka: eggs, bedynka: box, sirup: syrupLiters,
+    celkem: eggs*eggPrice + box*490 + Math.round(syrupLiters*190),
+    stav: 'čeká na potvrzení', navrzenyTermin: ''
+  };
+  setTimeout(() => {
+    switchTab('history');
+    // Zobraz optimisticky bez čekání na server
+    const container = document.getElementById('history-content');
+    const tempEl = document.createElement('div');
+    tempEl.id = 'temp-order';
+    renderOrderItem(tempEl, tempOrder);
+    if (container.firstChild) container.insertBefore(tempEl, container.firstChild);
+    else container.appendChild(tempEl);
+  }, 800);
+
+  // Pošli na server na pozadí
+  api({
+    action: 'addRequest',
+    jmeno: currentUser,
+    datum: datumCZ,
+    vajicka: eggs,
+    bedynka: box,
+    sirup: syrupLiters
+  }).then(() => {
+    btn.disabled = false;
+    // Načti skutečná data ze serveru
+    loadHistory();
+  }).catch(() => {
+    btn.disabled = false;
+    showToast('⚠️ Objednávka se neuložila. Zkuste znovu.');
+  });
+}
+
+function renderOrderItem(el, order) {
+  const statusMap = {
+    'čeká na potvrzení': {cls:'status-pending', label:'⏳ Čeká na potvrzení'},
+    'potvrzeno': {cls:'status-confirmed', label:'✓ Potvrzeno'},
+    'doručeno': {cls:'status-delivered', label:'✓ Doručeno'},
+    'navržen jiný termín': {cls:'status-suggested', label:'📅 Jiný termín'},
+    'zrušeno': {cls:'status-cancelled', label:'✗ Zrušeno'}
+  };
+  const status = statusMap[order.stav] || {cls:'status-pending', label: order.stav};
+  let productsHtml = '';
+  if (order.vajicka > 0) productsHtml += `<div class="order-product-row"><span>🥚 Vajíčka ${order.vajicka} ks</span><span>${order.vajicka * getEggPrice()} Kč</span></div>`;
+  if (order.bedynka > 0) productsHtml += `<div class="order-product-row"><span>🥦 Bedýnka ${order.bedynka} ks</span><span>${order.bedynka * 490} Kč</span></div>`;
+  if (order.sirup > 0) productsHtml += `<div class="order-product-row"><span>🍶 Sirup ${order.sirup} l</span><span>${Math.round(order.sirup * 190)} Kč</span></div>`;
+  let suggestedHtml = '';
+  if (order.stav === 'navržen jiný termín' && order.navrzenyTermin) {
+    suggestedHtml = `<div class="order-suggested-date">📅 Navržené doručení: <strong>${formatDatum(order.navrzenyTermin)}</strong></div>`;
   }
-  btn.disabled = false; btn.textContent = 'Odeslat objednávku';
+  el.className = 'order-item';
+  el.innerHTML = `
+    <div class="order-item-header">
+      <div>
+        <div class="order-date">Objednáno: ${formatDatum(order.datumPozadavku)}</div>
+        <div class="order-delivery">Doručení: ${formatDatum(order.datumDoruceni)}</div>
+      </div>
+      <span class="order-status ${status.cls}">${status.label}</span>
+    </div>
+    <div class="order-products">
+      ${productsHtml}
+      <div class="order-total"><span>Celkem</span><span>${order.celkem} Kč</span></div>
+    </div>
+    ${suggestedHtml}`;
 }
 
 // ── HISTORY ──
@@ -630,37 +686,8 @@ function renderHistory(orders) {
     return;
   }
   orders.slice().reverse().forEach(order => {
-    const statusMap = {
-      'čeká na potvrzení': {cls:'status-pending', label:'⏳ Čeká na potvrzení'},
-      'potvrzeno': {cls:'status-confirmed', label:'✓ Potvrzeno'},
-      'doručeno': {cls:'status-delivered', label:'✓ Doručeno'},
-      'navržen jiný termín': {cls:'status-suggested', label:'📅 Jiný termín'},
-      'zrušeno': {cls:'status-cancelled', label:'✗ Zrušeno'}
-    };
-    const status = statusMap[order.stav] || {cls:'status-pending', label: order.stav};
-    let productsHtml = '';
-    if (order.vajicka > 0) productsHtml += `<div class="order-product-row"><span>🥚 Vajíčka ${order.vajicka} ks</span><span>${order.vajicka * getEggPrice()} Kč</span></div>`;
-    if (order.bedynka > 0) productsHtml += `<div class="order-product-row"><span>🥦 Bedýnka ${order.bedynka} ks</span><span>${order.bedynka * 490} Kč</span></div>`;
-    if (order.sirup > 0) productsHtml += `<div class="order-product-row"><span>🍶 Sirup ${order.sirup} l</span><span>${Math.round(order.sirup * 190)} Kč</span></div>`;
-    let suggestedHtml = '';
-    if (order.stav === 'navržen jiný termín' && order.navrzenyTermin) {
-      suggestedHtml = `<div class="order-suggested-date">📅 Navržené doručení: <strong>${formatDatum(order.navrzenyTermin)}</strong></div>`;
-    }
     const el = document.createElement('div');
-    el.className = 'order-item';
-    el.innerHTML = `
-      <div class="order-item-header">
-        <div>
-          <div class="order-date">Objednáno: ${formatDatum(order.datumPozadavku)}</div>
-          <div class="order-delivery">Doručení: ${formatDatum(order.datumDoruceni)}</div>
-        </div>
-        <span class="order-status ${status.cls}">${status.label}</span>
-      </div>
-      <div class="order-products">
-        ${productsHtml}
-        <div class="order-total"><span>Celkem</span><span>${order.celkem} Kč</span></div>
-      </div>
-      ${suggestedHtml}`;
+    renderOrderItem(el, order);
     container.appendChild(el);
   });
 }
