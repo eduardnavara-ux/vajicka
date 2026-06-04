@@ -265,7 +265,7 @@
 
       <!-- Bedýnka -->
       <div class="product-card">
-        <div class="product-icon" style="background:#E8F0E6;">🧺</div>
+        <div class="product-icon" style="background:#E8F0E6;">🥦</div>
         <div class="product-info">
           <h3>Bedýnka zeleniny</h3>
           <p>490 Kč / ks</p>
@@ -283,7 +283,7 @@
       <!-- Sirup -->
       <div class="product-card" style="flex-direction:column;align-items:flex-start;">
         <div style="display:flex;align-items:center;gap:14px;width:100%;">
-          <div class="product-icon" style="background:#FAECE7;">🫙</div>
+          <div class="product-icon" style="background:#FAECE7;">🍶</div>
           <div class="product-info"><h3>Sirup</h3><p>190 Kč / litr</p></div>
           <div style="margin-left:auto;font-size:14px;font-weight:500;color:var(--orange);" id="syrup-subtotal">0 Kč</div>
         </div>
@@ -607,6 +607,16 @@ async function loadHistory() {
   }
 }
 
+function formatDatum(val) {
+  if (!val) return '';
+  // Pokud je to ISO string (2026-06-03T22:00:00.000Z nebo 2026-06-03)
+  const d = new Date(val);
+  if (!isNaN(d)) {
+    return d.getDate() + '.' + (d.getMonth()+1) + '.' + d.getFullYear();
+  }
+  return val; // už je ve formátu DD.MM.YYYY
+}
+
 function renderHistory(orders) {
   const container = document.getElementById('history-content');
   container.innerHTML = '';
@@ -625,8 +635,8 @@ function renderHistory(orders) {
     const status = statusMap[order.stav] || {cls:'status-pending', label: order.stav};
     let productsHtml = '';
     if (order.vajicka > 0) productsHtml += `<div class="order-product-row"><span>🥚 Vajíčka ${order.vajicka} ks</span><span>${order.vajicka * getEggPrice()} Kč</span></div>`;
-    if (order.bedynka > 0) productsHtml += `<div class="order-product-row"><span>🧺 Bedýnka ${order.bedynka} ks</span><span>${order.bedynka * 490} Kč</span></div>`;
-    if (order.sirup > 0) productsHtml += `<div class="order-product-row"><span>🫙 Sirup ${order.sirup} l</span><span>${Math.round(order.sirup * 190)} Kč</span></div>`;
+    if (order.bedynka > 0) productsHtml += `<div class="order-product-row"><span>🥦 Bedýnka ${order.bedynka} ks</span><span>${order.bedynka * 490} Kč</span></div>`;
+    if (order.sirup > 0) productsHtml += `<div class="order-product-row"><span>🍶 Sirup ${order.sirup} l</span><span>${Math.round(order.sirup * 190)} Kč</span></div>`;
     let suggestedHtml = '';
     if (order.stav === 'navržen jiný termín' && order.navrzenyTermin) {
       suggestedHtml = `<div class="order-suggested-date">📅 Navržené doručení: <strong>${order.navrzenyTermin}</strong></div>`;
@@ -636,8 +646,8 @@ function renderHistory(orders) {
     el.innerHTML = `
       <div class="order-item-header">
         <div>
-          <div class="order-date">Objednáno: ${order.datumPozadavku}</div>
-          <div class="order-delivery">Doručení: ${order.datumDoruceni}</div>
+          <div class="order-date">Objednáno: ${formatDatum(order.datumPozadavku)}</div>
+          <div class="order-delivery">Doručení: ${formatDatum(order.datumDoruceni)}</div>
         </div>
         <span class="order-status ${status.cls}">${status.label}</span>
       </div>
