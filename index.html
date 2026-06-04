@@ -33,7 +33,7 @@ html,body{width:100%;min-height:100vh;font-family:'Instrument Sans',sans-serif;b
 .hdr-arrow:disabled{opacity:0.2;}
 .hdr-center{flex:1;text-align:center;position:relative;}
 .hdr h1{font-family:'Fraunces',serif;font-size:clamp(22px,6vw,30px);color:white;font-weight:900;letter-spacing:-0.5px;line-height:1;}
-.hdr-badge{position:absolute;top:-6px;right:calc(50% - 60px);background:#FF3B30;color:white;font-size:11px;font-weight:700;width:20px;height:20px;border-radius:50%;display:none;align-items:center;justify-content:center;font-family:'Instrument Sans',sans-serif;}
+.hdr-badge{position:absolute;top:-8px;right:calc(50% - 70px);background:#FF3B30;color:white;font-size:12px;font-weight:700;min-width:22px;height:22px;border-radius:11px;padding:0 6px;display:none;align-items:center;justify-content:center;font-family:'Instrument Sans',sans-serif;box-shadow:0 2px 8px rgba(255,59,48,0.5);border:2px solid white;}
 .hdr-dots{display:flex;justify-content:center;gap:7px;padding:8px 0 12px;}
 .hdr-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.35);transition:background 0.2s;}
 .hdr-dot.on{background:white;}
@@ -162,6 +162,11 @@ html,body{width:100%;min-height:100vh;font-family:'Instrument Sans',sans-serif;b
   </div>
 </div>
 
+<!-- Notifikační pruh pro čekající požadavky -->
+<div id="REQ_BANNER" style="display:none;background:#FF3B30;color:white;text-align:center;padding:10px 16px;font-size:14px;font-weight:600;cursor:pointer;" onclick="goSlide(4)">
+  📬 <span id="REQ_BANNER_TEXT"></span> — klepni pro zobrazení
+</div>
+
 <div class="main">
   <div class="slider" id="SLIDER">
     <div class="slides" id="SLIDES">
@@ -169,16 +174,7 @@ html,body{width:100%;min-height:100vh;font-family:'Instrument Sans',sans-serif;b
       <!-- VAJÍČKA -->
       <div class="slide">
         <div class="card">
-          <div class="cust-grid" id="CB_0">
-            <button class="cust-btn" onclick="sC(0,this,'Danča')">Danča</button>
-            <button class="cust-btn" onclick="sC(0,this,'Kristýna')">Kristýna</button>
-            <button class="cust-btn" onclick="sC(0,this,'Renata')">Renata</button>
-            <button class="cust-btn" onclick="sC(0,this,'Andrea')">Andrea</button>
-            <button class="cust-btn" onclick="sC(0,this,'Marcela')">Marcela</button>
-            <button class="cust-btn" onclick="sC(0,this,'Dáša')">Dáša</button>
-            <button class="cust-btn" onclick="sC(0,this,'Regina')">Regina</button>
-            <button class="cust-btn" onclick="sC(0,this,'Ondra')">Ondra</button>
-          </div>
+          <div class="cust-grid" id="CB_0"></div>
           <div class="ks-wrap">
             <input type="number" id="KS_0" placeholder="Počet kusů" min="1" max="999" oninput="uP(0)">
             <span class="ks-unit">ks</span>
@@ -201,16 +197,7 @@ html,body{width:100%;min-height:100vh;font-family:'Instrument Sans',sans-serif;b
       <!-- BEDÝNKA -->
       <div class="slide">
         <div class="card">
-          <div class="cust-grid" id="CB_1">
-            <button class="cust-btn" onclick="sC(1,this,'Danča')">Danča</button>
-            <button class="cust-btn" onclick="sC(1,this,'Kristýna')">Kristýna</button>
-            <button class="cust-btn" onclick="sC(1,this,'Renata')">Renata</button>
-            <button class="cust-btn" onclick="sC(1,this,'Andrea')">Andrea</button>
-            <button class="cust-btn" onclick="sC(1,this,'Marcela')">Marcela</button>
-            <button class="cust-btn" onclick="sC(1,this,'Dáša')">Dáša</button>
-            <button class="cust-btn" onclick="sC(1,this,'Regina')">Regina</button>
-            <button class="cust-btn" onclick="sC(1,this,'Ondra')">Ondra</button>
-          </div>
+          <div class="cust-grid" id="CB_1"></div>
           <div class="ks-wrap">
             <input type="number" id="KS_1" placeholder="Počet kusů" min="1" max="999" oninput="uP(1)">
             <span class="ks-unit">ks</span>
@@ -233,16 +220,7 @@ html,body{width:100%;min-height:100vh;font-family:'Instrument Sans',sans-serif;b
       <!-- SIRUP -->
       <div class="slide">
         <div class="card">
-          <div class="cust-grid" id="CB_2">
-            <button class="cust-btn" onclick="sC(2,this,'Danča')">Danča</button>
-            <button class="cust-btn" onclick="sC(2,this,'Kristýna')">Kristýna</button>
-            <button class="cust-btn" onclick="sC(2,this,'Renata')">Renata</button>
-            <button class="cust-btn" onclick="sC(2,this,'Andrea')">Andrea</button>
-            <button class="cust-btn" onclick="sC(2,this,'Marcela')">Marcela</button>
-            <button class="cust-btn" onclick="sC(2,this,'Dáša')">Dáša</button>
-            <button class="cust-btn" onclick="sC(2,this,'Regina')">Regina</button>
-            <button class="cust-btn" onclick="sC(2,this,'Ondra')">Ondra</button>
-          </div>
+          <div class="cust-grid" id="CB_2"></div>
           <div class="ks-wrap">
             <input type="number" id="KS_2" placeholder="Lahev 1 litr" min="1" max="999" oninput="uP(2)">
             <span class="ks-unit">ks</span>
@@ -532,8 +510,17 @@ function loadRequests() {
     // Badge - počet čekajících
     var pending = data.filter(function(r){return r.stav==='čeká na potvrzení';}).length;
     var badge = document.getElementById('REQ_BADGE');
-    if (pending > 0) { badge.textContent = pending; badge.style.display = 'flex'; }
-    else { badge.style.display = 'none'; }
+    var banner = document.getElementById('REQ_BANNER');
+    var bannerText = document.getElementById('REQ_BANNER_TEXT');
+    if (pending > 0) {
+      badge.textContent = pending;
+      badge.style.display = 'flex';
+      bannerText.textContent = pending + ' nová objednávka' + (pending > 1 ? 'y' : '');
+      banner.style.display = 'block';
+    } else {
+      badge.style.display = 'none';
+      banner.style.display = 'none';
+    }
     renderRequests();
   });
 }
@@ -751,6 +738,22 @@ function loadCashflow(){
 buildDates();
 goSlide(0);
 for(var i=0;i<3;i++){loadO(i);}
+
+// Načti zákazníky dynamicky ze Sheets
+function loadCustomers() {
+  apiFetch({action:'getCustomers'}, function(err, data) {
+    if (err || !Array.isArray(data)) return;
+    var names = data.map(function(c){ return c.jmeno; });
+    for (var s = 0; s < 3; s++) {
+      var grid = document.getElementById('CB_' + s);
+      grid.innerHTML = names.map(function(name) {
+        var sIdx = s;
+        return '<button class="cust-btn" onclick="sC(' + sIdx + ',this,\'' + name + '\')">' + name + '</button>';
+      }).join('');
+    }
+  });
+}
+loadCustomers();
 
 // Zkontroluj badge při načtení
 apiFetch({action:'listRequests'}, function(err, data) {
