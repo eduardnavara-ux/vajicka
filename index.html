@@ -5,277 +5,261 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#D4560A">
+<meta name="theme-color" content="#FDF6EE">
 <title>Dvůr Pod Dubem</title>
 <link rel="icon" type="image/png" href="leaf.png">
 <link rel="apple-touch-icon" href="leaf.png">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@700;900&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{--or:#D4560A;--or2:#F06820;--cr:#FDF6EE;--br:#2C1500;--gr:#2A6E35;--gr2:#E4F4E8;--card:#FFFFFF;--border:#EDD9C4;--text2:#9A7A65;--warn:#FFF0E8;}
+:root{
+  --or:#D4560A;--or-dark:#9E3F06;--or-soft:#FAECE3;
+  --cr:#FDF6EE;--card:#FFFFFF;
+  --br:#2C1500;--text2:#9A7A65;--text3:#C2A88F;
+  --border:#F0E2D0;--border2:#E3CDB4;
+  --gr:#1D9E75;--gr-dark:#0F6E56;--gr-soft:#E4F4EC;
+  --rd:#C62828;--rd-soft:#FCEBEB;
+  --am:#B47208;--am-soft:#FAEEDA;
+}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-html,body{width:100%;min-height:100vh;font-family:'Instrument Sans',sans-serif;background:var(--cr);-webkit-font-smoothing:antialiased;}
+html,body{width:100%;min-height:100vh;font-family:'Instrument Sans',sans-serif;background:var(--cr);color:var(--br);-webkit-font-smoothing:antialiased;}
+button{font-family:'Instrument Sans',sans-serif;cursor:pointer;}
 
 /* ===== SPLASH ===== */
-#splash{position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:#FDF6EE;display:flex;flex-direction:column;overflow:hidden;transition:opacity 0.7s ease;}
+#splash{position:fixed;inset:0;z-index:9999;background:var(--cr);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;transition:opacity .6s ease;}
 #splash.hide{opacity:0;pointer-events:none;}
-#splash-photo{display:none;}
-#splash-bottom{flex:1;background:#FDF6EE;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 32px 48px;}
-#splash-leaf{margin-bottom:8px;}
-#splash-title{font-family:'Fraunces',serif;font-size:clamp(36px,10vw,52px);font-weight:900;color:var(--br);line-height:1;letter-spacing:-1px;}
-#splash-subtitle{font-family:'Fraunces',serif;font-size:clamp(18px,5vw,24px);font-weight:700;color:var(--or);margin-bottom:24px;letter-spacing:0.5px;}
-#splash-btn{background:var(--or);color:white;font-family:'Fraunces',serif;font-size:18px;font-weight:700;padding:15px 48px;border-radius:50px;border:none;cursor:pointer;box-shadow:0 6px 24px rgba(212,86,10,0.4);transition:transform 0.15s,box-shadow 0.15s;letter-spacing:0.3px;}
-#splash-btn:active{transform:scale(0.96);}
+#splash-title{font-family:'Fraunces',serif;font-size:clamp(38px,11vw,54px);font-weight:900;line-height:1;letter-spacing:-1px;margin-top:18px;}
+#splash-subtitle{font-family:'Fraunces',serif;font-size:clamp(19px,5.5vw,26px);font-weight:700;color:var(--or);margin:4px 0 30px;letter-spacing:.5px;}
+#splash-btn{background:var(--or);color:#fff;font-family:'Fraunces',serif;font-size:18px;font-weight:700;padding:15px 52px;border-radius:50px;border:none;box-shadow:0 6px 22px rgba(212,86,10,.35);transition:transform .15s;}
+#splash-btn:active{transform:scale(.96);}
 
-/* ===== APP ===== */
-.hdr{background:linear-gradient(135deg,var(--or) 0%,var(--or2) 100%);padding:env(safe-area-inset-top,0px) 0 0;text-align:center;position:sticky;top:0;z-index:100;box-shadow:0 4px 24px rgba(212,86,10,0.25);}
-.hdr-inner{padding:18px 20px 10px;display:flex;align-items:center;justify-content:space-between;}
-.hdr-arrow{background:none;border:none;color:white;font-size:38px;line-height:1;cursor:pointer;padding:4px 10px;opacity:0.9;transition:opacity 0.2s;-webkit-tap-highlight-color:transparent;font-weight:300;}
-.hdr-arrow:disabled{opacity:0.2;}
-.hdr-center{flex:1;text-align:center;position:relative;}
-.hdr h1{font-family:'Fraunces',serif;font-size:clamp(22px,6vw,30px);color:white;font-weight:900;letter-spacing:-0.5px;line-height:1;}
-.hdr-badge{position:absolute;top:-8px;right:calc(50% - 70px);background:#FF3B30;color:white;font-size:12px;font-weight:700;min-width:22px;height:22px;border-radius:11px;padding:0 6px;display:none;align-items:center;justify-content:center;font-family:'Instrument Sans',sans-serif;box-shadow:0 2px 8px rgba(255,59,48,0.5);border:2px solid white;}
-.hdr-dots{display:flex;justify-content:center;gap:7px;padding:8px 0 12px;}
-.hdr-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.35);transition:background 0.2s;}
-.hdr-dot.on{background:white;}
-.main{padding:16px 14px 40px;max-width:540px;margin:0 auto;}
-.slider{overflow:hidden;position:relative;}
-.slides{display:flex;transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);}
-.slide{min-width:100%;width:100%;}
-.card{background:var(--card);border-radius:22px;padding:clamp(18px,5vw,24px);box-shadow:0 2px 20px rgba(44,21,0,0.08);margin-bottom:16px;}
-.card-title{font-family:'Fraunces',serif;font-size:clamp(17px,5vw,21px);color:var(--br);margin-bottom:16px;font-weight:700;display:flex;align-items:center;gap:8px;}
-.cust-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(6px,2vw,10px);margin-bottom:16px;}
-.cust-btn{padding:clamp(12px,3.5vw,16px) 4px;border:2px solid var(--border);border-radius:14px;background:white;font-family:'Instrument Sans',sans-serif;font-size:clamp(13px,3.8vw,16px);font-weight:500;color:var(--br);cursor:pointer;text-align:center;transition:all 0.18s cubic-bezier(0.34,1.56,0.64,1);user-select:none;}
-.cust-btn:active{transform:scale(0.93);}
-.cust-btn.on{background:var(--or);border-color:var(--or);color:white;font-weight:600;box-shadow:0 4px 14px rgba(212,86,10,0.35);transform:scale(1.04);}
-.ks-wrap{position:relative;margin-bottom:16px;}
-.ks-wrap input{width:100%;border:2px solid var(--border);border-radius:14px;padding:clamp(14px,4vw,18px) 50px clamp(14px,4vw,18px) 18px;font-size:clamp(18px,5vw,22px);font-family:'Instrument Sans',sans-serif;color:var(--br);outline:none;background:white;transition:border-color 0.2s;font-weight:500;}
-.ks-wrap input:focus{border-color:var(--or);box-shadow:0 0 0 4px rgba(212,86,10,0.1);}
-.ks-wrap input::placeholder{color:#C9B09A;font-weight:400;}
-.ks-unit{position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:clamp(13px,3.5vw,15px);color:var(--text2);font-weight:500;pointer-events:none;}
-.dates-label{font-size:clamp(12px,3.2vw,13px);color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;}
-.dates-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:clamp(5px,1.5vw,8px);margin-bottom:16px;}
-.date-btn{padding:clamp(10px,3vw,14px) 2px;border:2px solid var(--border);border-radius:12px;background:white;font-family:'Instrument Sans',sans-serif;cursor:pointer;text-align:center;transition:all 0.18s cubic-bezier(0.34,1.56,0.64,1);user-select:none;line-height:1.3;}
-.date-btn:active{transform:scale(0.93);}
+/* ===== HLAVIČKA ===== */
+.hdr{background:var(--cr);padding:calc(env(safe-area-inset-top,0px) + 14px) 18px 0;position:sticky;top:0;z-index:100;border-bottom:1px solid var(--border);}
+.hdr-row{max-width:560px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.brand{display:flex;align-items:center;gap:10px;min-width:0;}
+.brand-logo{width:40px;height:40px;border-radius:50%;background:var(--or-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.brand-name{font-family:'Fraunces',serif;font-size:18px;font-weight:900;line-height:1.1;white-space:nowrap;}
+.brand-sub{font-size:12px;color:var(--text2);line-height:1.2;}
+.bell{position:relative;width:42px;height:42px;border-radius:50%;border:1.5px solid var(--border2);background:var(--card);color:var(--text2);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .15s;}
+.bell:active{transform:scale(.92);}
+.bell svg{width:21px;height:21px;}
+.bell-badge{position:absolute;top:-5px;right:-5px;background:var(--or);color:#fff;font-size:11px;font-weight:600;min-width:20px;height:20px;border-radius:10px;padding:0 5px;display:none;align-items:center;justify-content:center;border:2px solid var(--cr);}
+.tabs{max-width:560px;margin:0 auto;display:flex;gap:7px;justify-content:center;flex-wrap:wrap;padding:12px 0 14px;}
+.tab{border:1.5px solid var(--border2);background:var(--card);color:var(--text2);padding:8px 15px;border-radius:50px;font-size:14px;font-weight:500;transition:all .18s;position:relative;}
+.tab.on{background:var(--or);border-color:var(--or);color:#fff;font-weight:600;}
+.tab:active{transform:scale(.95);}
+.tab-dot{position:absolute;top:-3px;right:-3px;width:10px;height:10px;border-radius:50%;background:var(--or);border:2px solid var(--cr);display:none;}
+
+/* ===== LAYOUT ===== */
+.main{padding:16px 14px calc(env(safe-area-inset-bottom,0px) + 40px);max-width:560px;margin:0 auto;}
+.panel{display:none;}
+.panel.on{display:block;animation:fadeIn .25s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+.card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:clamp(18px,5vw,24px);margin-bottom:14px;}
+.card-title{font-family:'Fraunces',serif;font-size:clamp(17px,5vw,20px);font-weight:700;margin-bottom:14px;display:flex;align-items:baseline;justify-content:space-between;gap:10px;}
+.card-title small{font-family:'Instrument Sans',sans-serif;font-size:13px;font-weight:500;color:var(--text2);}
+.flabel{font-size:12px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;}
+
+/* ===== FORMULÁŘ ===== */
+.cust-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px;}
+.cust-btn{padding:clamp(11px,3.2vw,14px) 4px;border:1.5px solid var(--border2);border-radius:13px;background:var(--card);font-size:clamp(13px,3.8vw,15px);font-weight:500;color:var(--br);text-align:center;transition:all .15s;user-select:none;}
+.cust-btn:active{transform:scale(.94);}
+.cust-btn.on{background:var(--or-soft);border:2px solid var(--or);color:var(--or-dark);font-weight:600;padding:calc(clamp(11px,3.2vw,14px) - .5px) 3.5px;}
+.qty-row{display:flex;align-items:stretch;gap:9px;margin-bottom:18px;}
+.qty-btn{width:50px;border:1.5px solid var(--border2);border-radius:13px;background:var(--card);font-size:22px;color:var(--br);font-weight:500;transition:all .15s;}
+.qty-btn:active{transform:scale(.92);background:var(--cr);}
+.qty-wrap{flex:1;position:relative;}
+.qty-wrap input{width:100%;height:100%;min-height:50px;border:1.5px solid var(--border2);border-radius:13px;text-align:center;font-size:clamp(20px,6vw,24px);font-weight:600;font-family:'Instrument Sans',sans-serif;color:var(--br);outline:none;background:var(--card);padding:0 38px 0 14px;transition:border-color .2s;}
+.qty-wrap input:focus{border-color:var(--or);box-shadow:0 0 0 3px rgba(212,86,10,.12);}
+.qty-wrap input::placeholder{color:var(--text3);font-weight:400;font-size:16px;}
+.qty-unit{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--text2);font-weight:500;pointer-events:none;}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
+input[type=number]{-moz-appearance:textfield;appearance:textfield;}
+.dates-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:18px;}
+.date-btn{padding:clamp(9px,2.8vw,12px) 2px;border:1.5px solid var(--border2);border-radius:12px;background:var(--card);text-align:center;transition:all .15s;user-select:none;line-height:1.3;}
+.date-btn:active{transform:scale(.93);}
 .date-btn .dn{font-size:clamp(12px,3.5vw,14px);font-weight:600;color:var(--br);display:block;}
-.date-btn .dd{font-size:clamp(10px,3vw,12px);color:var(--text2);display:block;margin-top:2px;}
-.date-btn.on{background:var(--br);border-color:var(--br);color:white;box-shadow:0 4px 14px rgba(44,21,0,0.25);transform:scale(1.04);}
-.date-btn.on .dn,.date-btn.on .dd{color:white;}
-.submit-btn{width:100%;padding:clamp(16px,4.5vw,20px);background:linear-gradient(135deg,var(--or) 0%,var(--or2) 100%);color:white;border:none;border-radius:16px;font-size:clamp(17px,5vw,21px);font-family:'Fraunces',serif;font-weight:700;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 20px rgba(212,86,10,0.3);}
-.submit-btn:active{transform:scale(0.97);}
-.submit-btn:disabled{background:#DDD;box-shadow:none;cursor:not-allowed;}
-.msg{border-radius:13px;padding:14px 16px;font-size:clamp(14px,4vw,16px);display:none;margin-top:12px;font-weight:500;line-height:1.4;}
-.msg.ok{background:var(--gr2);color:var(--gr);display:block;}
-.msg.er{background:#FFEBEE;color:#C62828;display:block;}
-.msg.ld{background:var(--warn);color:var(--or);display:block;}
-.total-bar{display:flex;align-items:center;justify-content:space-between;background:var(--br);border-radius:14px;padding:14px 18px;margin-bottom:14px;color:white;}
-.total-bar span{font-size:clamp(13px,3.8vw,15px);opacity:0.8;}
-.total-bar strong{font-family:'Fraunces',serif;font-size:clamp(22px,6vw,28px);font-weight:900;}
-.total-bar .unit{font-size:clamp(12px,3vw,14px);opacity:0.6;margin-left:4px;}
-.obj-row{display:flex;align-items:center;padding:clamp(14px,4vw,18px);background:var(--cr);border-radius:16px;border:1.5px solid var(--border);margin-bottom:10px;cursor:pointer;transition:all 0.2s;position:relative;overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
-.obj-row::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--or);border-radius:4px 0 0 4px;}
-.obj-row:active{transform:scale(0.97);opacity:0.8;}
-.obj-row.done{background:var(--gr2);border-color:#A5D6A7;}
-.obj-row.done::before{background:var(--gr);}
-.obj-info{flex:1;padding-left:10px;}
-.obj-info strong{font-size:clamp(15px,4.5vw,19px);color:var(--br);display:block;font-weight:600;}
-.obj-info span{font-size:clamp(12px,3.5vw,14px);color:var(--text2);margin-top:2px;display:block;}
-.obj-ks{font-family:'Fraunces',serif;font-size:clamp(26px,7vw,34px);font-weight:900;color:var(--or);min-width:60px;text-align:right;line-height:1;}
-.obj-ks-unit{font-size:clamp(11px,3vw,13px);color:var(--text2);font-weight:400;display:block;text-align:right;margin-top:2px;}
-.edit-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;}
-.edit-dialog{background:white;border-radius:22px;padding:24px;width:calc(100% - 48px);max-width:320px;box-shadow:0 8px 40px rgba(0,0,0,0.2);}
-.edit-dialog h3{font-family:'Fraunces',serif;font-size:20px;color:var(--br);margin-bottom:6px;}
-.edit-dialog p{font-size:14px;color:var(--text2);margin-bottom:16px;}
-.edit-dialog input{width:100%;border:2px solid var(--border);border-radius:14px;padding:14px 18px;font-size:22px;font-family:'Instrument Sans',sans-serif;color:var(--br);outline:none;margin-bottom:16px;font-weight:500;}
-.edit-dialog input:focus{border-color:var(--or);}
-.edit-btns{display:flex;gap:10px;}
-.edit-btns button{flex:1;padding:14px;border:none;border-radius:14px;font-family:'Fraunces',serif;font-size:16px;font-weight:700;cursor:pointer;}
-.edit-btn-save{background:var(--or);color:white;}
-.edit-btn-cancel{background:var(--cr);color:var(--br);border:2px solid var(--border) !important;}
-.hint{font-size:clamp(12px,3.5vw,14px);color:var(--text2);text-align:center;margin-top:8px;}
+.date-btn .dd{font-size:clamp(10px,3vw,12px);color:var(--text2);display:block;margin-top:1px;}
+.date-btn.on{background:var(--gr-soft);border:2px solid var(--gr);padding:calc(clamp(9px,2.8vw,12px) - .5px) 1.5px;}
+.date-btn.on .dn{color:var(--gr-dark);}
+.date-btn.on .dd{color:var(--gr);}
+.submit-btn{width:100%;padding:clamp(15px,4.2vw,18px);background:var(--or);color:#fff;border:none;border-radius:15px;font-size:clamp(16px,4.6vw,19px);font-family:'Fraunces',serif;font-weight:700;transition:all .18s;box-shadow:0 4px 16px rgba(212,86,10,.25);}
+.submit-btn:active{transform:scale(.97);}
+.submit-btn:disabled{background:var(--text3);box-shadow:none;cursor:not-allowed;}
+.msg{border-radius:12px;padding:13px 15px;font-size:14px;display:none;margin-top:12px;font-weight:500;line-height:1.4;}
+.msg.ok{background:var(--gr-soft);color:var(--gr-dark);display:block;}
+.msg.er{background:var(--rd-soft);color:var(--rd);display:block;}
+.msg.ld{background:var(--or-soft);color:var(--or-dark);display:block;}
+
+/* ===== SEZNAMY ===== */
+.hrow{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--card);border:1.5px solid var(--border);border-radius:15px;margin-bottom:8px;transition:all .2s;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
+.hrow.done{background:var(--gr-soft);border-color:#BCE3D2;}
+.avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0;}
+.hrow-info{flex:1;min-width:0;}
+.hrow-info strong{font-size:15px;font-weight:600;display:block;}
+.hrow-info span{font-size:12px;color:var(--text2);display:block;margin-top:1px;}
+.hrow-qty{font-family:'Fraunces',serif;font-size:22px;font-weight:900;color:var(--br);white-space:nowrap;}
+.hrow-qty small{font-family:'Instrument Sans',sans-serif;font-size:12px;color:var(--text2);font-weight:400;margin-left:2px;}
+.check-btn{width:38px;height:38px;border-radius:50%;border:1.5px solid var(--border2);background:var(--card);color:var(--gr-dark);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;}
+.check-btn:active{transform:scale(.88);background:var(--gr-soft);border-color:var(--gr);}
+.check-btn svg{width:18px;height:18px;}
+.empty{text-align:center;color:var(--text2);font-size:14px;padding:18px 10px;}
+.skel{height:62px;border-radius:15px;background:linear-gradient(90deg,var(--border) 25%,#F7EDDF 50%,var(--border) 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;margin-bottom:8px;}
+@keyframes shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+.hint{font-size:12px;color:var(--text3);text-align:center;margin-top:10px;}
+.day-label{font-size:12px;color:var(--text2);font-weight:600;margin:14px 0 7px;}
+.day-label:first-child{margin-top:0;}
+.pic{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.pic svg{width:18px;height:18px;}
+.badge{font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;white-space:nowrap;}
+.badge.pend{background:var(--am-soft);color:var(--am);}
+.badge.done{background:var(--gr-soft);color:var(--gr-dark);}
+.badge.sugg{background:#FFE5D0;color:#7D3A00;}
+
+/* ===== CASHFLOW ===== */
+.cf-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:4px;}
+.cf-stat{border-radius:14px;padding:13px 10px;background:var(--cr);text-align:center;}
+.cf-stat.hl{background:var(--gr-soft);}
+.cf-stat .lbl{font-size:11px;color:var(--text2);font-weight:600;margin-bottom:3px;}
+.cf-stat.hl .lbl{color:var(--gr-dark);}
+.cf-stat .val{font-family:'Fraunces',serif;font-size:clamp(16px,4.6vw,20px);font-weight:900;}
+.cf-stat.hl .val{color:var(--gr-dark);}
+.cf-stat .sub{font-size:10px;color:var(--text3);margin-top:1px;}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.bar-row .m{width:58px;font-size:13px;color:var(--text2);flex-shrink:0;}
+.bar-track{flex:1;height:11px;background:var(--cr);border-radius:6px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:6px;transition:width .5s ease;}
+.bar-row .v{width:80px;text-align:right;font-size:13px;font-weight:600;flex-shrink:0;}
+.bar-sub{font-size:11px;color:var(--text3);margin:-6px 0 10px 68px;}
+.prod-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;}
+.prod-card{border:1.5px solid var(--border);border-radius:14px;padding:12px 10px;}
+.prod-card .lbl{font-size:11px;font-weight:600;margin-bottom:3px;}
+.prod-card .val{font-family:'Fraunces',serif;font-size:clamp(15px,4.2vw,18px);font-weight:900;}
+.prod-card .sub{font-size:10.5px;color:var(--text2);margin-top:2px;line-height:1.45;}
 
 /* ===== POŽADAVKY ===== */
-.req-card{background:white;border-radius:18px;padding:18px;margin-bottom:12px;box-shadow:0 2px 16px rgba(44,21,0,0.08);border-left:4px solid var(--or);}
-.req-card.confirmed{border-left-color:var(--gr);}
-.req-card.suggested{border-left-color:#F59E0B;}
-.req-card.cancelled{border-left-color:#C62828;opacity:0.6;}
-.req-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
-.req-name{font-family:'Fraunces',serif;font-size:18px;font-weight:900;color:var(--br);}
-.req-date{font-size:12px;color:var(--text2);margin-top:2px;}
-.req-status{font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;white-space:nowrap;}
-.req-status.pending{background:#FEF3CD;color:#856404;}
-.req-status.confirmed{background:#D1ECF1;color:#0C5460;}
-.req-status.suggested{background:#FFE5D0;color:#7D3A00;}
-.req-status.cancelled{background:#FFCDD2;color:#B71C1C;}
-.req-products{background:var(--cr);border-radius:12px;padding:12px;margin-bottom:12px;}
-.req-product-row{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;color:var(--br);}
-.req-total{display:flex;justify-content:space-between;font-size:14px;font-weight:600;margin-top:8px;padding-top:8px;border-top:1.5px solid var(--border);}
-.req-total span:last-child{color:var(--or);}
-.req-delivery{font-size:13px;color:var(--text2);margin-bottom:12px;}
-.req-delivery strong{color:var(--br);}
-.req-actions{display:flex;gap:8px;flex-wrap:wrap;}
-.req-btn{flex:1;min-width:80px;padding:10px 8px;border:none;border-radius:12px;font-family:'Fraunces',serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.15s;text-align:center;}
-.req-btn:active{transform:scale(0.96);}
-.req-btn-confirm{background:var(--gr);color:white;}
-.req-btn-suggest{background:#F59E0B;color:white;}
-.req-btn-cancel{background:#FFEBEE;color:#C62828;}
-.req-suggest-form{margin-top:10px;padding:12px;background:var(--warn);border-radius:12px;display:none;}
-.req-suggest-form label{font-size:12px;color:var(--text2);display:block;margin-bottom:6px;font-weight:600;}
-.req-suggest-form input{width:100%;border:2px solid var(--border);border-radius:10px;padding:10px 12px;font-size:15px;font-family:'Instrument Sans',sans-serif;color:var(--br);outline:none;margin-bottom:8px;}
-.req-suggest-form input:focus{border-color:var(--or);}
-.req-suggest-send{width:100%;padding:10px;background:var(--or);color:white;border:none;border-radius:10px;font-family:'Fraunces',serif;font-size:15px;font-weight:700;cursor:pointer;}
-.req-empty{text-align:center;padding:40px 20px;color:var(--text2);}
-.req-empty .icon{font-size:40px;margin-bottom:10px;}
-.req-tabs{display:flex;gap:8px;margin-bottom:16px;}
-.req-tab{flex:1;padding:10px;border:2px solid var(--border);border-radius:12px;background:white;font-family:'Instrument Sans',sans-serif;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;text-align:center;transition:all 0.15s;}
-.req-tab.active{background:var(--or);border-color:var(--or);color:white;}
+.req-card{background:var(--card);border:1.5px solid var(--border);border-radius:17px;padding:16px;margin-bottom:10px;}
+.req-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:8px;}
+.req-name{font-family:'Fraunces',serif;font-size:17px;font-weight:900;}
+.req-meta{font-size:12px;color:var(--text2);margin-top:2px;}
+.req-items{background:var(--cr);border-radius:12px;padding:10px 13px;margin-bottom:12px;}
+.req-item{display:flex;justify-content:space-between;font-size:13px;padding:2.5px 0;}
+.req-sum{display:flex;justify-content:space-between;font-size:14px;font-weight:600;margin-top:7px;padding-top:7px;border-top:1.5px solid var(--border);}
+.req-sum span:last-child{color:var(--or-dark);}
+.req-actions{display:flex;gap:8px;}
+.req-btn{flex:1;padding:11px 6px;border:none;border-radius:12px;font-size:14px;font-weight:600;transition:transform .15s;}
+.req-btn:active{transform:scale(.95);}
+.rb-ok{background:var(--gr);color:#fff;}
+.rb-alt{background:var(--card);color:var(--br);border:1.5px solid var(--border2);}
+.rb-no{background:var(--rd-soft);color:var(--rd);}
+.sugg-form{margin-top:10px;padding:12px;background:var(--or-soft);border-radius:12px;display:none;}
+.sugg-form label{font-size:12px;color:var(--or-dark);display:block;margin-bottom:6px;font-weight:600;}
+.sugg-form input{width:100%;border:1.5px solid var(--border2);border-radius:10px;padding:10px 12px;font-size:15px;font-family:'Instrument Sans',sans-serif;color:var(--br);outline:none;margin-bottom:8px;background:var(--card);}
+.sugg-form input:focus{border-color:var(--or);}
+.sugg-send{width:100%;padding:11px;background:var(--or);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;}
+.hist-toggle{width:100%;margin-top:6px;padding:13px;border:1.5px dashed var(--border2);border-radius:13px;background:none;font-size:14px;font-weight:500;color:var(--text2);display:flex;align-items:center;justify-content:center;gap:8px;transition:all .15s;}
+.hist-toggle:active{transform:scale(.98);}
+.hist-toggle svg{width:16px;height:16px;transition:transform .2s;}
+.hist-toggle.open svg.chev{transform:rotate(180deg);}
+#HIST_BODY{display:none;margin-top:10px;}
+
+/* ===== EDIT DIALOG / TOAST ===== */
+.edit-overlay{position:fixed;inset:0;background:rgba(44,21,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center;}
+.edit-dialog{background:var(--card);border-radius:20px;padding:22px;width:calc(100% - 48px);max-width:320px;}
+.edit-dialog h3{font-family:'Fraunces',serif;font-size:19px;margin-bottom:5px;}
+.edit-dialog p{font-size:13px;color:var(--text2);margin-bottom:14px;}
+.edit-dialog input{width:100%;border:1.5px solid var(--border2);border-radius:13px;padding:13px 16px;font-size:21px;font-family:'Instrument Sans',sans-serif;color:var(--br);outline:none;margin-bottom:14px;font-weight:600;text-align:center;}
+.edit-dialog input:focus{border-color:var(--or);}
+.edit-btns{display:flex;gap:8px;}
+.edit-btns button{flex:1;padding:12px 6px;border:none;border-radius:12px;font-size:14px;font-weight:600;}
+.eb-save{background:var(--or);color:#fff;}
+.eb-cancel{background:var(--cr);color:var(--br);border:1.5px solid var(--border2);}
+.eb-del{background:var(--rd-soft);color:var(--rd);}
+#TOAST{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(90px);background:var(--br);color:var(--cr);padding:12px 20px;border-radius:24px;font-size:14px;font-weight:500;transition:transform .3s ease;z-index:2000;white-space:nowrap;box-shadow:0 4px 18px rgba(44,21,0,.25);}
 </style>
 </head>
 <body>
 
 <!-- ===== SPLASH ===== -->
 <div id="splash">
-  <div id="splash-photo"></div>
-  <div id="splash-bottom">
-    <img id="splash-leaf" src="leaf.png" style="width:120px;height:120px;object-fit:contain;margin-bottom:12px;mix-blend-mode:multiply;">
-    <div id="splash-title">Dvůr</div>
-    <div id="splash-subtitle">Pod Dubem</div>
-    <button id="splash-btn" onclick="hideSplash()">Vstoupit</button>
-  </div>
+  <svg width="110" height="110" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M12 1.5 C10.8 3.6 9 3.9 8.4 5.8 C6.5 5.6 5.3 7.2 6 8.8 C4.2 9.2 3.7 11.3 5.2 12.3 C3.9 13.6 4.6 15.8 6.5 16 C6.9 17.9 8.9 18.6 10.6 17.6 C10.9 18 11.2 18.3 11.4 18.6 L11.4 21.5 L12.6 21.5 L12.6 18.6 C12.8 18.3 13.1 18 13.4 17.6 C15.1 18.6 17.1 17.9 17.5 16 C19.4 15.8 20.1 13.6 18.8 12.3 C20.3 11.3 19.8 9.2 18 8.8 C18.7 7.2 17.5 5.6 15.6 5.8 C15 3.9 13.2 3.6 12 1.5 Z" fill="#D4560A"/>
+    <path d="M12 5 L12 17 M12 8 L9.4 9.6 M12 8 L14.6 9.6 M12 12 L9 13.5 M12 12 L15 13.5" stroke="#FDF6EE" stroke-width="0.9" fill="none" stroke-linecap="round"/>
+  </svg>
+  <div id="splash-title">Dvůr</div>
+  <div id="splash-subtitle">Pod Dubem</div>
+  <button id="splash-btn" onclick="hideSplash()">Vstoupit</button>
 </div>
 
-<!-- ===== APP ===== -->
+<!-- ===== HLAVIČKA ===== -->
 <div class="hdr">
-  <div class="hdr-inner">
-    <button class="hdr-arrow" id="ARR_L" onclick="goSlide(-1)">‹</button>
-    <div class="hdr-center">
-      <h1 id="HDR_TITLE">🥚 Vajíčka 🐔</h1>
-      <div class="hdr-badge" id="REQ_BADGE">0</div>
+  <div class="hdr-row">
+    <div class="brand">
+      <div class="brand-logo">
+        <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 1.5 C10.8 3.6 9 3.9 8.4 5.8 C6.5 5.6 5.3 7.2 6 8.8 C4.2 9.2 3.7 11.3 5.2 12.3 C3.9 13.6 4.6 15.8 6.5 16 C6.9 17.9 8.9 18.6 10.6 17.6 C10.9 18 11.2 18.3 11.4 18.6 L11.4 21.5 L12.6 21.5 L12.6 18.6 C12.8 18.3 13.1 18 13.4 17.6 C15.1 18.6 17.1 17.9 17.5 16 C19.4 15.8 20.1 13.6 18.8 12.3 C20.3 11.3 19.8 9.2 18 8.8 C18.7 7.2 17.5 5.6 15.6 5.8 C15 3.9 13.2 3.6 12 1.5 Z" fill="#9E3F06"/>
+          <path d="M12 5 L12 17 M12 8 L9.4 9.6 M12 8 L14.6 9.6 M12 12 L9 13.5 M12 12 L15 13.5" stroke="#FAECE3" stroke-width="0.9" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-name">Dvůr pod Dubem</div>
+        <div class="brand-sub" id="HDR_DATE"></div>
+      </div>
     </div>
-    <button class="hdr-arrow" id="ARR_R" onclick="goSlide(1)">›</button>
+    <button class="bell" id="BELL" aria-label="Čekající objednávky" onclick="setTab(4)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6"/><path d="M9 17v1a3 3 0 0 0 6 0v-1"/></svg>
+      <span class="bell-badge" id="BELL_BADGE">0</span>
+    </button>
   </div>
-  <div class="hdr-dots">
-    <div class="hdr-dot on" id="DOT_0"></div>
-    <div class="hdr-dot" id="DOT_1"></div>
-    <div class="hdr-dot" id="DOT_2"></div>
-    <div class="hdr-dot" id="DOT_3"></div>
-    <div class="hdr-dot" id="DOT_4"></div>
+  <div class="tabs" id="TABS">
+    <button class="tab on" onclick="setTab(0)">Vajíčka</button>
+    <button class="tab" onclick="setTab(1)">Bedýnky</button>
+    <button class="tab" onclick="setTab(2)">Sirup</button>
+    <button class="tab" onclick="setTab(3)">Cashflow</button>
+    <button class="tab" onclick="setTab(4)">Objednávky<span class="tab-dot" id="TAB_DOT"></span></button>
   </div>
 </div>
 
-<!-- Notifikační pruh pro čekající požadavky -->
-<div id="REQ_BANNER" style="display:none;background:#FF3B30;color:white;text-align:center;padding:10px 16px;font-size:14px;font-weight:600;cursor:pointer;" onclick="goSlide(4)">
-  📬 <span id="REQ_BANNER_TEXT"></span> — klepni pro zobrazení
-</div>
+<div class="main" id="MAIN">
 
-<div class="main">
-  <div class="slider" id="SLIDER">
-    <div class="slides" id="SLIDES">
+  <!-- PRODUKTOVÉ PANELY 0–2 (generovány skriptem) -->
+  <div class="panel on" id="PANEL_0"></div>
+  <div class="panel" id="PANEL_1"></div>
+  <div class="panel" id="PANEL_2"></div>
 
-      <!-- VAJÍČKA -->
-      <div class="slide">
-        <div class="card">
-          <div class="cust-grid" id="CB_0"></div>
-          <div class="ks-wrap">
-            <input type="number" id="KS_0" placeholder="Počet kusů" min="1" max="999" oninput="uP(0)">
-            <span class="ks-unit">ks</span>
-          </div>
-          <div class="dates-label">Doručit dne:</div>
-          <div id="DG_0" class="dates-grid"></div>
-          <button class="submit-btn" onclick="odeslat(0)" id="SB_0">Přidat objednávku</button>
-          <div class="msg" id="MSG_0"></div>
-        </div>
-        <div class="card">
-          <div class="card-title">📋 Přehled k doručení</div>
-          <div id="TOTAL_0" style="display:none">
-            <div class="total-bar"><span>Celkem vajíček k doručení</span><div><strong id="TOTAL_NUM_0">0</strong><span class="unit">ks</span></div></div>
-          </div>
-          <div id="OL_0"><div class="empty">⏳ Načítám...</div></div>
-          <div class="hint" id="HT_0" style="display:none">👆 Klepnutím označíš jako doručeno</div>
-        </div>
-      </div>
-
-      <!-- BEDÝNKA -->
-      <div class="slide">
-        <div class="card">
-          <div class="cust-grid" id="CB_1"></div>
-          <div class="ks-wrap">
-            <input type="number" id="KS_1" placeholder="Počet kusů" min="1" max="999" oninput="uP(1)">
-            <span class="ks-unit">ks</span>
-          </div>
-          <div class="dates-label">Doručit dne:</div>
-          <div id="DG_1" class="dates-grid"></div>
-          <button class="submit-btn" onclick="odeslat(1)" id="SB_1">Přidat objednávku</button>
-          <div class="msg" id="MSG_1"></div>
-        </div>
-        <div class="card">
-          <div class="card-title">📋 Přehled k doručení</div>
-          <div id="TOTAL_1" style="display:none">
-            <div class="total-bar"><span>Celkem bedýnek k doručení</span><div><strong id="TOTAL_NUM_1">0</strong><span class="unit">ks</span></div></div>
-          </div>
-          <div id="OL_1"><div class="empty">⏳ Načítám...</div></div>
-          <div class="hint" id="HT_1" style="display:none">👆 Klepnutím označíš jako doručeno</div>
-        </div>
-      </div>
-
-      <!-- SIRUP -->
-      <div class="slide">
-        <div class="card">
-          <div class="cust-grid" id="CB_2"></div>
-          <div class="ks-wrap">
-            <input type="number" id="KS_2" placeholder="Lahev 1 litr" min="1" max="999" oninput="uP(2)">
-            <span class="ks-unit">ks</span>
-          </div>
-          <div class="dates-label">Doručit dne:</div>
-          <div id="DG_2" class="dates-grid"></div>
-          <button class="submit-btn" onclick="odeslat(2)" id="SB_2">Přidat objednávku</button>
-          <div class="msg" id="MSG_2"></div>
-        </div>
-        <div class="card">
-          <div class="card-title">📋 Přehled k doručení</div>
-          <div id="TOTAL_2" style="display:none">
-            <div class="total-bar"><span>Celkem sirupu k doručení</span><div><strong id="TOTAL_NUM_2">0</strong><span class="unit">ks</span></div></div>
-          </div>
-          <div id="OL_2"><div class="empty">⏳ Načítám...</div></div>
-          <div class="hint" id="HT_2" style="display:none">👆 Klepnutím označíš jako doručeno</div>
-        </div>
-      </div>
-
-      <!-- CASHFLOW -->
-      <div class="slide">
-        <div class="card">
-          <div class="card-title">💰 Celkový přehled</div>
-          <div id="CF_SUMMARY"><div class="empty">⏳ Načítám...</div></div>
-        </div>
-        <div class="card">
-          <div class="card-title">📈 Měsíční přehled</div>
-          <div style="position:relative;height:180px;margin-bottom:16px;">
-            <canvas id="CF_CHART"></canvas>
-          </div>
-          <div id="CF_TABLE"><div class="empty">⏳ Načítám...</div></div>
-        </div>
-        <div class="card">
-          <div class="card-title">🥚 Prodeje podle produktu</div>
-          <div style="position:relative;height:180px;margin-bottom:16px;">
-            <canvas id="CF_PRODUCTS_CHART"></canvas>
-          </div>
-          <div id="CF_PRODUCTS_TOTALS"></div>
-        </div>
-      </div>
-
-      <!-- POŽADAVKY -->
-      <div class="slide">
-        <div class="card">
-          <div class="card-title">📬 Příchozí objednávky</div>
-          <div class="req-tabs">
-            <button class="req-tab active" onclick="filterReq('pending',this)">⏳ Čekající</button>
-            <button class="req-tab" onclick="filterReq('all',this)">Všechny</button>
-          </div>
-          <div id="REQ_LIST"><div class="req-empty"><div class="icon">⏳</div><p>Načítám...</p></div></div>
-        </div>
-      </div>
-
+  <!-- CASHFLOW -->
+  <div class="panel" id="PANEL_3">
+    <div class="card">
+      <div class="card-title">Celkový přehled</div>
+      <div id="CF_SUMMARY"><div class="skel" style="height:78px"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Zisk po měsících</div>
+      <div id="CF_MONTHS"><div class="skel" style="height:34px"></div><div class="skel" style="height:34px"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Podle produktu <small>tržba · prodáno · zisk</small></div>
+      <div id="CF_PRODUCTS"><div class="skel" style="height:78px"></div></div>
     </div>
   </div>
+
+  <!-- OBJEDNÁVKY -->
+  <div class="panel" id="PANEL_4">
+    <div class="card">
+      <div class="card-title">Čeká na potvrzení <small id="REQ_COUNT"></small></div>
+      <div id="REQ_LIST"><div class="skel" style="height:120px"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">K doručení <small>všechny produkty</small></div>
+      <div id="DELIV_ALL"><div class="skel"></div><div class="skel"></div></div>
+      <button class="hist-toggle" id="HIST_TOGGLE" onclick="toggleHistory()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v4l2 2"/><path d="M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5"/></svg>
+        <span id="HIST_LABEL">Zobrazit historii objednávek</span>
+        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6-6"/></svg>
+      </button>
+      <div id="HIST_BODY"></div>
+    </div>
+  </div>
+
 </div>
 
 <!-- Edit dialog -->
@@ -285,55 +269,145 @@ html,body{width:100%;min-height:100vh;font-family:'Instrument Sans',sans-serif;b
     <p id="EDIT_DESC"></p>
     <input type="number" id="EDIT_INPUT" min="1" max="999">
     <div class="edit-btns">
-      <button class="edit-btns edit-btn-cancel" onclick="closeEdit()">Zrušit</button>
-      <button class="edit-btns edit-btn-delete" onclick="deleteItem()" style="background:#FFEBEE;color:#C62828;border:2px solid #FFCDD2 !important;">🗑️ Smazat</button>
-      <button class="edit-btns edit-btn-save" onclick="saveEdit()">Uložit</button>
+      <button class="eb-cancel" onclick="closeEdit()">Zrušit</button>
+      <button class="eb-del" onclick="deleteItem()">Smazat</button>
+      <button class="eb-save" onclick="saveEdit()">Uložit</button>
     </div>
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <script>
-Chart.register(ChartDataLabels);
+'use strict';
+
+/* ===== Konstanty a stav ===== */
+var API='/.netlify/functions/api';
+var PRODUKTY=['vajicka','bedynka','sirup'];
+var PROD_NAZVY=['Vajíčka','Bedýnky','Sirup'];
+var PROD_NAZVY_MALE=['vajíčka','bedýnky','sirup'];
+var UNITS=['ks','ks','l'];
+var QTY_LABELS=['Počet kusů','Počet kusů','Počet litrů'];
+var DNY=['Ne','Po','Út','St','Čt','Pá','So'];
+var DNY_FULL=['Neděle','Pondělí','Úterý','Středa','Čtvrtek','Pátek','Sobota'];
+var AV_COLORS=[['#FAECE3','#9E3F06'],['#E4F4EC','#0F6E56'],['#EEEDFE','#3C3489'],['#FBEAF0','#993556'],['#FAEEDA','#854F0B'],['#E6F1FB','#185FA5']];
+
+var curTab=0;
+var state=[
+  {jmeno:null,datum:null},
+  {jmeno:null,datum:null},
+  {jmeno:null,datum:null}
+];
+var store={customers:[],lists:{vajicka:null,bedynka:null,sirup:null},requests:null,cashflow:null,history:null};
+var dateOptions=[[],[],[]];
+var histOpen=false;
+
+/* ===== Splash ===== */
 function hideSplash(){
   var s=document.getElementById('splash');
   s.classList.add('hide');
-  setTimeout(function(){s.style.display='none';},700);
+  setTimeout(function(){s.style.display='none';},650);
 }
 setTimeout(hideSplash,4000);
 
-const API='/.netlify/functions/api';
-const DNY=['Ne','Po','Út','St','Čt','Pá','So'];
-const PRODUKTY=['vajicka','bedynka','sirup'];
-const TITULY=['🥚 Vajíčka 🐔','🥕 Bedýnka 🫛','🫐 Sirup 🌸','💰 Cashflow','📬 Požadavky'];
-var curSlide=0;
-var state=[
-  {jmeno:null,kusy:null,datum:null},
-  {jmeno:null,kusy:null,datum:null},
-  {jmeno:null,kusy:null,datum:null}
-];
-var allRequests=[];
-var reqFilter='pending';
+/* ===== Datum v hlavičce ===== */
+(function(){
+  var d=new Date();
+  document.getElementById('HDR_DATE').textContent=DNY_FULL[d.getDay()].toLowerCase()+' '+d.getDate()+'. '+(d.getMonth()+1)+'.';
+})();
 
-var touchStartX=0;
-document.getElementById('SLIDER').addEventListener('touchstart',function(e){touchStartX=e.touches[0].clientX;},{passive:true});
-document.getElementById('SLIDER').addEventListener('touchend',function(e){
+/* ===== API ===== */
+function apiFetch(params,cb){
+  var qs=Object.keys(params).map(function(k){return k+'='+encodeURIComponent(params[k]);}).join('&');
+  fetch(API+'?'+qs).then(function(r){return r.json();}).then(function(d){cb(null,d);}).catch(function(e){cb(e);});
+}
+
+/* ===== Pomocné ===== */
+function parseCZ(ds){
+  var m=(ds||'').toString().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+  if(!m)return null;
+  return new Date(parseInt(m[3]),parseInt(m[2])-1,parseInt(m[1]));
+}
+function fmtD(val){
+  if(!val)return '';
+  var s=val.toString().trim();
+  if(s.match(/^\d{1,2}\.\d{1,2}\.\d{4}$/))return s;
+  var d=new Date(s);
+  if(!isNaN(d))return d.getUTCDate()+'.'+(d.getUTCMonth()+1)+'.'+d.getUTCFullYear();
+  return s;
+}
+function avColor(name){
+  var h=0;for(var i=0;i<name.length;i++)h=(h*31+name.charCodeAt(i))>>>0;
+  return AV_COLORS[h%AV_COLORS.length];
+}
+function esc(s){return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function escJs(s){return (s||'').toString().replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
+function prodIcon(p){
+  if(p==='vajicka')return '<div class="pic" style="background:#FAECE3;color:#9E3F06"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3C8.7 3 6 8.4 6 13a6 6 0 0 0 12 0c0-4.6-2.7-10-6-10Z"/></svg></div>';
+  if(p==='bedynka')return '<div class="pic" style="background:#E4F4EC;color:#0F6E56"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 10h15l-1.4 8.5h-12.2L4.5 10Z"/><path d="M8.5 10l3.5-5.5L15.5 10"/></svg></div>';
+  return '<div class="pic" style="background:#F0EAF8;color:#5A3C96"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M10 3h4v3l1.5 2.2V20a1.5 1.5 0 0 1-1.5 1.5h-4A1.5 1.5 0 0 1 8.5 20V8.2L10 6V3Z"/></svg></div>';
+}
+function showToast(msg){
+  var t=document.getElementById('TOAST');
+  if(!t){t=document.createElement('div');t.id='TOAST';document.body.appendChild(t);}
+  t.textContent=msg;
+  requestAnimationFrame(function(){t.style.transform='translateX(-50%) translateY(0)';});
+  clearTimeout(t._tm);
+  t._tm=setTimeout(function(){t.style.transform='translateX(-50%) translateY(90px)';},2800);
+}
+
+/* ===== Záložky ===== */
+function setTab(i){
+  curTab=i;
+  var tabs=document.querySelectorAll('#TABS .tab');
+  for(var k=0;k<5;k++){
+    tabs[k].classList.toggle('on',k===i);
+    document.getElementById('PANEL_'+k).classList.toggle('on',k===i);
+  }
+  if(i===3)loadCashflow();
+  if(i===4){renderRequests();renderDelivAll();}
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+var touchStartX=0,touchStartY=0;
+document.getElementById('MAIN').addEventListener('touchstart',function(e){touchStartX=e.touches[0].clientX;touchStartY=e.touches[0].clientY;},{passive:true});
+document.getElementById('MAIN').addEventListener('touchend',function(e){
   var dx=e.changedTouches[0].clientX-touchStartX;
-  if(Math.abs(dx)>50){goSlide(dx<0?1:-1);}
+  var dy=e.changedTouches[0].clientY-touchStartY;
+  if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*1.5){
+    var next=curTab+(dx<0?1:-1);
+    if(next>=0&&next<=4)setTab(next);
+  }
 },{passive:true});
 
-function goSlide(dir){
-  var next=curSlide+dir;
-  if(next<0||next>4)return;
-  curSlide=next;
-  document.getElementById('SLIDES').style.transform='translateX(-'+curSlide*100+'%)';
-  document.getElementById('HDR_TITLE').textContent=TITULY[curSlide];
-  for(var i=0;i<5;i++){document.getElementById('DOT_'+i).className='hdr-dot'+(i===curSlide?' on':'');}
-  document.getElementById('ARR_L').disabled=curSlide===0;
-  document.getElementById('ARR_R').disabled=curSlide===4;
-  if(curSlide===3){loadCashflow();}
-  if(curSlide===4){loadRequests();}
+/* ===== Stavba produktových panelů ===== */
+function buildPanels(){
+  for(var s=0;s<3;s++){
+    document.getElementById('PANEL_'+s).innerHTML=
+      '<div class="card">'+
+        '<div class="flabel">Zákazník</div>'+
+        '<div class="cust-grid" id="CB_'+s+'"><div class="skel" style="height:46px"></div><div class="skel" style="height:46px"></div><div class="skel" style="height:46px"></div></div>'+
+        '<div class="flabel">'+QTY_LABELS[s]+'</div>'+
+        '<div class="qty-row">'+
+          '<button class="qty-btn" onclick="bumpQty('+s+',-1)" aria-label="Ubrat">−</button>'+
+          '<div class="qty-wrap"><input type="number" id="KS_'+s+'" placeholder="Zadej počet" min="1" max="999" inputmode="numeric"><span class="qty-unit">'+UNITS[s]+'</span></div>'+
+          '<button class="qty-btn" onclick="bumpQty('+s+',1)" aria-label="Přidat">+</button>'+
+        '</div>'+
+        '<div class="flabel">Doručit dne</div>'+
+        '<div id="DG_'+s+'" class="dates-grid"></div>'+
+        '<button class="submit-btn" onclick="odeslat('+s+')" id="SB_'+s+'">Přidat objednávku</button>'+
+        '<div class="msg" id="MSG_'+s+'"></div>'+
+      '</div>'+
+      '<div class="card">'+
+        '<div class="card-title">K doručení – '+PROD_NAZVY_MALE[s]+'<small id="TOTAL_'+s+'"></small></div>'+
+        '<div id="OL_'+s+'"><div class="skel"></div><div class="skel"></div></div>'+
+        '<div class="hint" id="HT_'+s+'" style="display:none">Klepnutím na ✓ označíš jako doručeno · podržením upravíš</div>'+
+      '</div>';
+  }
+}
+
+function bumpQty(s,dir){
+  var el=document.getElementById('KS_'+s);
+  var v=parseInt(el.value)||0;
+  v=Math.min(999,Math.max(1,v+dir));
+  el.value=v;
 }
 
 function buildDates(){
@@ -341,6 +415,7 @@ function buildDates(){
   for(var s=0;s<3;s++){
     var dg=document.getElementById('DG_'+s);
     var btns=[],d=new Date(today),count=0;
+    dateOptions[s]=[];
     d.setDate(d.getDate()+1);
     while(count<10){
       var dow=d.getDay();
@@ -348,85 +423,136 @@ function buildDates(){
         var dd=String(d.getDate()).padStart(2,'0');
         var mm=String(d.getMonth()+1).padStart(2,'0');
         var dateStr=dd+'.'+mm+'.'+d.getFullYear();
-        btns.push('<button class="date-btn" onclick="sD('+s+',this,\''+dateStr+'\')"><span class="dn">'+DNY[dow]+'</span><span class="dd">'+dd+'.'+mm+'.</span></button>');
+        dateOptions[s].push(dateStr);
+        btns.push('<button class="date-btn'+(count===0?' on':'')+'" onclick="sD('+s+',this,\''+dateStr+'\')"><span class="dn">'+DNY[dow]+'</span><span class="dd">'+dd+'.'+mm+'.</span></button>');
         count++;
       }
       d.setDate(d.getDate()+1);
     }
     dg.innerHTML=btns.join('');
+    state[s].datum=dateOptions[s][0]||null;
+  }
+}
+
+function renderCustomers(){
+  var names=store.customers.map(function(c){return c.jmeno;});
+  for(var s=0;s<3;s++){
+    var grid=document.getElementById('CB_'+s);
+    grid.innerHTML=names.map(function(name){
+      return '<button class="cust-btn'+(state[s].jmeno===name?' on':'')+'" onclick="sC('+s+',this,\''+escJs(name)+'\')">'+esc(name)+'</button>';
+    }).join('');
   }
 }
 
 function sC(s,b,n){
   if(b.classList.contains('on')){b.classList.remove('on');state[s].jmeno=null;}
-  else{document.querySelectorAll('#CB_'+s+' .cust-btn').forEach(x=>x.classList.remove('on'));b.classList.add('on');state[s].jmeno=n;}
-  uP(s);
+  else{document.querySelectorAll('#CB_'+s+' .cust-btn').forEach(function(x){x.classList.remove('on');});b.classList.add('on');state[s].jmeno=n;}
 }
-
 function sD(s,b,ds){
   if(b.classList.contains('on')){b.classList.remove('on');state[s].datum=null;}
-  else{document.querySelectorAll('#DG_'+s+' .date-btn').forEach(x=>x.classList.remove('on'));b.classList.add('on');state[s].datum=ds;}
-  uP(s);
+  else{document.querySelectorAll('#DG_'+s+' .date-btn').forEach(function(x){x.classList.remove('on');});b.classList.add('on');state[s].datum=ds;}
 }
-
-function uP(s){
-  var ksEl=document.getElementById('KS_'+s);
-  state[s].kusy=ksEl?ksEl.value:'';
-}
-
 function mS(s,t,m){var e=document.getElementById('MSG_'+s);e.className='msg '+t;e.innerHTML=m;}
 
-function apiFetch(params,cb){
-  var qs=Object.keys(params).map(function(k){return k+'='+encodeURIComponent(params[k]);}).join('&');
-  fetch(API+'?'+qs).then(function(r){return r.json();}).then(function(d){cb(null,d);}).catch(function(e){cb(e);});
-}
-
+/* ===== Odeslání objednávky ===== */
 function odeslat(s){
-  var st=state[s];
-  if(!st.jmeno){mS(s,'er','⚠️ Vyber zákazníka');return;}
-  if(!st.kusy||st.kusy<1){mS(s,'er','⚠️ Zadej počet');return;}
-  if(!st.datum){mS(s,'er','⚠️ Vyber datum');return;}
+  var jmeno=state[s].jmeno;
+  var kusy=parseInt(document.getElementById('KS_'+s).value);
+  var datum=state[s].datum;
+  if(!jmeno){mS(s,'er','Vyber zákazníka');return;}
+  if(!kusy||kusy<1){mS(s,'er','Zadej počet');return;}
+  if(!datum){mS(s,'er','Vyber datum doručení');return;}
   document.getElementById('SB_'+s).disabled=true;
-  mS(s,'ld','⏳ Ukládám...');
-  apiFetch({action:'add',jmeno:st.jmeno,kusy:st.kusy,datum:st.datum,produkt:PRODUKTY[s]},function(err,d){
-    if(err||!d||d.status!=='ok'){mS(s,'er','❌ '+(d&&d.error?d.error:err?err.message:'Chyba'));}
+  mS(s,'ld','Ukládám…');
+  apiFetch({action:'add',jmeno:jmeno,kusy:kusy,datum:datum,produkt:PRODUKTY[s]},function(err,d){
+    if(err||!d||d.status!=='ok'){mS(s,'er','Nepodařilo se uložit: '+(d&&d.error?d.error:err?err.message:'chyba spojení'));}
     else{
-      mS(s,'ok','✅ Uloženo: '+st.jmeno+' – '+st.kusy+' ks – '+st.datum);
-      state[s]={jmeno:null,kusy:null,datum:null};
-      document.querySelectorAll('#CB_'+s+' .cust-btn, #DG_'+s+' .date-btn').forEach(b=>b.classList.remove('on'));
+      mS(s,'ok','✓ Uloženo: '+esc(jmeno)+' · '+kusy+' '+UNITS[s]+' · '+datum);
+      state[s].jmeno=null;
+      document.querySelectorAll('#CB_'+s+' .cust-btn').forEach(function(b){b.classList.remove('on');});
       document.getElementById('KS_'+s).value='';
-      uP(s);
-      setTimeout(function(){loadO(s);},800);
+      resetDates(s);
+      setTimeout(function(){refreshList(s);},700);
     }
     document.getElementById('SB_'+s).disabled=false;
   });
 }
+function resetDates(s){
+  document.querySelectorAll('#DG_'+s+' .date-btn').forEach(function(b,i){b.classList.toggle('on',i===0);});
+  state[s].datum=dateOptions[s][0]||null;
+}
 
-function loadO(s){
+/* ===== Seznamy k doručení ===== */
+function refreshList(s,cb){
   apiFetch({action:'list',produkt:PRODUKTY[s]},function(err,items){
-    var l=document.getElementById('OL_'+s),h=document.getElementById('HT_'+s),tot=document.getElementById('TOTAL_'+s);
-    if(err||!items||!Array.isArray(items)||items.length===0){
-      l.innerHTML='<div class="empty">'+(err?'Nepodařilo se načíst 😕':'Žádné objednávky 🎉')+'</div>';
-      h.style.display='none';tot.style.display='none';return;
-    }
-    var celkem=items.reduce(function(sum,it){return sum+(parseInt(it.kusy)||0);},0);
-    document.getElementById('TOTAL_NUM_'+s).textContent=celkem;
-    tot.style.display='block';h.style.display='block';
-    l.innerHTML=items.map(function(it){
-      return '<div class="obj-row" '+
-        'onclick="dorucit(\''+PRODUKTY[s]+'\','+it.radek+','+it.sloupec+',this)" '+
-        'onmousedown="startLongPress(event,\''+PRODUKTY[s]+'\','+it.radek+','+it.sloupec+',\''+it.jmeno+'\','+it.kusy+',\''+it.datum+'\')" '+
-        'ontouchstart="startLongPress(event,\''+PRODUKTY[s]+'\','+it.radek+','+it.sloupec+',\''+it.jmeno+'\','+it.kusy+',\''+it.datum+'\')" '+
-        'onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()" ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()"'+
-        '><div class="obj-info"><strong>'+it.jmeno+'</strong><span>📅 '+it.datum+'</span></div><div><div class="obj-ks">'+it.kusy+'</div><div class="obj-ks-unit">ks</div></div></div>';
-    }).join('');
+    if(!err&&Array.isArray(items)){store.lists[PRODUKTY[s]]=items;saveCache();}
+    renderList(s);
+    renderDelivAll();
+    if(cb)cb();
   });
 }
 
-var lpTimer=null;
-var lpActive=false;
-var editState={};
+function renderList(s){
+  var items=store.lists[PRODUKTY[s]];
+  var l=document.getElementById('OL_'+s),h=document.getElementById('HT_'+s),tot=document.getElementById('TOTAL_'+s);
+  if(items===null)return;
+  if(!Array.isArray(items)||items.length===0){
+    l.innerHTML='<div class="empty">Žádné objednávky k doručení 🎉</div>';
+    h.style.display='none';tot.textContent='';return;
+  }
+  var celkem=items.reduce(function(sum,it){return sum+(parseFloat(it.kusy)||0);},0);
+  tot.textContent='celkem '+celkem+' '+UNITS[s];
+  h.style.display='block';
+  var sorted=items.slice().sort(function(a,b){
+    var da=parseCZ(a.datum),db=parseCZ(b.datum);
+    return (da?da.getTime():0)-(db?db.getTime():0);
+  });
+  l.innerHTML=sorted.map(function(it){
+    var c=avColor(it.jmeno);
+    var d=parseCZ(it.datum);
+    var dlabel=d?(DNY_FULL[d.getDay()].toLowerCase()+' '+d.getDate()+'. '+(d.getMonth()+1)+'.'):it.datum;
+    return '<div class="hrow" style="cursor:pointer" '+
+      'onclick="dorucit(\''+PRODUKTY[s]+'\','+it.radek+','+it.sloupec+',this,event)" '+
+      'onmousedown="startLongPress(event,\''+PRODUKTY[s]+'\','+it.radek+','+it.sloupec+',\''+escJs(it.jmeno)+'\','+it.kusy+',\''+it.datum+'\')" '+
+      'ontouchstart="startLongPress(event,\''+PRODUKTY[s]+'\','+it.radek+','+it.sloupec+',\''+escJs(it.jmeno)+'\','+it.kusy+',\''+it.datum+'\')" '+
+      'onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()" ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()">'+
+      '<div class="avatar" style="background:'+c[0]+';color:'+c[1]+'">'+esc(it.jmeno.substring(0,2))+'</div>'+
+      '<div class="hrow-info"><strong>'+esc(it.jmeno)+'</strong><span>'+dlabel+'</span></div>'+
+      '<div class="hrow-qty">'+it.kusy+'<small>'+UNITS[s]+'</small></div>'+
+      '<button class="check-btn" aria-label="Označit jako doručeno" onclick="dorucit(\''+PRODUKTY[s]+'\','+it.radek+','+it.sloupec+',this.parentNode,event)">'+
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>'+
+      '</button></div>';
+  }).join('');
+}
 
+/* ===== Doručení (klik na ✓ → zmizí, v Sheets zezelená) ===== */
+function dorucit(produkt,r,c,el,ev){
+  if(ev)ev.stopPropagation();
+  cancelLongPress();
+  if(lpActive){lpActive=false;return;}
+  el.style.pointerEvents='none';el.style.opacity='0.55';
+  apiFetch({action:'done',radek:r,sloupec:c,produkt:produkt},function(err,d){
+    if(!err&&d&&d.status==='ok'){
+      el.classList.add('done');
+      setTimeout(function(){
+        el.style.transition='all .4s ease';el.style.maxHeight='0';el.style.padding='0';
+        el.style.margin='0';el.style.opacity='0';el.style.overflow='hidden';el.style.border='none';
+        setTimeout(function(){
+          el.remove();
+          store.history=null;
+          if(histOpen)loadHistory();
+          refreshList(PRODUKTY.indexOf(produkt));
+        },420);
+      },250);
+    } else {
+      el.style.pointerEvents='';el.style.opacity='1';
+      showToast('Nepodařilo se označit doručení');
+    }
+  });
+}
+
+/* ===== Long-press úprava ===== */
+var lpTimer=null,lpActive=false,editState={};
 function startLongPress(e,produkt,radek,sloupec,jmeno,kusy,datum){
   lpActive=false;
   if(lpTimer)clearTimeout(lpTimer);
@@ -436,336 +562,312 @@ function startLongPress(e,produkt,radek,sloupec,jmeno,kusy,datum){
     openEdit(produkt,radek,sloupec,jmeno,kusy,datum);
   },600);
 }
-
-function cancelLongPress(){
-  if(lpTimer){clearTimeout(lpTimer);lpTimer=null;}
-}
-
-function dorucit(produkt,r,c,el){
-  cancelLongPress();
-  if(lpActive){lpActive=false;return;}
-  el.style.pointerEvents='none';el.style.opacity='0.5';
-  apiFetch({action:'done',radek:r,sloupec:c,produkt:produkt},function(err,d){
-    if(!err&&d&&d.status==='ok'){
-      el.classList.add('done');
-      setTimeout(function(){
-        el.style.transition='all 0.4s ease';el.style.maxHeight='0';el.style.padding='0';
-        el.style.margin='0';el.style.opacity='0';el.style.overflow='hidden';
-        setTimeout(function(){el.remove();loadO(PRODUKTY.indexOf(produkt));},420);
-      },250);
-    } else {el.style.pointerEvents='';el.style.opacity='1';}
-  });
-}
-
+function cancelLongPress(){if(lpTimer){clearTimeout(lpTimer);lpTimer=null;}}
 function openEdit(produkt,radek,sloupec,jmeno,kusy,datum){
   editState={produkt:produkt,radek:radek,sloupec:sloupec};
-  document.getElementById('EDIT_TITLE').textContent=jmeno+' – '+datum;
-  document.getElementById('EDIT_DESC').textContent='Uprav počet kusů:';
+  document.getElementById('EDIT_TITLE').textContent=jmeno+' · '+datum;
+  document.getElementById('EDIT_DESC').textContent='Uprav počet ('+UNITS[PRODUKTY.indexOf(produkt)]+'):';
   document.getElementById('EDIT_INPUT').value=kusy;
   document.getElementById('EDIT_OVERLAY').style.display='flex';
   setTimeout(function(){document.getElementById('EDIT_INPUT').focus();},100);
 }
-
-function closeEdit(){
-  document.getElementById('EDIT_OVERLAY').style.display='none';
-  editState={};
-}
-
+function closeEdit(){document.getElementById('EDIT_OVERLAY').style.display='none';editState={};}
 function deleteItem(){
-  var s=PRODUKTY.indexOf(editState.produkt);
   if(!confirm('Opravdu smazat tuto objednávku?'))return;
+  var s=PRODUKTY.indexOf(editState.produkt);
   apiFetch({action:'delete',radek:editState.radek,sloupec:editState.sloupec,produkt:editState.produkt},function(err,d){
-    if(!err&&d&&d.status==='ok'){loadO(s);}
+    if(!err&&d&&d.status==='ok'){store.history=null;refreshList(s);showToast('Objednávka smazána');}
+    else showToast('Smazání se nepodařilo');
   });
   closeEdit();
 }
-
 function saveEdit(){
   var novyPocet=parseInt(document.getElementById('EDIT_INPUT').value);
   if(!novyPocet||novyPocet<1)return;
   var s=PRODUKTY.indexOf(editState.produkt);
   apiFetch({action:'edit',radek:editState.radek,sloupec:editState.sloupec,produkt:editState.produkt,kusy:novyPocet},function(err,d){
-    if(!err&&d&&d.status==='ok'){loadO(s);}
+    if(!err&&d&&d.status==='ok'){store.history=null;refreshList(s);showToast('Počet upraven');}
+    else showToast('Úprava se nepodařila');
   });
   closeEdit();
 }
 
-// ===== POŽADAVKY =====
-
-function filterReq(f, btn) {
-  reqFilter = f;
-  document.querySelectorAll('.req-tab').forEach(function(b){b.classList.remove('active');});
-  btn.classList.add('active');
-  renderRequests();
+/* ===== Objednávky: čekající požadavky ===== */
+function updateBadge(){
+  var reqs=store.requests||[];
+  var pending=reqs.filter(function(r){return r.stav==='čeká na potvrzení';}).length;
+  var badge=document.getElementById('BELL_BADGE');
+  var dot=document.getElementById('TAB_DOT');
+  if(pending>0){badge.textContent=pending;badge.style.display='flex';dot.style.display='block';}
+  else{badge.style.display='none';dot.style.display='none';}
 }
 
-function loadRequests() {
-  document.getElementById('REQ_LIST').innerHTML = '<div class="req-empty"><div class="icon">⏳</div><p>Načítám...</p></div>';
-  apiFetch({action:'listRequests'}, function(err, data) {
-    if (err || !Array.isArray(data)) {
-      document.getElementById('REQ_LIST').innerHTML = '<div class="req-empty"><div class="icon">😕</div><p>Nepodařilo se načíst</p></div>';
-      return;
+function renderRequests(){
+  var reqs=store.requests;
+  var box=document.getElementById('REQ_LIST');
+  var cnt=document.getElementById('REQ_COUNT');
+  if(reqs===null)return;
+  var show=reqs.filter(function(r){return r.stav==='čeká na potvrzení'||r.stav==='navržen jiný termín';}).slice().reverse();
+  var pending=reqs.filter(function(r){return r.stav==='čeká na potvrzení';}).length;
+  cnt.textContent=pending>0?(pending+' nových'):'';
+  if(show.length===0){box.innerHTML='<div class="empty">Žádné čekající požadavky ✅</div>';return;}
+  box.innerHTML=show.map(function(req){
+    var items='';
+    if(req.vajicka>0)items+='<div class="req-item"><span>Vajíčka · '+req.vajicka+' ks</span></div>';
+    if(req.bedynka>0)items+='<div class="req-item"><span>Bedýnka · '+req.bedynka+' ks</span></div>';
+    if(req.sirup>0)items+='<div class="req-item"><span>Sirup · '+req.sirup+' l</span></div>';
+    var sugg='';
+    if(req.stav==='navržen jiný termín'&&req.navrzenyTermin){
+      sugg='<div style="margin-bottom:10px;padding:8px 12px;background:var(--or-soft);border-radius:10px;font-size:13px;color:var(--or-dark);">Navržen termín: <strong>'+fmtD(req.navrzenyTermin)+'</strong> · čeká na zákazníka</div>';
     }
-    allRequests = data.slice().reverse();
-    // Badge - počet čekajících
-    var pending = data.filter(function(r){return r.stav==='čeká na potvrzení';}).length;
-    var badge = document.getElementById('REQ_BADGE');
-    var banner = document.getElementById('REQ_BANNER');
-    var bannerText = document.getElementById('REQ_BANNER_TEXT');
-    if (pending > 0) {
-      badge.textContent = pending;
-      badge.style.display = 'flex';
-      bannerText.textContent = pending + ' nová objednávka' + (pending > 1 ? 'y' : '');
-      banner.style.display = 'block';
-    } else {
-      badge.style.display = 'none';
-      banner.style.display = 'none';
-    }
-    renderRequests();
-  });
-}
-
-function fmtD(val) {
-  if (!val) return '';
-  var s = val.toString().trim();
-  if (s.match(/^\d{1,2}\.\d{1,2}\.\d{4}$/)) return s;
-  var d = new Date(s);
-  if (!isNaN(d)) return d.getUTCDate() + '.' + (d.getUTCMonth()+1) + '.' + d.getUTCFullYear();
-  return s;
-}
-
-function renderRequests() {
-  var filtered = allRequests;
-  if (reqFilter === 'pending') {
-    filtered = allRequests.filter(function(r){ return r.stav === 'čeká na potvrzení'; });
-  }
-  var container = document.getElementById('REQ_LIST');
-  if (filtered.length === 0) {
-    container.innerHTML = '<div class="req-empty"><div class="icon">' + (reqFilter==='pending'?'✅':'📭') + '</div><p>' + (reqFilter==='pending'?'Žádné čekající požadavky':'Žádné požadavky') + '</p></div>';
-    return;
-  }
-
-  var statusMap = {
-    'čeká na potvrzení': {cls:'pending', label:'⏳ Čeká'},
-    'potvrzeno': {cls:'confirmed', label:'✓ Potvrzeno'},
-    'navržen jiný termín': {cls:'suggested', label:'📅 Jiný termín'},
-    'zrušeno': {cls:'cancelled', label:'✗ Zrušeno'}
-  };
-
-  container.innerHTML = filtered.map(function(req) {
-    var st = statusMap[req.stav] || {cls:'pending', label: req.stav};
-    var cardCls = req.stav==='potvrzeno'?'confirmed':req.stav==='navržen jiný termín'?'suggested':req.stav==='zrušeno'?'cancelled':'';
-
-    var products = '';
-    if (req.vajicka > 0) products += '<div class="req-product-row"><span>🥚 Vajíčka '+req.vajicka+' ks</span><span>'+req.celkem+' Kč</span></div>';
-    if (req.bedynka > 0) products += '<div class="req-product-row"><span>🧺 Bedýnka '+req.bedynka+' ks</span></div>';
-    if (req.sirup > 0) products += '<div class="req-product-row"><span>🫙 Sirup '+req.sirup+' l</span></div>';
-
-    var actions = '';
-    if (req.stav === 'čeká na potvrzení') {
-      actions = '<div class="req-actions">'+
-        '<button class="req-btn req-btn-confirm" onclick="confirmReq('+req.radek+')">✓ Potvrdit</button>'+
-        '<button class="req-btn req-btn-suggest" onclick="toggleSuggest('+req.radek+')">📅 Jiný termín</button>'+
-        '<button class="req-btn req-btn-cancel" onclick="cancelReq('+req.radek+')">✗ Zrušit</button>'+
+    var actions='';
+    if(req.stav==='čeká na potvrzení'){
+      actions='<div class="req-actions">'+
+        '<button class="req-btn rb-ok" onclick="confirmReq('+req.radek+')">Potvrdit</button>'+
+        '<button class="req-btn rb-alt" onclick="toggleSuggest('+req.radek+')">Jiný termín</button>'+
+        '<button class="req-btn rb-no" onclick="cancelReq('+req.radek+')">Zrušit</button>'+
       '</div>'+
-      '<div class="req-suggest-form" id="suggest-form-'+req.radek+'">'+
+      '<div class="sugg-form" id="suggest-form-'+req.radek+'">'+
         '<label>Navrhni jiný termín doručení:</label>'+
-        '<input type="date" id="suggest-date-'+req.radek+'" min="">'+
-        '<button class="req-suggest-send" onclick="sendSuggest('+req.radek+')">Odeslat návrh</button>'+
+        '<input type="date" id="suggest-date-'+req.radek+'">'+
+        '<button class="sugg-send" onclick="sendSuggest('+req.radek+')">Odeslat návrh</button>'+
       '</div>';
     }
-
-    var suggestedHtml = '';
-    if (req.stav === 'navržen jiný termín' && req.navrzenyTermin) {
-      suggestedHtml = '<div style="margin-bottom:10px;padding:8px 12px;background:#FFF3E0;border-radius:10px;font-size:13px;color:#7D3A00;">📅 Navrženo: <strong>'+fmtD(req.navrzenyTermin)+'</strong></div>';
-    }
-
-    return '<div class="req-card '+cardCls+'" id="req-card-'+req.radek+'">'+
-      '<div class="req-header">'+
-        '<div>'+
-          '<div class="req-name">'+req.jmeno+'</div>'+
-          '<div class="req-date">Objednáno: '+fmtD(req.datumPozadavku)+'</div>'+
-        '</div>'+
-        '<span class="req-status '+st.cls+'">'+st.label+'</span>'+
-      '</div>'+
-      '<div class="req-products">'+products+
-        '<div class="req-total"><span>Celkem</span><span>'+req.celkem+' Kč</span></div>'+
-      '</div>'+
-      '<div class="req-delivery">Požadované doručení: <strong>'+fmtD(req.datumDoruceni)+'</strong></div>'+
-      suggestedHtml +
-      actions +
-    '</div>';
+    var badge=req.stav==='čeká na potvrzení'
+      ?'<span class="badge pend">Čeká</span>'
+      :'<span class="badge sugg">Navržen termín</span>';
+    return '<div class="req-card">'+
+      '<div class="req-head"><div><div class="req-name">'+esc(req.jmeno)+'</div>'+
+      '<div class="req-meta">objednáno '+fmtD(req.datumPozadavku)+' · doručit '+fmtD(req.datumDoruceni)+'</div></div>'+badge+'</div>'+
+      '<div class="req-items">'+items+
+      '<div class="req-sum"><span>Celkem</span><span>'+req.celkem+' Kč</span></div></div>'+
+      sugg+actions+'</div>';
   }).join('');
+  var tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+1);
+  var minDate=tomorrow.toISOString().split('T')[0];
+  document.querySelectorAll('.sugg-form input[type=date]').forEach(function(el){el.min=minDate;});
+}
 
-  // Nastav min datum pro suggest inputy
-  var tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate()+1);
-  var minDate = tomorrow.toISOString().split('T')[0];
-  document.querySelectorAll('.req-suggest-form input[type=date]').forEach(function(el){
-    el.min = minDate;
+function refreshRequests(){
+  apiFetch({action:'listRequests'},function(err,data){
+    if(!err&&Array.isArray(data)){store.requests=data;saveCache();updateBadge();renderRequests();}
+  });
+}
+function confirmReq(radek){
+  apiFetch({action:'confirmRequest',radek:radek,navrzenyDatum:''},function(err,d){
+    if(!err&&d&&d.status==='ok'){
+      showToast('✓ Potvrzeno a zapsáno do tabulky');
+      store.history=null;
+      refreshRequests();
+      for(var s=0;s<3;s++)refreshList(s);
+    } else showToast('Potvrzení se nepodařilo');
+  });
+}
+function toggleSuggest(radek){
+  var form=document.getElementById('suggest-form-'+radek);
+  form.style.display=form.style.display==='block'?'none':'block';
+}
+function sendSuggest(radek){
+  var dateEl=document.getElementById('suggest-date-'+radek);
+  if(!dateEl.value){showToast('Vyber datum');return;}
+  var parts=dateEl.value.split('-');
+  var datumCZ=parts[2]+'.'+parts[1]+'.'+parts[0];
+  apiFetch({action:'confirmRequest',radek:radek,navrzenyDatum:datumCZ},function(err,d){
+    if(!err&&d&&d.status==='ok'){showToast('Návrh termínu odeslán');refreshRequests();}
+    else showToast('Odeslání se nepodařilo');
+  });
+}
+function cancelReq(radek){
+  if(!confirm('Opravdu zrušit tuto objednávku?'))return;
+  apiFetch({action:'rejectRequest',radek:radek},function(err,d){
+    if(!err&&d&&d.status==='ok'){showToast('Objednávka zrušena');refreshRequests();}
   });
 }
 
-function confirmReq(radek) {
-  apiFetch({action:'confirmRequest', radek:radek, navrzenyDatum:''}, function(err,d){
-    if (!err && d && d.status==='ok') {
-      showToast('✓ Objednávka potvrzena a zapsána do Sheets');
-      loadRequests();
-    } else {
-      showToast('❌ Chyba při potvrzování');
+/* ===== Objednávky: vše k doručení (napříč produkty) ===== */
+function renderDelivAll(){
+  var box=document.getElementById('DELIV_ALL');
+  var all=[];
+  for(var s=0;s<3;s++){
+    var items=store.lists[PRODUKTY[s]];
+    if(Array.isArray(items)){
+      items.forEach(function(it){
+        all.push({produkt:PRODUKTY[s],s:s,radek:it.radek,sloupec:it.sloupec,jmeno:it.jmeno,kusy:it.kusy,datum:it.datum});
+      });
     }
-  });
-}
-
-function toggleSuggest(radek) {
-  var form = document.getElementById('suggest-form-'+radek);
-  form.style.display = form.style.display === 'block' ? 'none' : 'block';
-}
-
-function sendSuggest(radek) {
-  var dateEl = document.getElementById('suggest-date-'+radek);
-  if (!dateEl.value) { showToast('Vyberte datum'); return; }
-  var parts = dateEl.value.split('-');
-  var datumCZ = parts[2]+'.'+parts[1]+'.'+parts[0];
-  apiFetch({action:'confirmRequest', radek:radek, navrzenyDatum:datumCZ}, function(err,d){
-    if (!err && d && d.status==='ok') {
-      showToast('📅 Návrh termínu odeslán a zapsán do Sheets');
-      loadRequests();
-    } else {
-      showToast('❌ Chyba');
-    }
-  });
-}
-
-function cancelReq(radek) {
-  if (!confirm('Opravdu zrušit tuto objednávku?')) return;
-  apiFetch({action:'rejectRequest', radek:radek}, function(err,d){
-    if (!err && d && d.status==='ok') {
-      showToast('Objednávka zrušena');
-      loadRequests();
-    }
-  });
-}
-
-function showToast(msg) {
-  var t = document.getElementById('TOAST');
-  if (!t) {
-    t = document.createElement('div');
-    t.id = 'TOAST';
-    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#2C1500;color:#FDF6EE;padding:12px 20px;border-radius:24px;font-size:14px;font-weight:500;transition:transform 0.3s ease;z-index:2000;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.2);';
-    document.body.appendChild(t);
   }
-  t.textContent = msg;
-  t.style.transform = 'translateX(-50%) translateY(0)';
-  setTimeout(function(){ t.style.transform = 'translateX(-50%) translateY(80px)'; }, 2800);
+  if(store.lists.vajicka===null)return;
+  if(all.length===0){box.innerHTML='<div class="empty">Vše doručeno 🎉</div>';return;}
+  all.sort(function(a,b){
+    var da=parseCZ(a.datum),db=parseCZ(b.datum);
+    return (da?da.getTime():0)-(db?db.getTime():0);
+  });
+  var html='',lastDate='';
+  all.forEach(function(it){
+    if(it.datum!==lastDate){
+      lastDate=it.datum;
+      var d=parseCZ(it.datum);
+      html+='<div class="day-label">'+(d?DNY_FULL[d.getDay()]+' '+d.getDate()+'. '+(d.getMonth()+1)+'.':it.datum)+'</div>';
+    }
+    html+='<div class="hrow" style="cursor:pointer" onclick="dorucit(\''+it.produkt+'\','+it.radek+','+it.sloupec+',this,event)">'+prodIcon(it.produkt)+
+      '<div class="hrow-info"><strong>'+esc(it.jmeno)+'</strong><span>'+PROD_NAZVY_MALE[it.s]+'</span></div>'+
+      '<div class="hrow-qty">'+it.kusy+'<small>'+UNITS[it.s]+'</small></div>'+
+      '<button class="check-btn" aria-label="Označit jako doručeno" onclick="dorucit(\''+it.produkt+'\','+it.radek+','+it.sloupec+',this.parentNode,event)">'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg></button></div>';
+  });
+  box.innerHTML=html;
 }
 
-// ===== CASHFLOW (beze změny) =====
-var cfChart=null;
-var cfLoaded=false;
+/* ===== Historie (na rozklik) ===== */
+function toggleHistory(){
+  histOpen=!histOpen;
+  var body=document.getElementById('HIST_BODY');
+  var btn=document.getElementById('HIST_TOGGLE');
+  var lbl=document.getElementById('HIST_LABEL');
+  body.style.display=histOpen?'block':'none';
+  btn.classList.toggle('open',histOpen);
+  lbl.textContent=histOpen?'Skrýt historii objednávek':'Zobrazit historii objednávek';
+  if(histOpen&&store.history===null)loadHistory();
+}
+function loadHistory(){
+  var body=document.getElementById('HIST_BODY');
+  body.innerHTML='<div class="skel"></div><div class="skel"></div>';
+  apiFetch({action:'history'},function(err,data){
+    if(err||!Array.isArray(data)){
+      body.innerHTML='<div class="empty">Historii se nepodařilo načíst</div>';
+      store.history=null;
+      return;
+    }
+    store.history=data;
+    renderHistory();
+  });
+}
+function renderHistory(){
+  var body=document.getElementById('HIST_BODY');
+  var data=store.history||[];
+  if(data.length===0){body.innerHTML='<div class="empty">Zatím žádné objednávky</div>';return;}
+  body.innerHTML=data.map(function(it){
+    var s=PRODUKTY.indexOf(it.produkt);
+    return '<div class="hrow">'+prodIcon(it.produkt)+
+      '<div class="hrow-info"><strong>'+esc(it.jmeno)+' · '+PROD_NAZVY_MALE[s]+' '+it.kusy+' '+UNITS[s]+'</strong><span>'+it.datum+'</span></div>'+
+      (it.dorucen?'<span class="badge done">Doručeno</span>':'<span class="badge pend">K doručení</span>')+
+      '</div>';
+  }).join('');
+}
 
-function loadCashflow(){
-  if(cfLoaded)return;
+/* ===== Cashflow ===== */
+var cfLoaded=false;
+function loadCashflow(force){
+  if(cfLoaded&&!force)return;
   apiFetch({action:'cashflow'},function(err,data){
     if(err||!data||!Array.isArray(data)){
-      document.getElementById('CF_SUMMARY').innerHTML='<div class="empty">Nepodařilo se načíst 😕</div>';
-      document.getElementById('CF_TABLE').innerHTML='';
+      document.getElementById('CF_SUMMARY').innerHTML='<div class="empty">Nepodařilo se načíst</div>';
+      document.getElementById('CF_MONTHS').innerHTML='';
+      document.getElementById('CF_PRODUCTS').innerHTML='';
       return;
     }
     cfLoaded=true;
-    var celkTrzba=data.reduce(function(s,m){return s+m.trzba;},0);
-    var celkNaklady=data.reduce(function(s,m){return s+m.naklady;},0);
-    var celkZisk=celkTrzba-celkNaklady;
-    document.getElementById('CF_SUMMARY').innerHTML=
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">'+
-        '<div style="background:var(--gr2);border-radius:14px;padding:14px;text-align:center;">'+
-          '<div style="font-size:12px;color:var(--gr);font-weight:600;margin-bottom:4px;">Celkem tržby</div>'+
-          '<div style="font-family:\'Fraunces\',serif;font-size:22px;font-weight:900;color:var(--gr);">'+celkTrzba.toLocaleString('cs')+'</div>'+
-          '<div style="font-size:11px;color:var(--gr);opacity:0.7;">Kč</div>'+
-        '</div>'+
-        '<div style="background:#FFEBEE;border-radius:14px;padding:14px;text-align:center;">'+
-          '<div style="font-size:12px;color:#C62828;font-weight:600;margin-bottom:4px;">Celkem náklady</div>'+
-          '<div style="font-family:\'Fraunces\',serif;font-size:22px;font-weight:900;color:#C62828;">'+celkNaklady.toLocaleString('cs')+'</div>'+
-          '<div style="font-size:11px;color:#C62828;opacity:0.7;">Kč</div>'+
-        '</div>'+
-      '</div>'+
-      '<div style="background:var(--warn);border-radius:14px;padding:14px;display:flex;justify-content:space-between;align-items:center;">'+
-        '<span style="font-size:14px;color:var(--or);font-weight:600;">Celkový zisk</span>'+
-        '<span style="font-family:\'Fraunces\',serif;font-size:28px;font-weight:900;color:var(--or);">'+celkZisk.toLocaleString('cs')+' Kč</span>'+
-      '</div>';
-    data=data.filter(function(m){return m.trzba>0||m.naklady>0;});
-    var labels=data.map(function(m){return m.nazev.split(' ')[0];});
-    var trzby=data.map(function(m){return m.trzba;});
-    var naklady=data.map(function(m){return m.naklady;});
-    var zisky=data.map(function(m){return m.zisk;});
-    if(cfChart){cfChart.destroy();}
-    var ctx=document.getElementById('CF_CHART').getContext('2d');
-    cfChart=new Chart(ctx,{
-      type:'bar',
-      data:{labels:labels,datasets:[
-        {label:'Tržby',data:trzby,backgroundColor:'rgba(212,86,10,0.7)',borderRadius:6},
-        {label:'Náklady',data:naklady,backgroundColor:'rgba(198,40,40,0.5)',borderRadius:6},
-        {label:'Zisk',data:zisky,backgroundColor:'rgba(42,110,53,0.8)',borderRadius:6}
-      ]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:11},boxWidth:12}},datalabels:{display:false}},scales:{y:{ticks:{font:{size:10},callback:function(v){return v.toLocaleString('cs');}},grid:{color:function(c){return c.tick.value===0?'rgba(0,0,0,0.5)':'rgba(0,0,0,0.05)';},lineWidth:function(c){return c.tick.value===0?2:1;}}},x:{ticks:{font:{size:10}},grid:{display:false}}}},
-      plugins:[ChartDataLabels]
-    });
-    var totalVajicka=data.reduce(function(s,m){return s+(m.vajicka||0);},0);
-    var totalBedynky=data.reduce(function(s,m){return s+(m.bedynky||0);},0);
-    var totalSirup=data.reduce(function(s,m){return s+(m.sirup||0);},0);
-    var ctx2=document.getElementById('CF_PRODUCTS_CHART').getContext('2d');
-    new Chart(ctx2,{type:'bar',data:{labels:labels,datasets:[
-      {label:'Vajíčka 🥚',data:data.map(function(m){return m.vajicka||0;}),backgroundColor:'rgba(212,86,10,0.75)',borderRadius:6},
-      {label:'Bedýnky 🥕',data:data.map(function(m){return m.bedynky||0;}),backgroundColor:'rgba(42,110,53,0.75)',borderRadius:6},
-      {label:'Sirup 🫐',data:data.map(function(m){return m.sirup||0;}),backgroundColor:'rgba(90,60,150,0.75)',borderRadius:6}
-    ]},options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:24}},plugins:{legend:{labels:{font:{size:11},boxWidth:12}},datalabels:{display:function(ctx){return ctx.dataset.data[ctx.dataIndex]>0;},color:'#2C1500',font:{size:13,weight:'700'},anchor:'end',align:'top',offset:2,formatter:function(v){return v+' ks';}}},scales:{y:{ticks:{font:{size:10}},grid:{color:function(c){return c.tick.value===0?'rgba(0,0,0,0.5)':'rgba(0,0,0,0.05)';},lineWidth:function(c){return c.tick.value===0?2:1;}}},x:{ticks:{font:{size:10}},grid:{display:false}}}},plugins:[ChartDataLabels]});
-    document.getElementById('CF_PRODUCTS_TOTALS').innerHTML=
-      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px;">'+
-        '<div style="background:var(--warn);border-radius:12px;padding:12px;text-align:center;"><div style="font-size:11px;color:var(--or);font-weight:600;margin-bottom:4px;">Vajíčka 🥚</div><div style="font-family:\'Fraunces\',serif;font-size:22px;font-weight:900;color:var(--or);">'+totalVajicka+'</div><div style="font-size:10px;color:var(--or);opacity:0.7;">ks celkem</div></div>'+
-        '<div style="background:var(--gr2);border-radius:12px;padding:12px;text-align:center;"><div style="font-size:11px;color:var(--gr);font-weight:600;margin-bottom:4px;">Bedýnky 🥕</div><div style="font-family:\'Fraunces\',serif;font-size:22px;font-weight:900;color:var(--gr);">'+totalBedynky+'</div><div style="font-size:10px;color:var(--gr);opacity:0.7;">ks celkem</div></div>'+
-        '<div style="background:#F0EAF8;border-radius:12px;padding:12px;text-align:center;"><div style="font-size:11px;color:#5A3C96;font-weight:600;margin-bottom:4px;">Sirup 🫐</div><div style="font-family:\'Fraunces\',serif;font-size:22px;font-weight:900;color:#5A3C96;">'+totalSirup+'</div><div style="font-size:10px;color:#5A3C96;opacity:0.7;">ks celkem</div></div>'+
-      '</div>';
-    var rows=data.slice().reverse().map(function(m){
-      var ziskColor=m.zisk>=0?'var(--gr)':'#C62828';
-      return '<div style="border:1.5px solid var(--border);border-radius:14px;padding:14px;margin-bottom:8px;background:var(--cr);">'+
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><strong style="font-size:15px;color:var(--br);">'+m.nazev+'</strong><span style="font-family:\'Fraunces\',serif;font-size:18px;font-weight:900;color:'+ziskColor+';">'+m.zisk.toLocaleString('cs')+' Kč</span></div>'+
-        '<div style="display:flex;gap:12px;"><span style="font-size:12px;color:var(--gr);">↑ '+m.trzba.toLocaleString('cs')+' Kč</span><span style="font-size:12px;color:#C62828;">↓ '+m.naklady.toLocaleString('cs')+' Kč</span></div>'+
-      '</div>';
-    }).join('');
-    document.getElementById('CF_TABLE').innerHTML=rows||'<div class="empty">Žádná data</div>';
+    store.cashflow=data;
+    renderCashflow();
   });
 }
+function renderCashflow(){
+  var data=store.cashflow||[];
+  var celkTrzba=data.reduce(function(s,m){return s+m.trzba;},0);
+  var celkNaklady=data.reduce(function(s,m){return s+m.naklady;},0);
+  var celkZisk=celkTrzba-celkNaklady;
+  document.getElementById('CF_SUMMARY').innerHTML=
+    '<div class="cf-grid">'+
+      '<div class="cf-stat"><div class="lbl">Tržby</div><div class="val">'+celkTrzba.toLocaleString('cs')+'</div><div class="sub">Kč</div></div>'+
+      '<div class="cf-stat"><div class="lbl">Náklady</div><div class="val">'+celkNaklady.toLocaleString('cs')+'</div><div class="sub">Kč</div></div>'+
+      '<div class="cf-stat hl"><div class="lbl">Zisk</div><div class="val">'+celkZisk.toLocaleString('cs')+'</div><div class="sub">Kč</div></div>'+
+    '</div>';
 
-buildDates();
-goSlide(0);
-for(var i=0;i<3;i++){loadO(i);}
+  var months=data.filter(function(m){return m.trzba>0||m.naklady>0;}).slice().reverse();
+  var maxAbs=months.reduce(function(mx,m){return Math.max(mx,Math.abs(m.zisk));},1);
+  document.getElementById('CF_MONTHS').innerHTML=months.map(function(m){
+    var pos=m.zisk>=0;
+    var w=Math.max(4,Math.round(Math.abs(m.zisk)/maxAbs*100));
+    return '<div class="bar-row">'+
+      '<span class="m">'+esc(m.nazev.split(' ')[0])+'</span>'+
+      '<div class="bar-track"><div class="bar-fill" style="width:'+w+'%;background:'+(pos?'var(--gr)':'#E24B4A')+'"></div></div>'+
+      '<span class="v" style="color:'+(pos?'var(--gr-dark)':'var(--rd)')+'">'+(pos?'+':'−')+Math.abs(m.zisk).toLocaleString('cs')+' Kč</span>'+
+    '</div>'+
+    '<div class="bar-sub">↑ '+m.trzba.toLocaleString('cs')+' Kč · ↓ '+m.naklady.toLocaleString('cs')+' Kč</div>';
+  }).join('')||'<div class="empty">Žádná data</div>';
 
-// Načti zákazníky dynamicky ze Sheets
-function loadCustomers() {
-  apiFetch({action:'getCustomers'}, function(err, data) {
-    if (err || !Array.isArray(data)) return;
-    var names = data.map(function(c){ return c.jmeno; });
-    for (var s = 0; s < 3; s++) {
-      var grid = document.getElementById('CB_' + s);
-      grid.innerHTML = names.map(function(name) {
-        var sIdx = s;
-        return '<button class="cust-btn" onclick="sC(' + sIdx + ',this,\'' + name + '\')">' + name + '</button>';
-      }).join('');
-    }
-  });
-}
-loadCustomers();
-
-// Zkontroluj badge při načtení
-apiFetch({action:'listRequests'}, function(err, data) {
-  if (!err && Array.isArray(data)) {
-    var pending = data.filter(function(r){return r.stav==='čeká na potvrzení';}).length;
-    if (pending > 0) {
-      var badge = document.getElementById('REQ_BADGE');
-      badge.textContent = pending;
-      badge.style.display = 'flex';
-    }
+  var tV=data.reduce(function(s,m){return s+(m.vajicka||0);},0);
+  var tB=data.reduce(function(s,m){return s+(m.bedynky||0);},0);
+  var tS=data.reduce(function(s,m){return s+(m.sirup||0);},0);
+  var hasRev=data.length>0&&typeof data[0].trzbaVajicka!=='undefined';
+  var rV=hasRev?data.reduce(function(s,m){return s+(m.trzbaVajicka||0);},0):null;
+  var rB=hasRev?data.reduce(function(s,m){return s+(m.trzbaBedynky||0);},0):null;
+  var rS=hasRev?data.reduce(function(s,m){return s+(m.trzbaSirup||0);},0):null;
+  function pCard(lbl,color,rev,cnt,unit,zisk){
+    return '<div class="prod-card"><div class="lbl" style="color:'+color+'">'+lbl+'</div>'+
+      '<div class="val">'+(rev!==null?rev.toLocaleString('cs')+' Kč':cnt+' '+unit)+'</div>'+
+      '<div class="sub">'+(rev!==null?(cnt+' '+unit+' prodáno<br>zisk '+zisk.toLocaleString('cs')+' Kč'):'prodáno celkem')+'</div></div>';
   }
-});
+  document.getElementById('CF_PRODUCTS').innerHTML='<div class="prod-grid">'+
+    pCard('Vajíčka','#9E3F06',rV,tV,'ks',rV!==null?rV-celkNaklady:0)+
+    pCard('Bedýnky','#0F6E56',rB,tB,'ks',rB!==null?rB:0)+
+    pCard('Sirup','#5A3C96',rS,tS,'l',rS!==null?rS:0)+
+  '</div>'+(hasRev?'<div class="hint" style="margin-top:10px">Náklady (zrní) se odečítají od vajíček.</div>':'');
+}
+
+/* ===== Načtení dat: init + cache + fallback ===== */
+function saveCache(){
+  try{sessionStorage.setItem('dpd-cache',JSON.stringify({customers:store.customers,lists:store.lists,requests:store.requests}));}catch(e){}
+}
+function loadCache(){
+  try{
+    var c=JSON.parse(sessionStorage.getItem('dpd-cache'));
+    if(c&&c.customers&&c.lists){
+      store.customers=c.customers;store.lists=c.lists;store.requests=c.requests||null;
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
+function applyInit(data){
+  store.customers=Array.isArray(data.customers)?data.customers:[];
+  store.lists=data.lists&&data.lists.vajicka!==undefined?data.lists:store.lists;
+  store.requests=Array.isArray(data.requests)?data.requests:store.requests;
+  saveCache();
+  renderAll();
+}
+function renderAll(){
+  renderCustomers();
+  for(var s=0;s<3;s++)renderList(s);
+  updateBadge();
+  renderRequests();
+  renderDelivAll();
+}
+function loadLegacy(){
+  apiFetch({action:'getCustomers'},function(err,data){
+    if(!err&&Array.isArray(data)){store.customers=data;renderCustomers();saveCache();}
+  });
+  for(var s=0;s<3;s++)(function(s){
+    apiFetch({action:'list',produkt:PRODUKTY[s]},function(err,items){
+      if(!err&&Array.isArray(items)){store.lists[PRODUKTY[s]]=items;saveCache();}
+      else if(store.lists[PRODUKTY[s]]===null)store.lists[PRODUKTY[s]]=[];
+      renderList(s);renderDelivAll();
+    });
+  })(s);
+  refreshRequests();
+}
+function loadInit(){
+  apiFetch({action:'init'},function(err,data){
+    if(!err&&data&&data.customers!==undefined&&data.status!=='error'){applyInit(data);}
+    else loadLegacy();
+  });
+}
+
+/* ===== Start ===== */
+buildPanels();
+buildDates();
+if(loadCache())renderAll();
+loadInit();
 </script>
 </body>
 </html>
