@@ -1,5 +1,5 @@
 const { google } = require('googleapis');
- 
+
 const SPREADSHEET_ID = '1ORfd4FhxKsJIuk22WvdoW6sLNpRNBFK39q3yt5YAj8Q';
 const DISCOUNT_NAMES = ['Danča', 'Kristýna', 'Renata', 'Andrea', 'Marcela', 'Dáša'];
 const SUMA_ROW = 30;
@@ -7,19 +7,19 @@ const HEADER_ROW = 2;
 const FIRST_COL = 2;
 const DATA_START_ROW = 4;
 const NTFY_TOPIC = 'dvurpoddubem-objednavky';
- 
+
 async function getSheets() {
   const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY);
   const auth = new google.auth.GoogleAuth({ credentials, scopes: ['https://www.googleapis.com/auth/spreadsheets'] });
   return google.sheets({ version: 'v4', auth });
 }
- 
+
 function colLetter(n) {
   let s = '';
   while (n > 0) { s = String.fromCharCode(64 + (n - 1) % 26 + 1) + s; n = Math.floor((n - 1) / 26); }
   return s;
 }
- 
+
 function fmtDate(val) {
   if (!val) return '';
   const s = val.toString().trim();
@@ -37,7 +37,7 @@ function fmtDate(val) {
   if (!isNaN(d)) return d.getUTCDate() + '.' + (d.getUTCMonth() + 1) + '.' + d.getUTCFullYear();
   return s;
 }
- 
+
 function parseDate(val) {
   if (!val) return null;
   const s = val.toString().trim();
@@ -51,7 +51,7 @@ function parseDate(val) {
   const d = new Date(s);
   return isNaN(d) ? null : d;
 }
- 
+
 async function sendNtfy(jmeno, datum, vajicka, bedynka, sirup) {
   try {
     let msg = '';
@@ -73,7 +73,7 @@ async function sendNtfy(jmeno, datum, vajicka, bedynka, sirup) {
     });
   } catch (e) { /* notifikace nesmí shodit objednávku */ }
 }
- 
+
 async function getSheetData(sheets, sheetName) {
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
@@ -82,7 +82,7 @@ async function getSheetData(sheets, sheetName) {
   });
   return res.data.values || [];
 }
- 
+
 async function getSheetColors(sheets, sheetName) {
   const res = await sheets.spreadsheets.get({
     spreadsheetId: SPREADSHEET_ID, ranges: [`${sheetName}!A:Z`],
@@ -90,7 +90,7 @@ async function getSheetColors(sheets, sheetName) {
   });
   return res.data.sheets?.[0]?.data?.[0]?.rowData || [];
 }
- 
+
 function getCustomers(headers) {
   const c = [];
   for (let i = FIRST_COL - 1; i < headers.length; i++) {
@@ -99,7 +99,7 @@ function getCustomers(headers) {
   }
   return c;
 }
- 
+
 // Detekce barev buněk (oranžová #F4A623 = čekající, zelená #93C47D = doručeno)
 function isOrange(bg) {
   return !!(bg && bg.red > 0.9 && bg.green > 0.6 && bg.green < 0.72 && bg.blue < 0.2);
@@ -107,12 +107,12 @@ function isOrange(bg) {
 function isGreen(bg) {
   return !!(bg && bg.red > 0.45 && bg.red < 0.7 && bg.green > 0.7 && bg.green < 0.85 && bg.blue > 0.38 && bg.blue < 0.6);
 }
- 
+
 async function getSheetId(sheets, sheetName) {
   const res = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID });
   return res.data.sheets.find(s => s.properties.title === sheetName)?.properties?.sheetId;
 }
- 
+
 async function getOrCreateCustomerCol(sheets, sheetName, jmeno) {
   const data = await getSheetData(sheets, sheetName);
   const headers = data[HEADER_ROW - 1] || [];
@@ -139,7 +139,7 @@ async function getOrCreateCustomerCol(sheets, sheetName, jmeno) {
   await updatePrehled(sheets, sheetName);
   return newCol;
 }
- 
+
 async function updatePrehled(sheets, sheetName) {
   const data = await getSheetData(sheets, sheetName);
   const customers = getCustomers(data[HEADER_ROW - 1] || []);
@@ -161,7 +161,7 @@ async function updatePrehled(sheets, sheetName) {
     ]}
   });
 }
- 
+
 async function zpracujObjednavku(sheets, jmeno, kusy, datum, produkt) {
   const sn = { vajicka: 'Vajíčka', bedynka: 'Bedýnky', sirup: 'Sirup' }[produkt];
   const col = await getOrCreateCustomerCol(sheets, sn, jmeno);
@@ -173,7 +173,7 @@ async function zpracujObjednavku(sheets, jmeno, kusy, datum, produkt) {
     if (!cellVal || cellVal === '') { targetRow = r; break; }
   }
   if (targetRow === -1) targetRow = SUMA_ROW - 1;
- 
+
   await sheets.spreadsheets.values.batchUpdate({
     spreadsheetId: SPREADSHEET_ID,
     requestBody: { valueInputOption: 'USER_ENTERED', data: [
@@ -191,7 +191,7 @@ async function zpracujObjednavku(sheets, jmeno, kusy, datum, produkt) {
     }}]}
   });
 }
- 
+
 // Čekající objednávky (oranžové buňky) jednoho produktu – používá 'list' i 'init'
 async function listProduct(sheets, produkt) {
   const sn = { vajicka: 'Vajíčka', bedynka: 'Bedýnky', sirup: 'Sirup' }[produkt];
@@ -211,7 +211,7 @@ async function listProduct(sheets, produkt) {
   }
   return res;
 }
- 
+
 // Historie všech objednávek (oranžové i zelené buňky) napříč produkty
 async function historyAll(sheets) {
   const produkty = ['vajicka', 'bedynka', 'sirup'];
@@ -242,7 +242,7 @@ async function historyAll(sheets) {
   out.sort((a, b) => b.ts - a.ts);
   return out.slice(0, 200).map(o => ({ produkt: o.produkt, jmeno: o.jmeno, kusy: o.kusy, datum: o.datum, dorucen: o.dorucen }));
 }
- 
+
 function mapRequests(data) {
   return data.length <= 1 ? [] : data.slice(1).map((r, i) => ({
     radek: i + 2, id: r[0], jmeno: r[1], datumPozadavku: fmtDate(r[2]), datumDoruceni: fmtDate(r[3]),
@@ -250,7 +250,7 @@ function mapRequests(data) {
     stav: r[8] || 'čeká na potvrzení', navrzenyTermin: fmtDate(r[9])
   }));
 }
- 
+
 async function getPozadavkyData(sheets) {
   try { return await getSheetData(sheets, 'Požadavky'); }
   catch {
@@ -260,7 +260,7 @@ async function getPozadavkyData(sheets) {
     return hdr;
   }
 }
- 
+
 async function getZakazniciData(sheets) {
   try { return await getSheetData(sheets, 'Zákazníci'); }
   catch {
@@ -270,9 +270,61 @@ async function getZakazniciData(sheets) {
     return rows;
   }
 }
- 
+
+// ── SKLAD (dostupnost produktů) ──
+// Struktura listu Sklad:
+// A: produkt (sirup|bedynka|vajicka), B: dostupne (ano|ne), C: od (datum), D: popis
+const SKLAD_DEFAULT = [
+  ['Produkt','Dostupné','K dispozici od','Popis'],
+  ['sirup','ano','','malinový'],
+  ['bedynka','ne','','Mrkev, brambory, cuketa, salát, bylinky'],
+  ['vajicka','ano','','']
+];
+
+async function getSkladData(sheets) {
+  let data;
+  try { data = await getSheetData(sheets, 'Sklad'); }
+  catch {
+    await sheets.spreadsheets.batchUpdate({ spreadsheetId: SPREADSHEET_ID, requestBody: { requests: [{ addSheet: { properties: { title: 'Sklad' } } }] } });
+    data = [];
+  }
+  // prázdný nebo bez hlavičky → naplň výchozími hodnotami
+  if (!data || data.length === 0 || !data[0] || (data[0][0]||'').toString().toLowerCase().indexOf('produkt') < 0) {
+    await sheets.spreadsheets.values.update({ spreadsheetId: SPREADSHEET_ID, range: 'Sklad!A1:D' + SKLAD_DEFAULT.length, valueInputOption: 'USER_ENTERED', requestBody: { values: SKLAD_DEFAULT } });
+    data = SKLAD_DEFAULT.map(r => r.slice());
+  }
+  return data;
+}
+
+function mapSklad(data) {
+  const out = { sirup:{}, bedynka:{}, vajicka:{} };
+  for (let i = 1; i < data.length; i++) {
+    const key = (data[i][0]||'').toString().trim().toLowerCase();
+    if (!out[key]) continue;
+    out[key] = {
+      dostupne: (data[i][1]||'').toString().trim().toLowerCase() === 'ano',
+      od: fmtDate(data[i][2]),
+      popis: (data[i][3]||'').toString().trim()
+    };
+  }
+  return out;
+}
+
+async function setSklad(sheets, produkt, dostupne, od, popis) {
+  const data = await getSkladData(sheets);
+  let row = -1;
+  for (let i = 1; i < data.length; i++) {
+    if ((data[i][0]||'').toString().trim().toLowerCase() === produkt) { row = i + 1; break; }
+  }
+  if (row === -1) {
+    await sheets.spreadsheets.values.append({ spreadsheetId: SPREADSHEET_ID, range: 'Sklad!A:D', valueInputOption: 'USER_ENTERED', requestBody: { values: [[produkt, dostupne?'ano':'ne', od||'', popis||'']] } });
+  } else {
+    await sheets.spreadsheets.values.update({ spreadsheetId: SPREADSHEET_ID, range: `Sklad!B${row}:D${row}`, valueInputOption: 'USER_ENTERED', requestBody: { values: [[dostupne?'ano':'ne', od||'', popis||'']] } });
+  }
+}
+
 const hdrs = { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' };
- 
+
 exports.handler = async function(event) {
   const p = event.queryStringParameters || {};
   try {
@@ -328,19 +380,28 @@ exports.handler = async function(event) {
       }
       case 'init': {
         // Vše pro start appky v jednom volání
-        const [vajicka, bedynka, sirup, reqData, zakData] = await Promise.all([
+        const [vajicka, bedynka, sirup, reqData, zakData, skladData] = await Promise.all([
           listProduct(sheets, 'vajicka'),
           listProduct(sheets, 'bedynka'),
           listProduct(sheets, 'sirup'),
           getPozadavkyData(sheets),
-          getZakazniciData(sheets)
+          getZakazniciData(sheets),
+          getSkladData(sheets)
         ]);
         result = {
           customers: zakData.length <= 1 ? [] : zakData.slice(1).map(r => ({ jmeno: r[0], maPin: r[1] !== '' && r[1] != null })),
           lists: { vajicka, bedynka, sirup },
-          requests: mapRequests(reqData).filter(r => r.stav !== 'zrušeno')
+          requests: mapRequests(reqData).filter(r => r.stav !== 'zrušeno'),
+          sklad: mapSklad(skladData)
         };
         break;
+      }
+      case 'getSklad': {
+        result = mapSklad(await getSkladData(sheets)); break;
+      }
+      case 'setSklad': {
+        await setSklad(sheets, (p.produkt||'').toLowerCase(), p.dostupne==='ano'||p.dostupne==='true'||p.dostupne==='1', p.od||'', p.popis||'');
+        result = { status: 'ok' }; break;
       }
       case 'history': {
         result = await historyAll(sheets); break;
