@@ -13,7 +13,15 @@ self.addEventListener('push', function(event) {
     renotify: true,
     data: { url: data.url || '/zakaznik' }
   };
-  event.waitUntil(self.registration.showNotification(title, options));
+  var tasks = [ self.registration.showNotification(title, options) ];
+  // Badge na ikoně: u admin objednávek zvedni počítadlo (pokud appka/iOS podporuje)
+  if (data.tag === 'objednavka' && 'setAppBadge' in self.navigator) {
+    tasks.push(
+      (self.__pendingCount = (self.__pendingCount || 0) + 1,
+       self.navigator.setAppBadge(self.__pendingCount).catch(function(){}))
+    );
+  }
+  event.waitUntil(Promise.all(tasks));
 });
 
 self.addEventListener('notificationclick', function(event) {
@@ -27,4 +35,14 @@ self.addEventListener('notificationclick', function(event) {
       if (clients.openWindow) return clients.openWindow(url);
     })
   );
+});
+
+// Appka pošle SW přesný počet (po načtení / odbavení objednávky)
+self.addEventListener('message', function(event) {
+  var d = event.data || {};
+  if (d.type === 'setBadge' && 'setAppBadge' in self.navigator) {
+    self.__pendingCount = d.count || 0;
+    if (d.count > 0) self.navigator.setAppBadge(d.count).catch(function(){});
+    else if ('clearAppBadge' in self.navigator) self.navigator.clearAppBadge().catch(function(){});
+  }
 });
