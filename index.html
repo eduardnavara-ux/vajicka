@@ -661,6 +661,20 @@ function updateBadge(){
   var dot=document.getElementById('TAB_DOT');
   if(pending>0){badge.textContent=pending;badge.style.display='flex';dot.style.display='block';}
   else{badge.style.display='none';dot.style.display='none';}
+  setAppBadge(pending);
+}
+// iOS badge na ikoně appky (počet čekajících objednávek)
+function setAppBadge(count){
+  try{
+    if('setAppBadge' in navigator){
+      if(count>0)navigator.setAppBadge(count).catch(function(){});
+      else if('clearAppBadge' in navigator)navigator.clearAppBadge().catch(function(){});
+    }
+    // pošli i do service workeru (drží počítadlo pro push na pozadí)
+    if(navigator.serviceWorker&&navigator.serviceWorker.controller){
+      navigator.serviceWorker.controller.postMessage({type:'setBadge',count:count});
+    }
+  }catch(e){}
 }
 
 function renderRequests(){
