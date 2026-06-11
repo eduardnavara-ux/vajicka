@@ -992,11 +992,50 @@ function loadInit(){
   });
 }
 
+/* ===== Web Push (admin – nové objednávky) ===== */
+function pushSupported(){
+  return ('serviceWorker' in navigator) && ('PushManager' in window) && ('Notification' in window);
+}
+function urlBase64ToUint8Array(base64){
+  var pad='='.repeat((4-base64.length%4)%4);
+  var b=(base64+pad).replace(/-/g,'+').replace(/_/g,'/');
+  var raw=atob(b);var arr=new Uint8Array(raw.length);
+  for(var i=0;i<raw.length;i++)arr[i]=raw.charCodeAt(i);
+  return arr;
+}
+function initAdminPush(){
+  if(!pushSupported())return;
+  navigator.serviceWorker.register('/sw.js').catch(function(){});
+  if(Notification.permission==='granted'){ subscribeAdminPush(); return; }
+  if(Notification.permission==='default'){
+    // automaticky se zeptá při otevření admin appky
+    Notification.requestPermission().then(function(perm){
+      if(perm==='granted')subscribeAdminPush();
+    });
+  }
+}
+function subscribeAdminPush(){
+  apiFetch({action:'vapidKey'},function(err,res){
+    if(err||!res||!res.key)return;
+    navigator.serviceWorker.ready.then(function(reg){
+      return reg.pushManager.getSubscription().then(function(existing){
+        if(existing)return existing;
+        return reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(res.key)});
+      });
+    }).then(function(sub){
+      if(!sub)return;
+      var json=sub.toJSON();
+      apiFetch({action:'subscribe',jmeno:'__admin__',endpoint:sub.endpoint,p256dh:json.keys.p256dh,auth:json.keys.auth},function(){});
+    }).catch(function(){});
+  });
+}
+
 /* ===== Start ===== */
 buildPanels();
 buildDates();
 if(loadCache())renderAll();
 loadInit();
+initAdminPush();
 </script>
 </body>
 </html>
