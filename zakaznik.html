@@ -607,7 +607,7 @@ function applySyrup(){
 }
 function toggleInfo(which){
   var box=document.getElementById(which+'-info');
-  var s=sklad[which==='box'?'bedynka':'syrup']||{};
+  var s=sklad[which==='box'?'bedynka':'sirup']||{};
   if(box.style.display==='block'){box.style.display='none';return;}
   var html='<div class="lbl">'+(which==='box'?'Co bude v bedýnce':'Příchuť')+'</div>'+esc(s.popis);
   if(which==='box'&&s.od)html+='<div class="from">K objednání od '+esc(s.od)+'</div>';
