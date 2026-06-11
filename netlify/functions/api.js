@@ -53,18 +53,27 @@ function parseDate(val) {
 }
  
 function sendNtfy(jmeno, datum, vajicka, bedynka, sirup) {
-  const https = require('https');
-  let msg = '';
-  if (vajicka > 0) msg += vajicka + ' ks vajíček  ';
-  if (bedynka > 0) msg += bedynka + 'x bedýnka  ';
-  if (sirup > 0) msg += sirup + 'l sirupu  ';
-  msg += '· doručení ' + datum;
-  const body = Buffer.from(msg);
-  const req = https.request({
-    hostname: 'ntfy.sh', port: 443, path: '/' + NTFY_TOPIC, method: 'POST',
-    headers: { 'Title': '🛒 ' + jmeno + ' – nová objednávka', 'Priority': 'high', 'Tags': 'egg', 'Content-Length': body.length }
-  });
-  req.on('error', () => {}); req.write(body); req.end();
+  try {
+    const https = require('https');
+    let msg = '';
+    if (vajicka > 0) msg += vajicka + ' ks vajíček  ';
+    if (bedynka > 0) msg += bedynka + 'x bedýnka  ';
+    if (sirup > 0) msg += sirup + 'l sirupu  ';
+    msg += '· doručení ' + datum;
+    // JSON publish – na rozdíl od HTTP hlaviček zvládá diakritiku i emoji v titulku
+    const body = Buffer.from(JSON.stringify({
+      topic: NTFY_TOPIC,
+      title: '🛒 ' + jmeno + ' – nová objednávka',
+      message: msg,
+      priority: 5,
+      tags: ['egg']
+    }));
+    const req = https.request({
+      hostname: 'ntfy.sh', port: 443, path: '/', method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': body.length }
+    });
+    req.on('error', () => {}); req.write(body); req.end();
+  } catch (e) { /* notifikace nesmí shodit objednávku */ }
 }
  
 async function getSheetData(sheets, sheetName) {
@@ -418,6 +427,24 @@ exports.handler = async function(event) {
       }
       case 'rejectRequest': {
         await sheets.spreadsheets.values.update({ spreadsheetId: SPREADSHEET_ID, range: `Požadavky!I${parseInt(p.radek)}`, valueInputOption: 'USER_ENTERED', requestBody: { values: [['zrušeno']] } });
+        result = { status: 'ok' }; break;
+      }
+      case 'acceptSuggested': {
+        // Zákazník (nebo admin) přijal navržený termín – zapiš objednávku s datem ze sloupce J
+        const data = await getPozadavkyData(sheets);
+        const radek = parseInt(p.radek);
+        const row = data[radek-1];
+        if(!row){result={status:'error',error:'Not found row '+radek};break;}
+        const nd = fmtDate(row[9]);
+        if(!nd){result={status:'error',error:'Žádný navržený termín'};break;}
+        const v=parseInt((row[4]||'0').toString().replace(/\s/g,''))||0;
+        const b=parseInt((row[5]||'0').toString().replace(/\s/g,''))||0;
+        const s=parseFloat((row[6]||'0').toString().replace(/\s/g,'').replace(',','.'))||0;
+        if(v>0) await zpracujObjednavku(sheets,row[1],v,nd,'vajicka');
+        if(b>0) await zpracujObjednavku(sheets,row[1],b,nd,'bedynka');
+        if(s>0) await zpracujObjednavku(sheets,row[1],s,nd,'sirup');
+        await sheets.spreadsheets.values.update({ spreadsheetId: SPREADSHEET_ID, range: `Požadavky!D${radek}`, valueInputOption: 'USER_ENTERED', requestBody: { values: [[nd]] } });
+        await sheets.spreadsheets.values.update({ spreadsheetId: SPREADSHEET_ID, range: `Požadavky!I${radek}`, valueInputOption: 'USER_ENTERED', requestBody: { values: [['potvrzeno']] } });
         result = { status: 'ok' }; break;
       }
       case 'getCustomers': {
