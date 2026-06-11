@@ -178,6 +178,27 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 .eb-save{background:var(--or);color:#fff;}
 .eb-cancel{background:var(--cr);color:var(--br);border:1.5px solid var(--border2);}
 .eb-del{background:var(--rd-soft);color:var(--rd);}
+.sklad-item{border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px;}
+.sklad-head{display:flex;align-items:center;gap:11px;margin-bottom:12px;}
+.sklad-head .pic2{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.sklad-head .pic2 svg{width:19px;height:19px;}
+.sklad-head .nm{flex:1;}
+.sklad-head .nm strong{font-size:15px;font-weight:600;display:block;}
+.sklad-head .nm span{font-size:12px;color:var(--text2);}
+.toggle{width:48px;height:28px;border-radius:50px;border:none;background:var(--border2);position:relative;transition:background .2s;flex-shrink:0;cursor:pointer;}
+.toggle.on{background:var(--gr);}
+.toggle .knob{width:22px;height:22px;border-radius:50%;background:#fff;position:absolute;top:3px;left:3px;transition:left .2s;}
+.toggle.on .knob{left:23px;}
+.sklad-field{margin-top:10px;}
+.sklad-field label{font-size:12px;color:var(--text2);font-weight:600;display:block;margin-bottom:5px;}
+.sklad-field input,.sklad-field textarea{width:100%;border:1.5px solid var(--border2);border-radius:11px;padding:10px 12px;font-size:14px;font-family:'Instrument Sans',sans-serif;color:var(--br);background:var(--card);outline:none;}
+.sklad-field input:focus,.sklad-field textarea:focus{border-color:var(--or);}
+.sklad-field textarea{resize:vertical;min-height:52px;line-height:1.5;}
+.sklad-status{font-size:13px;border-radius:10px;padding:8px 11px;margin-top:10px;}
+.sklad-status.ok{background:var(--gr-soft);color:var(--gr-dark);}
+.sklad-status.off{background:#F1EFE8;color:#5F5E5A;}
+.sklad-save{width:100%;margin-top:12px;padding:12px;background:var(--or);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;transition:transform .15s;}
+.sklad-save:active{transform:scale(.97);}
 #TOAST{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(90px);background:var(--br);color:var(--cr);padding:12px 20px;border-radius:24px;font-size:14px;font-weight:500;transition:transform .3s ease;z-index:2000;white-space:nowrap;box-shadow:0 4px 18px rgba(44,21,0,.25);}
 </style>
 </head>
@@ -214,6 +235,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
     <button class="tab" onclick="setTab(2)">Sirup</button>
     <button class="tab" onclick="setTab(3)">Cashflow</button>
     <button class="tab" onclick="setTab(4)">Objednávky<span class="tab-dot" id="TAB_DOT"></span></button>
+    <button class="tab" onclick="setTab(5)">Sklad</button>
   </div>
 </div>
 
@@ -258,6 +280,14 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
     </div>
   </div>
 
+  <!-- SKLAD -->
+  <div class="panel" id="PANEL_5">
+    <div class="card">
+      <div class="card-title">Dostupnost produktů <small>co vidí zákazníci</small></div>
+      <div id="SKLAD_BODY"><div class="skel" style="height:120px"></div><div class="skel" style="height:120px"></div></div>
+    </div>
+  </div>
+
 </div>
 
 <!-- Edit dialog -->
@@ -294,7 +324,7 @@ var state=[
   {jmeno:null,datum:null},
   {jmeno:null,datum:null}
 ];
-var store={customers:[],lists:{vajicka:null,bedynka:null,sirup:null},requests:null,cashflow:null,history:null};
+var store={customers:[],lists:{vajicka:null,bedynka:null,sirup:null},requests:null,cashflow:null,history:null,sklad:null};
 var dateOptions=[[],[],[]];
 var histOpen=false;
 
@@ -356,12 +386,13 @@ function showToast(msg){
 function setTab(i){
   curTab=i;
   var tabs=document.querySelectorAll('#TABS .tab');
-  for(var k=0;k<5;k++){
+  for(var k=0;k<6;k++){
     tabs[k].classList.toggle('on',k===i);
     document.getElementById('PANEL_'+k).classList.toggle('on',k===i);
   }
   if(i===3)loadCashflow();
   if(i===4){renderRequests();renderDelivAll();}
+  if(i===5)renderSklad();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 var touchStartX=0,touchStartY=0;
@@ -371,7 +402,7 @@ document.getElementById('MAIN').addEventListener('touchend',function(e){
   var dy=e.changedTouches[0].clientY-touchStartY;
   if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*1.5){
     var next=curTab+(dx<0?1:-1);
-    if(next>=0&&next<=4)setTab(next);
+    if(next>=0&&next<=5)setTab(next);
   }
 },{passive:true});
 
@@ -866,8 +897,73 @@ function applyInit(data){
   store.customers=Array.isArray(data.customers)?data.customers:[];
   store.lists=data.lists&&data.lists.vajicka!==undefined?data.lists:store.lists;
   store.requests=Array.isArray(data.requests)?data.requests:store.requests;
+  if(data.sklad)store.sklad=data.sklad;
   saveCache();
   renderAll();
+}
+
+/* ===== Sklad ===== */
+function renderSklad(){
+  var box=document.getElementById('SKLAD_BODY');
+  if(!store.sklad){
+    apiFetch({action:'getSklad'},function(err,d){
+      if(!err&&d&&d.sirup){store.sklad=d;renderSklad();}
+      else box.innerHTML='<div class="empty">Sklad se nepodařilo načíst</div>';
+    });
+    return;
+  }
+  var sk=store.sklad;
+  box.innerHTML=
+    skladItem('bedynka','Bedýnka zeleniny','490 Kč / ks',sk.bedynka||{},true)+
+    skladItem('sirup','Sirup','190 Kč / litr',sk.sirup||{},false)+
+    '<p style="font-size:12px;color:var(--text2);text-align:center;margin-top:4px;">Vajíčka se zde neevidují – jsou vždy k objednání.</p>';
+}
+function skladItem(key,name,price,s,withDate){
+  var on=s.dostupne!==false;
+  return '<div class="sklad-item">'+
+    '<div class="sklad-head">'+prodIcon(key).replace('class="pic"','class="pic2"')+
+      '<div class="nm"><strong>'+name+'</strong><span>'+price+'</span></div>'+
+      '<button class="toggle'+(on?' on':'')+'" id="tg-'+key+'" onclick="toggleSklad(\''+key+'\')" aria-label="Dostupnost"><span class="knob"></span></button>'+
+    '</div>'+
+    (withDate?'<div class="sklad-field" id="fld-od-'+key+'" style="'+(on?'':'display:none')+'"><label>K dispozici od (nech prázdné = ihned)</label><input type="date" id="sk-od-'+key+'" value="'+czToIso(s.od)+'"></div>':'')+
+    '<div class="sklad-field"><label>'+(key==='sirup'?'Příchuť (vidí zákazník v „i")':'Složení / popis (vidí zákazník v „i")')+'</label><textarea id="sk-popis-'+key+'" placeholder="'+(key==='sirup'?'např. malinový':'např. mrkev, brambory, salát…')+'">'+esc(s.popis||'')+'</textarea></div>'+
+    '<div class="sklad-status '+(on?'ok':'off')+'" id="st-'+key+'">'+statusText(key,on,s)+'</div>'+
+    '<button class="sklad-save" onclick="saveSkladItem(\''+key+'\','+withDate+')">Uložit</button>'+
+  '</div>';
+}
+function statusText(key,on,s){
+  if(!on)return key==='sirup'?'Vyprodáno · zákazníci nemohou objednat, vidí telefon':'Vypnuto · zákazníci vidí „Připravujeme"';
+  if(key==='bedynka'&&s.od)return 'Skladem · k objednání od '+s.od;
+  return 'Skladem · zákazníci mohou objednávat';
+}
+function toggleSklad(key){
+  var tg=document.getElementById('tg-'+key);
+  tg.classList.toggle('on');
+  var fld=document.getElementById('fld-od-'+key);
+  if(fld)fld.style.display=tg.classList.contains('on')?'':'none';
+}
+function czToIso(cz){
+  var m=(cz||'').toString().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+  if(!m)return '';
+  return m[3]+'-'+String(m[2]).padStart(2,'0')+'-'+String(m[1]).padStart(2,'0');
+}
+function saveSkladItem(key,withDate){
+  var on=document.getElementById('tg-'+key).classList.contains('on');
+  var popis=document.getElementById('sk-popis-'+key).value.trim();
+  var odCz='';
+  if(withDate){
+    var iso=document.getElementById('sk-od-'+key).value;
+    if(iso){var p=iso.split('-');odCz=parseInt(p[2])+'.'+parseInt(p[1])+'.'+p[0];}
+  }
+  apiFetch({action:'setSklad',produkt:key,dostupne:on?'ano':'ne',od:odCz,popis:popis},function(err,d){
+    if(!err&&d&&d.status==='ok'){
+      store.sklad=store.sklad||{};
+      store.sklad[key]={dostupne:on,od:odCz,popis:popis};
+      document.getElementById('st-'+key).className='sklad-status '+(on?'ok':'off');
+      document.getElementById('st-'+key).textContent=statusText(key,on,store.sklad[key]);
+      showToast('✓ Uloženo');
+    }else showToast('Uložení se nepodařilo');
+  });
 }
 function renderAll(){
   renderCustomers();
