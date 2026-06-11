@@ -2,261 +2,212 @@
 <html lang="cs">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Dvůr Pod Dubem">
-<meta name="theme-color" content="#D4560A">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#FDF6EE">
 <title>Dvůr Pod Dubem – Objednávky</title>
-<link rel="manifest" href="/manifest.json">
-<link rel="apple-touch-icon" href="/leaf.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@700;900&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --orange: #D4560A;
-    --orange-light: #F2A06A;
-    --orange-pale: #FDF0E8;
-    --brown: #3D1F0A;
-    --cream: #FBF7F2;
-    --green: #4A6741;
-    --green-light: #E8F0E6;
-    --text: #2C1A0E;
-    --text-muted: #8C6D57;
-    --border: rgba(212,86,10,0.15);
-    --white: #FFFFFF;
-    --radius: 16px;
-    --radius-sm: 10px;
-    --shadow: 0 4px 24px rgba(61,31,10,0.10);
-    --shadow-lg: 0 8px 40px rgba(61,31,10,0.16);
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+:root{
+  --or:#D4560A;--or-dark:#9E3F06;--or-soft:#FAECE3;
+  --cr:#FDF6EE;--card:#FFFFFF;
+  --br:#2C1500;--text2:#9A7A65;--text3:#C2A88F;
+  --border:#F0E2D0;--border2:#E3CDB4;
+  --gr:#1D9E75;--gr-dark:#0F6E56;--gr-soft:#E4F4EC;
+  --rd:#C62828;--rd-soft:#FCEBEB;
+  --am:#B47208;--am-soft:#FAEEDA;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{width:100%;min-height:100vh;font-family:'Instrument Sans',sans-serif;background:var(--cr);color:var(--br);-webkit-font-smoothing:antialiased;}
+button{font-family:'Instrument Sans',sans-serif;cursor:pointer;}
 
-  /* SPLASH */
-  #splash {
-    position: fixed; inset: 0; z-index: 100;
-    background: var(--brown);
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 20px;
-    transition: opacity 0.6s ease, transform 0.6s ease;
-  }
-  #splash.hide { opacity: 0; transform: scale(1.04); pointer-events: none; }
-  .splash-logo {
-    width: 90px; height: 90px; border-radius: 50%;
-    background: var(--orange);
-    display: flex; align-items: center; justify-content: center;
-    animation: pulse 2.5s ease-in-out infinite;
-  }
-  .splash-logo img { width: 50px; height: 50px; object-fit: contain; filter: brightness(10); }
-  @keyframes pulse {
-    0%,100% { box-shadow: 0 0 0 0 rgba(212,86,10,0.4); }
-    50% { box-shadow: 0 0 0 20px rgba(212,86,10,0); }
-  }
-  .splash-title { font-family: 'Playfair Display', serif; font-size: 32px; color: var(--cream); text-align: center; line-height: 1.2; animation: fadeUp 0.8s ease 0.3s both; }
-  .splash-sub { font-size: 14px; color: var(--orange-light); letter-spacing: 0.12em; text-transform: uppercase; animation: fadeUp 0.8s ease 0.5s both; }
-  @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+/* ===== SPLASH ===== */
+#splash{position:fixed;inset:0;z-index:9999;background:var(--cr);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;transition:opacity .6s ease;}
+#splash.hide{opacity:0;pointer-events:none;}
+#splash-title{font-family:'Fraunces',serif;font-size:clamp(36px,10vw,50px);font-weight:900;line-height:1;letter-spacing:-1px;margin-top:18px;}
+#splash-subtitle{font-family:'Fraunces',serif;font-size:clamp(18px,5vw,24px);font-weight:700;color:var(--or);margin-top:4px;letter-spacing:.5px;}
+#splash-tag{font-size:13px;color:var(--text2);margin-top:14px;letter-spacing:.08em;text-transform:uppercase;}
 
-  /* SCREENS */
-  .screen { display: none; min-height: 100vh; }
-  .screen.active { display: flex; flex-direction: column; }
+/* ===== OBRAZOVKY ===== */
+.screen{display:none;min-height:100vh;}
+.screen.on{display:flex;flex-direction:column;}
 
-  /* LOGIN */
-  #screen-login { background: var(--cream); align-items: center; justify-content: center; padding: 24px; }
-  .login-card { width: 100%; max-width: 400px; background: var(--white); border-radius: 24px; box-shadow: var(--shadow-lg); overflow: hidden; animation: fadeUp 0.5s ease both; }
-  .login-header { background: var(--brown); padding: 32px 28px 24px; text-align: center; }
-  .login-header img { width: 48px; margin-bottom: 12px; filter: brightness(10); }
-  .login-header h1 { font-family: 'Playfair Display', serif; font-size: 24px; color: var(--cream); font-weight: 600; }
-  .login-header p { font-size: 13px; color: var(--orange-light); margin-top: 4px; }
-  .login-body { padding: 28px; }
-  .login-body label { font-size: 12px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; display: block; margin-bottom: 6px; }
-  .login-body input, .login-body select {
-    width: 100%; padding: 12px 14px;
-    border: 1.5px solid var(--border); border-radius: var(--radius-sm);
-    font-family: 'DM Sans', sans-serif; font-size: 15px; color: var(--text);
-    background: var(--cream); outline: none; transition: border-color 0.2s; appearance: none;
-  }
-  .login-body input:focus, .login-body select:focus { border-color: var(--orange); }
-  .login-body select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238C6D57' stroke-width='1.5' fill='none'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; }
-  .field-group { margin-bottom: 18px; }
-  .btn-primary { width: 100%; padding: 14px; background: var(--orange); color: white; border: none; border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; cursor: pointer; transition: background 0.2s, transform 0.1s; margin-top: 4px; }
-  .btn-primary:active { transform: scale(0.98); background: #B84508; }
-  .login-error { font-size: 13px; color: #C0392B; margin-top: 10px; text-align: center; display: none; }
-  .login-step { display: none; }
-  .login-step.active { display: block; }
-  .step-title { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--text); margin-bottom: 20px; }
+/* ===== PŘIHLÁŠENÍ ===== */
+#screen-login{align-items:center;justify-content:center;padding:24px;}
+.login-card{width:100%;max-width:380px;background:var(--card);border:1px solid var(--border);border-radius:24px;overflow:hidden;}
+.login-head{padding:28px 24px 20px;text-align:center;border-bottom:1px solid var(--border);}
+.login-head img{width:54px;height:54px;}
+.login-head h1{font-family:'Fraunces',serif;font-size:22px;font-weight:900;margin-top:10px;}
+.login-head p{font-size:13px;color:var(--text2);margin-top:3px;}
+.login-body{padding:24px;}
+.flabel{font-size:12px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:7px;display:block;}
+.login-body input,.login-body select{width:100%;padding:12px 14px;border:1.5px solid var(--border2);border-radius:12px;font-family:'Instrument Sans',sans-serif;font-size:15px;color:var(--br);background:var(--card);outline:none;appearance:none;transition:border-color .2s;}
+.login-body input:focus,.login-body select:focus{border-color:var(--or);box-shadow:0 0 0 3px rgba(212,86,10,.1);}
+.login-body select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239A7A65' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;}
+.fgroup{margin-bottom:16px;}
+.or-divider{text-align:center;font-size:12px;color:var(--text3);margin:4px 0 16px;}
+.btn-primary{width:100%;padding:14px;background:var(--or);color:#fff;border:none;border-radius:13px;font-family:'Fraunces',serif;font-size:16px;font-weight:700;transition:transform .15s;box-shadow:0 4px 14px rgba(212,86,10,.22);}
+.btn-primary:active{transform:scale(.97);}
+.btn-back{width:100%;margin-top:8px;padding:10px;background:none;border:none;color:var(--text2);font-size:14px;}
+.login-error{font-size:13px;color:var(--rd);margin-top:10px;text-align:center;display:none;}
+.login-step{display:none;}
+.login-step.on{display:block;}
+.step-title{font-family:'Fraunces',serif;font-size:18px;margin-bottom:16px;}
 
-  /* APP */
-  #screen-app { background: var(--cream); }
-  .app-header { background: var(--brown); padding: 16px 20px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 50; }
-  .app-header img { width: 32px; filter: brightness(10); }
-  .app-header-title { flex: 1; }
-  .app-header-title h2 { font-family: 'Playfair Display', serif; font-size: 17px; color: var(--cream); }
-  .app-header-title p { font-size: 12px; color: var(--orange-light); }
-  .btn-logout { background: rgba(255,255,255,0.12); border: none; color: var(--cream); font-size: 12px; font-family: 'DM Sans', sans-serif; padding: 6px 12px; border-radius: 20px; cursor: pointer; }
-  .tabs { display: flex; background: var(--white); border-bottom: 1px solid var(--border); position: sticky; top: 65px; z-index: 40; }
-  .tab-btn { flex: 1; padding: 14px 8px; background: none; border: none; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; color: var(--text-muted); cursor: pointer; border-bottom: 2.5px solid transparent; transition: all 0.2s; }
-  .tab-btn.active { color: var(--orange); border-bottom-color: var(--orange); }
-  .tab-content { display: none; flex: 1; }
-  .tab-content.active { display: block; }
+/* ===== APPKA ===== */
+.hdr{background:var(--cr);padding:calc(env(safe-area-inset-top,0px) + 14px) 18px 0;position:sticky;top:0;z-index:100;border-bottom:1px solid var(--border);}
+.hdr-row{max-width:560px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.brand{display:flex;align-items:center;gap:10px;min-width:0;}
+.brand-logo{width:40px;height:40px;border-radius:50%;background:var(--or-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.brand-logo img{width:26px;height:26px;}
+.brand-name{font-family:'Fraunces',serif;font-size:18px;font-weight:900;line-height:1.1;white-space:nowrap;}
+.brand-sub{font-size:12px;color:var(--text2);line-height:1.2;}
+.btn-logout{border:1.5px solid var(--border2);background:var(--card);color:var(--text2);font-size:13px;padding:8px 14px;border-radius:50px;flex-shrink:0;}
+.tabs{max-width:560px;margin:0 auto;display:flex;gap:7px;justify-content:center;padding:12px 0 14px;}
+.tab{border:1.5px solid var(--border2);background:var(--card);color:var(--text2);padding:8px 16px;border-radius:50px;font-size:14px;font-weight:500;transition:all .18s;}
+.tab.on{background:var(--or);border-color:var(--or);color:#fff;font-weight:600;}
+.tab:active{transform:scale(.95);}
+.main{padding:16px 14px calc(env(safe-area-inset-bottom,0px) + 40px);max-width:560px;margin:0 auto;width:100%;}
+.panel{display:none;}
+.panel.on{display:block;animation:fadeIn .25s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:11px;}
 
-  /* ORDER */
-  #tab-order { padding: 20px 16px; }
-  .section-label { font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; }
-  .product-card { background: var(--white); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 14px; }
-  .product-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
-  .product-info { flex: 1; }
-  .product-info h3 { font-size: 15px; font-weight: 500; color: var(--text); }
-  .product-info p { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-  .product-qty { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
-  .qty-row { display: flex; align-items: center; gap: 8px; }
-  .qty-btn { width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid var(--border); background: var(--cream); color: var(--orange); font-size: 18px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: 500; transition: background 0.15s; }
-  .qty-btn:active { background: var(--orange-pale); }
-  .qty-input { width: 52px; text-align: center; border: 1.5px solid var(--border); border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; color: var(--text); padding: 4px; background: var(--cream); outline: none; }
-  .qty-input:focus { border-color: var(--orange); }
-  .qty-price { font-size: 12px; color: var(--text-muted); }
-  .syrup-options { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
-  .syrup-btn { padding: 6px 14px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--cream); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; transition: all 0.15s; }
-  .syrup-btn.active { background: var(--orange); color: white; border-color: var(--orange); }
-  .date-card { background: var(--white); border-radius: var(--radius); padding: 16px; margin-bottom: 20px; box-shadow: var(--shadow); }
-  .date-card label { font-size: 13px; color: var(--text-muted); display: block; margin-bottom: 8px; }
-  .date-card input[type=date] { width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 15px; color: var(--text); background: var(--cream); outline: none; }
-  .date-card input[type=date]:focus { border-color: var(--orange); }
-  .summary-card { background: var(--orange-pale); border: 1.5px solid rgba(212,86,10,0.2); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; }
-  .summary-row { display: flex; justify-content: space-between; font-size: 14px; color: var(--text); padding: 4px 0; }
-  .summary-row.total { border-top: 1px solid rgba(212,86,10,0.2); margin-top: 8px; padding-top: 10px; font-size: 16px; font-weight: 500; }
-  .summary-row.total span:last-child { color: var(--orange); }
-  .summary-empty { font-size: 13px; color: var(--text-muted); text-align: center; padding: 8px 0; }
-  .btn-order { width: 100%; padding: 16px; background: var(--orange); color: white; border: none; border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 500; cursor: pointer; transition: background 0.2s, transform 0.1s; margin-bottom: 32px; }
-  .btn-order:active { transform: scale(0.98); }
-  .btn-order:disabled { background: #ccc; cursor: not-allowed; }
+/* ===== PRODUKTY ===== */
+.prod-row{display:flex;align-items:center;gap:12px;}
+.pic{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.pic svg{width:19px;height:19px;}
+.prod-info{flex:1;min-width:0;}
+.prod-info h3{font-size:15px;font-weight:600;}
+.prod-info p{font-size:12px;color:var(--text2);margin-top:1px;}
+.qty-row{display:flex;align-items:center;gap:8px;}
+.qty-btn{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--border2);background:var(--card);color:var(--br);font-size:18px;font-weight:500;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.qty-btn:active{transform:scale(.9);background:var(--cr);}
+.qty-input{width:52px;text-align:center;border:1.5px solid var(--border2);border-radius:10px;font-family:'Instrument Sans',sans-serif;font-size:17px;font-weight:600;color:var(--br);padding:5px 2px;background:var(--card);outline:none;}
+.qty-input:focus{border-color:var(--or);}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
+input[type=number]{-moz-appearance:textfield;appearance:textfield;}
+.syrup-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:11px;}
+.syrup-btn{padding:7px 14px;border-radius:50px;border:1.5px solid var(--border2);background:var(--card);color:var(--text2);font-size:13px;transition:all .15s;}
+.syrup-btn.on{background:var(--or-soft);border:2px solid var(--or);color:var(--or-dark);font-weight:600;padding:6.5px 13.5px;}
+.syrup-btn:active{transform:scale(.95);}
 
-  /* HISTORY */
-  #tab-history { padding: 20px 16px; }
-  .order-item { background: var(--white); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow); animation: fadeUp 0.3s ease both; }
-  .order-item-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-  .order-date { font-size: 13px; color: var(--text-muted); }
-  .order-delivery { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-  .order-status { font-size: 11px; font-weight: 500; padding: 4px 10px; border-radius: 20px; white-space: nowrap; }
-  .status-pending { background: #FEF3CD; color: #856404; }
-  .status-confirmed { background: #D1ECF1; color: #0C5460; }
-  .status-delivered { background: var(--green-light); color: var(--green); }
-  .status-suggested { background: #FFE5D0; color: #7D3A00; }
-  .status-cancelled { background: #FFCDD2; color: #B71C1C; }
-  .order-products { border-top: 1px solid var(--border); padding-top: 10px; }
-  .order-product-row { display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; color: var(--text); }
-  .order-total { display: flex; justify-content: space-between; font-size: 14px; font-weight: 500; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
-  .order-total span:last-child { color: var(--orange); }
-  .order-suggested-date { margin-top: 10px; padding: 10px 12px; background: #FFF3E0; border-radius: var(--radius-sm); font-size: 13px; color: #7D3A00; }
-  .empty-state { text-align: center; padding: 48px 24px; color: var(--text-muted); }
-  .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
-  .empty-state p { font-size: 14px; }
+/* ===== TERMÍNY ===== */
+.flabel-block{font-size:12px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin:16px 0 8px;}
+.dates-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:9px;}
+.date-btn{padding:9px 2px;border:1.5px solid var(--border2);border-radius:12px;background:var(--card);text-align:center;transition:all .15s;line-height:1.3;}
+.date-btn:active{transform:scale(.93);}
+.date-btn .dn{font-size:13px;font-weight:600;color:var(--br);display:block;}
+.date-btn .dd{font-size:11px;color:var(--text2);display:block;margin-top:1px;}
+.date-btn.on{background:var(--gr-soft);border:2px solid var(--gr);padding:8.5px 1.5px;}
+.date-btn.on .dn{color:var(--gr-dark);}
+.date-btn.on .dd{color:var(--gr);}
+.other-date{display:flex;align-items:center;gap:9px;}
+.other-date label{font-size:12px;color:var(--text2);white-space:nowrap;}
+.other-date input{flex:1;border:1.5px solid var(--border2);border-radius:11px;padding:9px 12px;font-size:14px;font-family:'Instrument Sans',sans-serif;color:var(--br);background:var(--card);outline:none;min-width:0;}
+.other-date input:focus{border-color:var(--or);}
 
-  /* TOAST */
-  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--brown); color: var(--cream); padding: 12px 20px; border-radius: 24px; font-size: 14px; font-weight: 500; transition: transform 0.3s ease; z-index: 200; white-space: nowrap; box-shadow: var(--shadow-lg); }
-  .toast.show { transform: translateX(-50%) translateY(0); }
+/* ===== SOUHRN ===== */
+.sum-row{display:flex;justify-content:space-between;font-size:14px;padding:3px 0;}
+.sum-row.total{font-size:15px;font-weight:600;border-top:1px solid var(--border);margin-top:7px;padding-top:9px;}
+.sum-row.total span:last-child{color:var(--or-dark);}
+.sum-empty{font-size:13px;color:var(--text2);text-align:center;padding:6px 0;}
+.btn-order{width:100%;padding:16px;background:var(--or);color:#fff;border:none;border-radius:15px;font-family:'Fraunces',serif;font-size:17px;font-weight:700;transition:all .18s;box-shadow:0 4px 16px rgba(212,86,10,.25);margin-top:3px;}
+.btn-order:active{transform:scale(.97);}
+.btn-order:disabled{background:var(--text3);box-shadow:none;cursor:not-allowed;}
 
-  /* LOADING */
-  .loading { text-align: center; padding: 32px; color: var(--text-muted); font-size: 14px; }
-  .spinner { width: 24px; height: 24px; border: 2px solid var(--border); border-top-color: var(--orange); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 12px; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+/* ===== HISTORIE ===== */
+.badge{font-size:11px;font-weight:600;padding:4px 10px;border-radius:50px;white-space:nowrap;}
+.badge.pend{background:var(--am-soft);color:var(--am);}
+.badge.conf{background:var(--gr-soft);color:var(--gr-dark);}
+.badge.sugg{background:#FFE5D0;color:#7D3A00;}
+.badge.canc{background:var(--rd-soft);color:var(--rd);}
+.ord-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:9px;}
+.ord-meta{font-size:12px;color:var(--text2);}
+.sugg-box{margin-top:10px;padding:11px 13px;background:var(--or-soft);border-radius:12px;font-size:13px;color:var(--or-dark);line-height:1.45;}
+.ord-actions{display:flex;gap:8px;margin-top:11px;}
+.ord-btn{flex:1;padding:11px 6px;border:none;border-radius:12px;font-size:13.5px;font-weight:600;transition:transform .15s;}
+.ord-btn:active{transform:scale(.96);}
+.ob-ok{background:var(--gr);color:#fff;}
+.ob-no{background:none;border:1.5px solid #F5C9C9;color:var(--rd);}
+.empty{text-align:center;color:var(--text2);font-size:14px;padding:32px 16px;line-height:1.6;}
+.skel{height:90px;border-radius:18px;background:linear-gradient(90deg,var(--border) 25%,#F7EDDF 50%,var(--border) 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;margin-bottom:11px;}
+@keyframes shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
 
-  /* CONFIRM DIALOG */
-  .dialog-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 300; display: flex; align-items: flex-end; justify-content: center; padding: 16px; animation: fadeIn 0.2s ease; }
-  .dialog-overlay.hide { display: none; }
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  .dialog-box { background: var(--white); border-radius: 24px; padding: 24px; width: 100%; max-width: 420px; box-shadow: var(--shadow-lg); animation: slideUp 0.25s ease; }
-  @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-  .dialog-title { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--text); margin-bottom: 8px; }
-  .dialog-body { font-size: 14px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5; }
-  .dialog-summary { background: var(--orange-pale); border-radius: 12px; padding: 12px; margin-bottom: 20px; font-size: 14px; }
-  .dialog-summary-row { display: flex; justify-content: space-between; padding: 3px 0; color: var(--text); }
-  .dialog-summary-row.total { font-weight: 600; border-top: 1px solid rgba(212,86,10,0.2); margin-top: 6px; padding-top: 8px; }
-  .dialog-summary-row.total span:last-child { color: var(--orange); }
-  .dialog-btns { display: flex; gap: 10px; }
-  .dialog-btn { flex: 1; padding: 14px; border: none; border-radius: 12px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
-  .dialog-btn:active { transform: scale(0.97); }
-  .dialog-btn-cancel { background: var(--cream); color: var(--text-muted); border: 1.5px solid var(--border) !important; }
-  .dialog-btn-confirm { background: var(--orange); color: white; }
-
-  /* CANCEL ORDER BUTTON */
-  .btn-cancel-order { width: 100%; padding: 10px; background: none; border: 1.5px solid #FFCDD2; border-radius: 10px; color: #C62828; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; margin-top: 10px; transition: all 0.15s; }
-  .btn-cancel-order:active { background: #FFEBEE; }
+/* ===== DIALOG / TOAST ===== */
+.dialog-overlay{position:fixed;inset:0;background:rgba(44,21,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:24px;}
+.dialog-box{background:var(--card);border-radius:20px;padding:22px;width:100%;max-width:340px;}
+.dialog-box h3{font-family:'Fraunces',serif;font-size:19px;margin-bottom:4px;}
+.dialog-box>p{font-size:13px;color:var(--text2);margin-bottom:13px;}
+.dialog-sum{background:var(--cr);border-radius:12px;padding:11px 13px;margin-bottom:16px;}
+.dialog-btns{display:flex;gap:8px;}
+.dialog-btns button{flex:1;padding:13px 6px;border:none;border-radius:12px;font-size:14px;font-weight:600;}
+.db-cancel{background:var(--cr);color:var(--br);border:1.5px solid var(--border2) !important;}
+.db-ok{background:var(--or);color:#fff;}
+#TOAST{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(90px);background:var(--br);color:var(--cr);padding:12px 20px;border-radius:24px;font-size:14px;font-weight:500;transition:transform .3s ease;z-index:2000;white-space:nowrap;box-shadow:0 4px 18px rgba(44,21,0,.25);}
 </style>
 </head>
 <body>
 
-<!-- SPLASH -->
+<!-- ===== SPLASH ===== -->
 <div id="splash">
-  <div class="splash-logo"><img src="leaf.png" alt="list"></div>
-  <div class="splash-title">Dvůr<br>Pod Dubem</div>
-  <div class="splash-sub">Čerstvé z naší farmy</div>
+  <img src="leaf-logo.png" alt="" width="100" height="100">
+  <div id="splash-title">Dvůr</div>
+  <div id="splash-subtitle">Pod Dubem</div>
+  <div id="splash-tag">Čerstvé z naší farmy</div>
 </div>
 
-<!-- POTVRZOVACÍ DIALOG -->
-<div class="dialog-overlay hide" id="confirm-dialog">
-  <div class="dialog-box">
-    <div class="dialog-title">Potvrdit objednávku?</div>
-    <div class="dialog-body">Zkontrolujte prosím svou objednávku:</div>
-    <div class="dialog-summary" id="dialog-summary"></div>
-    <div class="dialog-btns">
-      <button class="dialog-btn dialog-btn-cancel" onclick="closeConfirmDialog()">Zpět</button>
-      <button class="dialog-btn dialog-btn-confirm" onclick="confirmAndSubmit()">Odeslat ✓</button>
-    </div>
-  </div>
-</div>
-
-<!-- LOGIN -->
+<!-- ===== PŘIHLÁŠENÍ ===== -->
 <div id="screen-login" class="screen">
   <div class="login-card">
-    <div class="login-header">
-      <img src="leaf.png" alt="logo">
+    <div class="login-head">
+      <img src="leaf-logo.png" alt="">
       <h1>Dvůr Pod Dubem</h1>
-      <p id="login-subtitle">Přihlaste se pro objednávku</p>
+      <p id="login-subtitle">Přihlas se pro objednávku</p>
     </div>
     <div class="login-body">
 
-      <!-- KROK 1: Výběr jména -->
-      <div class="login-step active" id="step-name">
-        <div class="field-group">
-          <label>Vyberte své jméno</label>
+      <div class="login-step on" id="step-name">
+        <div class="fgroup">
+          <label class="flabel" for="name-select">Vyber své jméno</label>
           <select id="name-select"><option value="">— načítám… —</option></select>
         </div>
-        <div style="text-align:center; font-size:12px; color:var(--text-muted); margin: 8px 0;">nebo</div>
-        <div class="field-group">
-          <label>Nový zákazník – zadejte jméno</label>
-          <input type="text" id="name-new" placeholder="Vaše jméno">
+        <div class="or-divider">nebo</div>
+        <div class="fgroup">
+          <label class="flabel" for="name-new">Nový zákazník – zadej jméno</label>
+          <input type="text" id="name-new" placeholder="Tvoje jméno">
         </div>
-        <button class="btn-primary" onclick="handleStepName()">Pokračovat →</button>
+        <button class="btn-primary" onclick="handleStepName()">Pokračovat</button>
         <div class="login-error" id="error-name"></div>
       </div>
 
-      <!-- KROK 2a: Přihlášení existujícího zákazníka -->
       <div class="login-step" id="step-pin">
-        <p class="step-title">Zadejte PIN</p>
-        <div class="field-group">
-          <label>PIN</label>
-          <input type="password" id="pin-input" inputmode="numeric" maxlength="6" placeholder="Váš PIN">
+        <p class="step-title">Zadej PIN</p>
+        <div class="fgroup">
+          <label class="flabel" for="pin-input">PIN</label>
+          <input type="password" id="pin-input" inputmode="numeric" maxlength="6" placeholder="Tvůj PIN">
         </div>
         <button class="btn-primary" onclick="handleStepPin()">Přihlásit se</button>
-        <button onclick="goBackToName()" style="width:100%;margin-top:10px;padding:10px;background:none;border:none;color:var(--text-muted);font-size:14px;cursor:pointer;">← Zpět</button>
+        <button class="btn-back" onclick="goBackToName()">← Zpět</button>
         <div class="login-error" id="error-pin"></div>
       </div>
 
-      <!-- KROK 2b: Nový zákazník – vytvoření PINu -->
       <div class="login-step" id="step-newpin">
-        <p class="step-title">Vytvořte si PIN</p>
-        <div class="field-group">
-          <label>Nový PIN (4–6 číslic)</label>
-          <input type="password" id="pin-new" inputmode="numeric" maxlength="6" placeholder="Zvolte PIN">
+        <p class="step-title">Vytvoř si PIN</p>
+        <div class="fgroup">
+          <label class="flabel" for="pin-new">Nový PIN (4–6 číslic)</label>
+          <input type="password" id="pin-new" inputmode="numeric" maxlength="6" placeholder="Zvol PIN">
         </div>
-        <div class="field-group">
-          <label>Potvrďte PIN</label>
-          <input type="password" id="pin-confirm" inputmode="numeric" maxlength="6" placeholder="Zopakujte PIN">
+        <div class="fgroup">
+          <label class="flabel" for="pin-confirm">Potvrď PIN</label>
+          <input type="password" id="pin-confirm" inputmode="numeric" maxlength="6" placeholder="Zopakuj PIN">
         </div>
         <button class="btn-primary" onclick="handleNewPin()">Zaregistrovat se</button>
-        <button onclick="goBackToName()" style="width:100%;margin-top:10px;padding:10px;background:none;border:none;color:var(--text-muted);font-size:14px;cursor:pointer;">← Zpět</button>
+        <button class="btn-back" onclick="goBackToName()">← Zpět</button>
         <div class="login-error" id="error-newpin"></div>
       </div>
 
@@ -264,501 +215,455 @@
   </div>
 </div>
 
-<!-- MAIN APP -->
+<!-- ===== APPKA ===== -->
 <div id="screen-app" class="screen">
-  <div class="app-header">
-    <img src="leaf.png" alt="logo">
-    <div class="app-header-title">
-      <h2>Dvůr Pod Dubem</h2>
-      <p id="header-name">Přihlášen: —</p>
-    </div>
-    <button class="btn-logout" onclick="logout()">Odhlásit</button>
-  </div>
-  <div class="tabs">
-    <button class="tab-btn active" id="tabBtn-order" onclick="switchTab('order')">🛒 Objednat</button>
-    <button class="tab-btn" id="tabBtn-history" onclick="switchTab('history')">📋 Moje objednávky</button>
-  </div>
-
-  <!-- TAB: ORDER -->
-  <div class="tab-content active" id="tab-order">
-    <div style="padding: 20px 16px 0;"><div class="section-label">Produkty</div></div>
-    <div style="padding: 0 16px;">
-
-      <!-- Vajíčka -->
-      <div class="product-card">
-        <div class="product-icon" style="background:#FEF3CD;">🥚</div>
-        <div class="product-info">
-          <h3>Vajíčka</h3>
-          <p id="egg-price-label">— Kč / ks</p>
+  <div class="hdr">
+    <div class="hdr-row">
+      <div class="brand">
+        <div class="brand-logo"><img src="leaf-logo.png" alt=""></div>
+        <div>
+          <div class="brand-name">Dvůr pod Dubem</div>
+          <div class="brand-sub" id="header-name"></div>
         </div>
-        <div class="product-qty">
+      </div>
+      <button class="btn-logout" onclick="logout()">Odhlásit</button>
+    </div>
+    <div class="tabs">
+      <button class="tab on" id="tabBtn-order" onclick="switchTab('order')">Objednat</button>
+      <button class="tab" id="tabBtn-history" onclick="switchTab('history')">Moje objednávky</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- OBJEDNAT -->
+    <div class="panel on" id="panel-order">
+      <div class="card">
+        <div class="prod-row">
+          <div class="pic" style="background:var(--or-soft);color:var(--or-dark)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3C8.7 3 6 8.4 6 13a6 6 0 0 0 12 0c0-4.6-2.7-10-6-10Z"/></svg></div>
+          <div class="prod-info"><h3>Vajíčka</h3><p id="egg-price-label">— Kč / ks</p></div>
           <div class="qty-row">
-            <button class="qty-btn" onclick="changeQty('eggs',-1)">−</button>
+            <button class="qty-btn" onclick="changeQty('eggs',-1)" aria-label="Ubrat">−</button>
             <input class="qty-input" type="number" id="qty-eggs" value="0" min="0" max="999" inputmode="numeric" oninput="updateSummary()">
-            <button class="qty-btn" onclick="changeQty('eggs',1)">+</button>
+            <button class="qty-btn" onclick="changeQty('eggs',1)" aria-label="Přidat">+</button>
           </div>
-          <div class="qty-price" id="eggs-subtotal">0 Kč</div>
         </div>
       </div>
 
-      <!-- Bedýnka -->
-      <div class="product-card">
-        <div class="product-icon" style="background:#E8F0E6;">🥦</div>
-        <div class="product-info">
-          <h3>Bedýnka zeleniny</h3>
-          <p>490 Kč / ks</p>
-        </div>
-        <div class="product-qty">
+      <div class="card">
+        <div class="prod-row">
+          <div class="pic" style="background:var(--gr-soft);color:var(--gr-dark)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 10h15l-1.4 8.5h-12.2L4.5 10Z"/><path d="M8.5 10l3.5-5.5L15.5 10"/></svg></div>
+          <div class="prod-info"><h3>Bedýnka zeleniny</h3><p>490 Kč / ks</p></div>
           <div class="qty-row">
-            <button class="qty-btn" onclick="changeQty('box',-1)">−</button>
+            <button class="qty-btn" onclick="changeQty('box',-1)" aria-label="Ubrat">−</button>
             <input class="qty-input" type="number" id="qty-box" value="0" min="0" max="99" inputmode="numeric" oninput="updateSummary()">
-            <button class="qty-btn" onclick="changeQty('box',1)">+</button>
+            <button class="qty-btn" onclick="changeQty('box',1)" aria-label="Přidat">+</button>
           </div>
-          <div class="qty-price" id="box-subtotal">0 Kč</div>
         </div>
       </div>
 
-      <!-- Sirup -->
-      <div class="product-card" style="flex-direction:column;align-items:flex-start;">
-        <div style="display:flex;align-items:center;gap:14px;width:100%;">
-          <div class="product-icon" style="background:#FAECE7;">🍶</div>
-          <div class="product-info"><h3>Sirup</h3><p>190 Kč / litr</p></div>
-          <div style="margin-left:auto;font-size:14px;font-weight:500;color:var(--orange);" id="syrup-subtotal">0 Kč</div>
+      <div class="card">
+        <div class="prod-row">
+          <div class="pic" style="background:#F0EAF8;color:#5A3C96"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M10 3h4v3l1.5 2.2V20a1.5 1.5 0 0 1-1.5 1.5h-4A1.5 1.5 0 0 1 8.5 20V8.2L10 6V3Z"/></svg></div>
+          <div class="prod-info"><h3>Sirup</h3><p>190 Kč / litr</p></div>
         </div>
-        <div class="syrup-options" style="margin-left:62px;margin-top:4px;">
-          <button class="syrup-btn active" onclick="setSyrup(0)" id="syrup-0">Žádný</button>
-          <button class="syrup-btn" onclick="setSyrup(0.5)" id="syrup-05">0,5 l — 95 Kč</button>
-          <button class="syrup-btn" onclick="setSyrup(1)" id="syrup-1">1 l — 190 Kč</button>
-          <button class="syrup-btn" onclick="setSyrup(1.5)" id="syrup-15">1,5 l — 285 Kč</button>
-          <button class="syrup-btn" onclick="setSyrup(2)" id="syrup-2">2 l — 380 Kč</button>
+        <div class="syrup-chips">
+          <button class="syrup-btn on" onclick="setSyrup(0,this)">Žádný</button>
+          <button class="syrup-btn" onclick="setSyrup(0.5,this)">0,5 l</button>
+          <button class="syrup-btn" onclick="setSyrup(1,this)">1 l</button>
+          <button class="syrup-btn" onclick="setSyrup(1.5,this)">1,5 l</button>
+          <button class="syrup-btn" onclick="setSyrup(2,this)">2 l</button>
         </div>
       </div>
-    </div>
 
-    <!-- Datum -->
-    <div style="padding: 0 16px; margin-top: 4px;">
-      <div class="date-card">
-        <label>Preferované datum doručení</label>
-        <input type="date" id="delivery-date" min="">
-      </div>
-    </div>
+      <div class="flabel-block">Doručit dne</div>
+      <div id="DG" class="dates-grid"></div>
+      <div class="other-date"><label for="OD">Jiné datum</label><input type="date" id="OD" onchange="sOD(this)"></div>
 
-    <!-- Souhrn -->
-    <div style="padding: 0 16px;">
-      <div class="section-label">Souhrn objednávky</div>
-      <div class="summary-card">
-        <div class="summary-empty" id="summary-empty">Zatím nic nevybráno.</div>
+      <div class="flabel-block">Souhrn objednávky</div>
+      <div class="card">
+        <div class="sum-empty" id="summary-empty">Zatím nic nevybráno.</div>
         <div id="summary-rows"></div>
-        <div class="summary-row total" id="summary-total" style="display:none;">
-          <span>Celkem</span><span id="total-price">0 Kč</span>
-        </div>
+        <div class="sum-row total" id="summary-total" style="display:none;"><span>Celkem</span><span id="total-price">0 Kč</span></div>
       </div>
-      <button class="btn-order" id="btn-order" onclick="submitOrder()" disabled>Odeslat objednávku</button>
+      <button class="btn-order" id="btn-order" onclick="openConfirm()" disabled>Odeslat objednávku</button>
     </div>
-  </div>
 
-  <!-- TAB: HISTORY -->
-  <div class="tab-content" id="tab-history">
-    <div id="history-content">
-      <div class="loading"><div class="spinner"></div>Načítám objednávky…</div>
+    <!-- MOJE OBJEDNÁVKY -->
+    <div class="panel" id="panel-history">
+      <div id="history-content"><div class="skel"></div><div class="skel"></div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Potvrzovací dialog -->
+<div class="dialog-overlay" id="confirm-dialog" style="display:none;" onclick="if(event.target===this)closeConfirm()">
+  <div class="dialog-box">
+    <h3>Potvrdit objednávku?</h3>
+    <p>Zkontroluj prosím svou objednávku:</p>
+    <div class="dialog-sum" id="dialog-summary"></div>
+    <div class="dialog-btns">
+      <button class="db-cancel" onclick="closeConfirm()">Zpět</button>
+      <button class="db-ok" onclick="confirmAndSubmit()">Odeslat</button>
     </div>
   </div>
 </div>
 
-<!-- TOAST -->
-<div class="toast" id="toast"></div>
-
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZaaphaylwXDNFgNUGALSyz3_wnlAHarKMtXpCKkDCFMATP03k54_f9F8vUdQDD70RcA/exec';
-const SESSION_KEY = 'dvur_session'; // localStorage = pamatuje přihlášení i po zavření prohlížeče
-const DISCOUNT_CUSTOMERS = ['Danča','Kristýna','Renata','Andrea','Marcela','Dáša'];
-const EGG_PRICE_STD = 10;
-const EGG_PRICE_DISC = 9;
-const BOX_PRICE = 490;
-const SYRUP_PRICE = 190;
+'use strict';
 
-let currentUser = null;
-let syrupLiters = 0;
-let customerList = []; // [{jmeno, maPin}]
-let pendingName = ''; // jméno čekající na PIN
-let isNewCustomer = false;
+var API='/.netlify/functions/api';
+var SESSION_KEY='dvur_session';
+var DISCOUNT_CUSTOMERS=['Danča','Kristýna','Renata','Andrea','Marcela','Dáša'];
+var EGG_PRICE_STD=10,EGG_PRICE_DISC=9,BOX_PRICE=490,SYRUP_PRICE=190;
+var DNY=['Ne','Po','Út','St','Čt','Pá','So'];
 
-function api(params) {
-  const qs = Object.keys(params).map(k => k + '=' + encodeURIComponent(params[k])).join('&');
-  return fetch('/.netlify/functions/api?' + qs).then(r => r.json());
+var currentUser=null;
+var syrupLiters=0;
+var customerList=[];
+var pendingName='';
+var selectedDate=null;
+var pendingOrder=null;
+
+function api(params){
+  var qs=Object.keys(params).map(function(k){return k+'='+encodeURIComponent(params[k]);}).join('&');
+  return fetch(API+'?'+qs).then(function(r){return r.json();});
+}
+function esc(s){return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function showToast(msg){
+  var t=document.getElementById('TOAST');
+  if(!t){t=document.createElement('div');t.id='TOAST';document.body.appendChild(t);}
+  t.textContent=msg;
+  requestAnimationFrame(function(){t.style.transform='translateX(-50%) translateY(0)';});
+  clearTimeout(t._tm);
+  t._tm=setTimeout(function(){t.style.transform='translateX(-50%) translateY(90px)';},2800);
+}
+function formatDatum(val){
+  if(!val)return '';
+  var s=val.toString().trim();
+  if(s.match(/^\d{1,2}\.\d{1,2}\.\d{4}$/))return s;
+  var d=new Date(s);
+  if(!isNaN(d))return d.getUTCDate()+'.'+(d.getUTCMonth()+1)+'.'+d.getUTCFullYear();
+  return s;
 }
 
-// ── INIT ──
-window.addEventListener('load', () => {
-  setMinDate();
-  setTimeout(() => {
+/* ===== Start ===== */
+window.addEventListener('load',function(){
+  buildDates();
+  setTimeout(function(){
     document.getElementById('splash').classList.add('hide');
-    setTimeout(() => {
-      document.getElementById('splash').style.display = 'none';
+    setTimeout(function(){
+      document.getElementById('splash').style.display='none';
       checkSession();
-    }, 600);
-  }, 1800);
+    },600);
+  },1600);
 });
 
-function checkSession() {
-  const s = localStorage.getItem(SESSION_KEY);
-  if (s) { currentUser = s; showApp(); }
-  else { loadCustomerList(); showScreen('login'); }
+function checkSession(){
+  var s=localStorage.getItem(SESSION_KEY);
+  if(s){currentUser=s;showApp();}
+  else{loadCustomerList();showScreen('login');}
+}
+function showScreen(name){
+  document.querySelectorAll('.screen').forEach(function(x){x.classList.remove('on');});
+  document.getElementById('screen-'+name).classList.add('on');
 }
 
-async function loadCustomerList() {
-  try {
-    customerList = await api({action:'getCustomers'});
+/* ===== Přihlášení ===== */
+function loadCustomerList(){
+  api({action:'getCustomers'}).then(function(d){
+    customerList=Array.isArray(d)?d:[];
     populateSelect();
-  } catch(e) {
-    customerList = [];
-    populateSelect();
-  }
+  }).catch(function(){customerList=[];populateSelect();});
 }
-
-function populateSelect() {
-  const sel = document.getElementById('name-select');
-  sel.innerHTML = '<option value="">— vyberte —</option>';
-  customerList.forEach(c => {
-    const o = document.createElement('option');
-    o.value = c.jmeno; o.textContent = c.jmeno;
+function populateSelect(){
+  var sel=document.getElementById('name-select');
+  sel.innerHTML='<option value="">— vyber —</option>';
+  customerList.forEach(function(c){
+    var o=document.createElement('option');
+    o.value=c.jmeno;o.textContent=c.jmeno;
     sel.appendChild(o);
   });
 }
-
-function setMinDate() {
-  const d = new Date(); d.setDate(d.getDate() + 1);
-  const iso = d.toISOString().split('T')[0];
-  document.getElementById('delivery-date').min = iso;
-  document.getElementById('delivery-date').value = iso;
+function showStep(id){
+  document.querySelectorAll('.login-step').forEach(function(s){s.classList.remove('on');});
+  document.getElementById(id).classList.add('on');
 }
-
-// ── LOGIN KROKY ──
-function showStep(id) {
-  document.querySelectorAll('.login-step').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+function showLoginError(stepId,msg){
+  var el=document.getElementById('error-'+stepId);
+  el.textContent=msg;el.style.display='block';
+  setTimeout(function(){el.style.display='none';},3000);
 }
-
-function showLoginError(stepId, msg) {
-  const el = document.getElementById('error-' + stepId);
-  el.textContent = msg; el.style.display = 'block';
-  setTimeout(() => el.style.display = 'none', 3000);
-}
-
-function handleStepName() {
-  const sel = document.getElementById('name-select').value;
-  const newName = document.getElementById('name-new').value.trim();
-  const name = sel || newName;
-  if (!name) { showLoginError('name', 'Zadejte nebo vyberte své jméno.'); return; }
-
-  pendingName = name;
-  const existing = customerList.find(c => c.jmeno === name);
-
-  if (existing && existing.maPin) {
-    // Existující zákazník s PINem → přihlášení
-    isNewCustomer = false;
-    document.getElementById('login-subtitle').textContent = 'Vítejte zpět, ' + name + '!';
+function handleStepName(){
+  var sel=document.getElementById('name-select').value;
+  var newName=document.getElementById('name-new').value.trim();
+  var name=sel||newName;
+  if(!name){showLoginError('name','Zadej nebo vyber své jméno.');return;}
+  pendingName=name;
+  var existing=customerList.find(function(c){return c.jmeno===name;});
+  if(existing&&existing.maPin){
+    document.getElementById('login-subtitle').textContent='Vítej zpět, '+name+'!';
     showStep('step-pin');
-  } else {
-    // Nový zákazník nebo zákazník bez PINu → vytvoření PINu
-    isNewCustomer = true;
-    document.getElementById('login-subtitle').textContent = 'Registrace: ' + name;
+    setTimeout(function(){document.getElementById('pin-input').focus();},100);
+  }else{
+    document.getElementById('login-subtitle').textContent='Registrace: '+name;
     showStep('step-newpin');
   }
 }
-
-async function handleStepPin() {
-  const pin = document.getElementById('pin-input').value.trim();
-  if (!pin) { showLoginError('pin', 'Zadejte PIN.'); return; }
-  try {
-    const res = await api({action:'checkPin', jmeno: pendingName, pin: pin});
-    if (res.status === 'ok') {
-      loginSuccess(pendingName);
-    } else {
-      showLoginError('pin', 'Nesprávný PIN. Zkuste znovu.');
-      document.getElementById('pin-input').value = '';
-    }
-  } catch(e) {
-    showLoginError('pin', 'Chyba připojení.');
-  }
+function handleStepPin(){
+  var pin=document.getElementById('pin-input').value.trim();
+  if(!pin){showLoginError('pin','Zadej PIN.');return;}
+  api({action:'checkPin',jmeno:pendingName,pin:pin}).then(function(res){
+    if(res.status==='ok')loginSuccess(pendingName);
+    else{showLoginError('pin','Nesprávný PIN. Zkus to znovu.');document.getElementById('pin-input').value='';}
+  }).catch(function(){showLoginError('pin','Chyba připojení.');});
 }
-
-async function handleNewPin() {
-  const pin = document.getElementById('pin-new').value.trim();
-  const confirm = document.getElementById('pin-confirm').value.trim();
-  if (pin.length < 4) { showLoginError('newpin', 'PIN musí mít alespoň 4 číslice.'); return; }
-  if (pin !== confirm) { showLoginError('newpin', 'PINy se neshodují.'); return; }
-  try {
-    await api({action:'saveCustomer', jmeno: pendingName, pin: pin});
+function handleNewPin(){
+  var pin=document.getElementById('pin-new').value.trim();
+  var conf=document.getElementById('pin-confirm').value.trim();
+  if(pin.length<4){showLoginError('newpin','PIN musí mít alespoň 4 číslice.');return;}
+  if(pin!==conf){showLoginError('newpin','PINy se neshodují.');return;}
+  api({action:'saveCustomer',jmeno:pendingName,pin:pin}).then(function(){
     loginSuccess(pendingName);
-  } catch(e) {
-    showLoginError('newpin', 'Chyba při ukládání. Zkuste znovu.');
-  }
+  }).catch(function(){showLoginError('newpin','Chyba při ukládání. Zkus to znovu.');});
 }
-
-function goBackToName() {
-  document.getElementById('login-subtitle').textContent = 'Přihlaste se pro objednávku';
-  document.getElementById('pin-input').value = '';
-  document.getElementById('pin-new').value = '';
-  document.getElementById('pin-confirm').value = '';
-  pendingName = '';
+function goBackToName(){
+  document.getElementById('login-subtitle').textContent='Přihlas se pro objednávku';
+  document.getElementById('pin-input').value='';
+  document.getElementById('pin-new').value='';
+  document.getElementById('pin-confirm').value='';
+  pendingName='';
   showStep('step-name');
 }
-
-function loginSuccess(name) {
-  currentUser = name;
-  localStorage.setItem(SESSION_KEY, name);
+function loginSuccess(name){
+  currentUser=name;
+  localStorage.setItem(SESSION_KEY,name);
   showApp();
 }
-
-function logout() {
+function logout(){
   localStorage.removeItem(SESSION_KEY);
-  currentUser = null;
-  document.getElementById('qty-eggs').value = 0;
-  document.getElementById('qty-box').value = 0;
-  setSyrup(0); updateSummary();
+  currentUser=null;
+  document.getElementById('qty-eggs').value=0;
+  document.getElementById('qty-box').value=0;
+  setSyrup(0,document.querySelector('.syrup-btn'));
+  updateSummary();
   goBackToName();
   loadCustomerList();
   showScreen('login');
 }
-
-function showScreen(name) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById('screen-' + name).classList.add('active');
-}
-
-function showApp() {
-  document.getElementById('header-name').textContent = 'Přihlášen: ' + currentUser;
-  const price = DISCOUNT_CUSTOMERS.includes(currentUser) ? EGG_PRICE_DISC : EGG_PRICE_STD;
-  document.getElementById('egg-price-label').textContent = price + ' Kč / ks';
+function showApp(){
+  document.getElementById('header-name').textContent='Ahoj, '+currentUser+'!';
+  document.getElementById('egg-price-label').textContent=getEggPrice()+' Kč / ks';
   showScreen('app');
   updateSummary();
 }
 
-// ── TABS ──
-function switchTab(name) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-  document.getElementById('tabBtn-' + name).classList.add('active');
-  document.getElementById('tab-' + name).classList.add('active');
-  if (name === 'history') loadHistory();
+/* ===== Záložky ===== */
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('on');});
+  document.querySelectorAll('.panel').forEach(function(c){c.classList.remove('on');});
+  document.getElementById('tabBtn-'+name).classList.add('on');
+  document.getElementById('panel-'+name).classList.add('on');
+  if(name==='history')loadHistory();
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
-// ── ORDER ──
-function getEggPrice() { return DISCOUNT_CUSTOMERS.includes(currentUser) ? EGG_PRICE_DISC : EGG_PRICE_STD; }
-
-function changeQty(type, delta) {
-  const id = type === 'eggs' ? 'qty-eggs' : 'qty-box';
-  const el = document.getElementById(id);
-  el.value = Math.max(0, parseInt(el.value || 0) + delta);
-  updateSummary();
-}
-
-function setSyrup(liters) {
-  syrupLiters = liters;
-  ['0','05','1','15','2'].forEach(k => document.getElementById('syrup-' + k).classList.remove('active'));
-  const map = {0:'0', 0.5:'05', 1:'1', 1.5:'15', 2:'2'};
-  document.getElementById('syrup-' + map[liters]).classList.add('active');
-  updateSummary();
-}
-
-function updateSummary() {
-  const eggs = parseInt(document.getElementById('qty-eggs').value || 0);
-  const box = parseInt(document.getElementById('qty-box').value || 0);
-  const eggPrice = getEggPrice();
-  const eggTotal = eggs * eggPrice;
-  const boxTotal = box * BOX_PRICE;
-  const syrupTotal = Math.round(syrupLiters * SYRUP_PRICE);
-  const total = eggTotal + boxTotal + syrupTotal;
-
-  document.getElementById('eggs-subtotal').textContent = eggTotal + ' Kč';
-  document.getElementById('box-subtotal').textContent = boxTotal + ' Kč';
-  document.getElementById('syrup-subtotal').textContent = syrupTotal + ' Kč';
-
-  const rows = document.getElementById('summary-rows');
-  const empty = document.getElementById('summary-empty');
-  const totalRow = document.getElementById('summary-total');
-  rows.innerHTML = '';
-  const items = [];
-  if (eggs > 0) items.push({label:'Vajíčka ' + eggs + ' ks', price: eggTotal});
-  if (box > 0) items.push({label:'Bedýnka ' + box + ' ks', price: boxTotal});
-  if (syrupLiters > 0) items.push({label:'Sirup ' + syrupLiters + ' l', price: syrupTotal});
-
-  if (items.length === 0) {
-    empty.style.display = 'block'; totalRow.style.display = 'none';
-  } else {
-    empty.style.display = 'none';
-    items.forEach(item => {
-      const row = document.createElement('div');
-      row.className = 'summary-row';
-      row.innerHTML = '<span>' + item.label + '</span><span>' + item.price + ' Kč</span>';
-      rows.appendChild(row);
-    });
-    document.getElementById('total-price').textContent = total + ' Kč';
-    totalRow.style.display = 'flex';
+/* ===== Termíny: všední dny + jiné datum ===== */
+function buildDates(){
+  var today=new Date();today.setHours(0,0,0,0);
+  var dg=document.getElementById('DG');
+  var btns=[],d=new Date(today),count=0;
+  var options=[];
+  d.setDate(d.getDate()+1);
+  while(count<10){
+    var dow=d.getDay();
+    if(dow>=1&&dow<=5){
+      var dd=String(d.getDate()).padStart(2,'0');
+      var mm=String(d.getMonth()+1).padStart(2,'0');
+      var dateStr=dd+'.'+mm+'.'+d.getFullYear();
+      options.push(dateStr);
+      btns.push('<button class="date-btn'+(count===0?' on':'')+'" onclick="sD(this,\''+dateStr+'\')"><span class="dn">'+DNY[dow]+'</span><span class="dd">'+dd+'.'+mm+'.</span></button>');
+      count++;
+    }
+    d.setDate(d.getDate()+1);
   }
-  document.getElementById('btn-order').disabled = total === 0;
+  dg.innerHTML=btns.join('');
+  selectedDate=options[0]||null;
+  buildDates._first=options[0]||null;
+  var od=document.getElementById('OD');
+  var t=new Date(today);t.setDate(t.getDate()+1);
+  od.min=t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
 }
-
-let pendingOrder = null;
-
-async function submitOrder() {
-  const eggs = parseInt(document.getElementById('qty-eggs').value || 0);
-  const box = parseInt(document.getElementById('qty-box').value || 0);
-  const date = document.getElementById('delivery-date').value;
-  if (!date) { showToast('Vyberte datum doručení'); return; }
-  if (eggs === 0 && box === 0 && syrupLiters === 0) { showToast('Přidejte alespoň jeden produkt'); return; }
-
-  const [y,m,d] = date.split('-');
-  const datumCZ = d + '.' + m + '.' + y;
-  const eggPrice = getEggPrice();
-  const total = eggs*eggPrice + box*490 + Math.round(syrupLiters*190);
-
-  pendingOrder = { eggs, box, sirup: syrupLiters, datumCZ, total };
-
-  let summaryHtml = '';
-  if (eggs > 0) summaryHtml += `<div class="dialog-summary-row"><span>🥚 Vajíčka ${eggs} ks</span><span>${eggs*eggPrice} Kč</span></div>`;
-  if (box > 0) summaryHtml += `<div class="dialog-summary-row"><span>🥦 Bedýnka ${box} ks</span><span>${box*490} Kč</span></div>`;
-  if (syrupLiters > 0) summaryHtml += `<div class="dialog-summary-row"><span>🍶 Sirup ${syrupLiters} l</span><span>${Math.round(syrupLiters*190)} Kč</span></div>`;
-  summaryHtml += `<div class="dialog-summary-row" style="font-size:12px;color:var(--text-muted);padding-top:6px;">📅 Doručení: ${datumCZ}</div>`;
-  summaryHtml += `<div class="dialog-summary-row total"><span>Celkem</span><span>${total} Kč</span></div>`;
-
-  document.getElementById('dialog-summary').innerHTML = summaryHtml;
-  document.getElementById('confirm-dialog').classList.remove('hide');
+function sD(b,ds){
+  document.getElementById('OD').value='';
+  if(b.classList.contains('on')){b.classList.remove('on');selectedDate=null;}
+  else{document.querySelectorAll('#DG .date-btn').forEach(function(x){x.classList.remove('on');});b.classList.add('on');selectedDate=ds;}
 }
-
-function closeConfirmDialog() {
-  document.getElementById('confirm-dialog').classList.add('hide');
-  pendingOrder = null;
-}
-
-function confirmAndSubmit() {
-  if (!pendingOrder) return;
-  const { eggs, box, sirup, datumCZ, total } = pendingOrder;
-  pendingOrder = null;
-  closeConfirmDialog();
-
-  const btn = document.getElementById('btn-order');
-  btn.disabled = true;
-  showToast('✓ Objednávka odeslána! Čeká na potvrzení.');
-  document.getElementById('qty-eggs').value = 0;
-  document.getElementById('qty-box').value = 0;
-  setSyrup(0); updateSummary();
-
-  const tempOrder = {
-    datumPozadavku: new Date().getDate() + '.' + (new Date().getMonth()+1) + '.' + new Date().getFullYear(),
-    datumDoruceni: datumCZ,
-    vajicka: eggs, bedynka: box, sirup: sirup,
-    celkem: total, stav: 'čeká na potvrzení', navrzenyTermin: ''
-  };
-  setTimeout(() => {
-    switchTab('history');
-    const container = document.getElementById('history-content');
-    const tempEl = document.createElement('div');
-    renderOrderItem(tempEl, tempOrder);
-    if (container.firstChild) container.insertBefore(tempEl, container.firstChild);
-    else container.appendChild(tempEl);
-  }, 600);
-
-  api({ action: 'addRequest', jmeno: currentUser, datum: datumCZ, vajicka: eggs, bedynka: box, sirup: sirup })
-    .then(() => { btn.disabled = false; setTimeout(() => loadHistory(), 2000); })
-    .catch(() => { btn.disabled = false; showToast('⚠️ Objednávka se neuložila. Zkuste znovu.'); });
-}
-
-async function cancelOrder(radek) {
-  if (!confirm('Opravdu chcete zrušit tuto objednávku?')) return;
-  try {
-    await api({ action: 'rejectRequest', radek: radek });
-    showToast('Objednávka zrušena');
-    loadHistory();
-  } catch(e) {
-    showToast('Chyba při rušení objednávky');
-  }
-}
-
-function renderOrderItem(el, order) {
-  const statusMap = {
-    'čeká na potvrzení': {cls:'status-pending', label:'⏳ Čeká na potvrzení'},
-    'potvrzeno': {cls:'status-confirmed', label:'✓ Potvrzeno'},
-    'doručeno': {cls:'status-delivered', label:'✓ Doručeno'},
-    'navržen jiný termín': {cls:'status-suggested', label:'📅 Jiný termín'},
-    'zrušeno': {cls:'status-cancelled', label:'✗ Zrušeno'}
-  };
-  const status = statusMap[order.stav] || {cls:'status-pending', label: order.stav};
-  let productsHtml = '';
-  if (order.vajicka > 0) productsHtml += `<div class="order-product-row"><span>🥚 Vajíčka ${order.vajicka} ks</span><span>${order.vajicka * getEggPrice()} Kč</span></div>`;
-  if (order.bedynka > 0) productsHtml += `<div class="order-product-row"><span>🥦 Bedýnka ${order.bedynka} ks</span><span>${order.bedynka * 490} Kč</span></div>`;
-  if (order.sirup > 0) productsHtml += `<div class="order-product-row"><span>🍶 Sirup ${order.sirup} l</span><span>${Math.round(order.sirup * 190)} Kč</span></div>`;
-  let suggestedHtml = '';
-  if (order.stav === 'navržen jiný termín' && order.navrzenyTermin) {
-    suggestedHtml = `<div class="order-suggested-date">📅 Navržené doručení: <strong>${formatDatum(order.navrzenyTermin)}</strong></div>`;
-  }
-  let cancelHtml = '';
-  if (order.stav === 'čeká na potvrzení' && order.radek) {
-    cancelHtml = `<button class="btn-cancel-order" onclick="cancelOrder(${order.radek})">✕ Zrušit objednávku</button>`;
-  }
-  el.className = 'order-item';
-  el.innerHTML = `
-    <div class="order-item-header">
-      <div>
-        <div class="order-date">Objednáno: ${formatDatum(order.datumPozadavku)}</div>
-        <div class="order-delivery">Doručení: ${formatDatum(order.datumDoruceni)}</div>
-      </div>
-      <span class="order-status ${status.cls}">${status.label}</span>
-    </div>
-    <div class="order-products">
-      ${productsHtml}
-      <div class="order-total"><span>Celkem</span><span>${order.celkem} Kč</span></div>
-    </div>
-    ${suggestedHtml}
-    ${cancelHtml}`;
-}
-
-// ── HISTORY ──
-async function loadHistory() {
-  const container = document.getElementById('history-content');
-  container.innerHTML = '<div class="loading"><div class="spinner"></div>Načítám objednávky…</div>';
-  try {
-    const data = await api({action:'getMyRequests', jmeno: currentUser});
-    renderHistory(Array.isArray(data) ? data : []);
-  } catch(e) {
-    container.innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>Nepodařilo se načíst objednávky.</p></div>';
-  }
-}
-
-function formatDatum(val) {
-  if (!val) return '';
-  // Převede jakýkoliv formát na DD.M.YYYY
-  const s = val.toString().trim();
-  // Již ve formátu DD.MM.YYYY nebo D.M.YYYY
-  if (s.match(/^\d{1,2}\.\d{1,2}\.\d{4}$/)) return s;
-  // ISO string nebo datum objekt
-  const d = new Date(s);
-  if (!isNaN(d)) {
-    // Použij UTC aby se zabránilo posunu o den kvůli časové zóně
-    return d.getUTCDate() + '.' + (d.getUTCMonth()+1) + '.' + d.getUTCFullYear();
-  }
-  return s;
-}
-
-function renderHistory(orders) {
-  const container = document.getElementById('history-content');
-  container.innerHTML = '';
-  if (orders.length === 0) {
-    container.innerHTML = '<div class="empty-state"><div class="icon">🛒</div><p>Zatím žádné objednávky.<br>Objednejte svou první zásilku!</p></div>';
+function sOD(inp){
+  if(!inp.value){if(!document.querySelector('#DG .date-btn.on'))selectedDate=null;return;}
+  var p=inp.value.split('-');
+  var d=new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2]));
+  if(d.getDay()===0||d.getDay()===6){
+    showToast('Vyber prosím všední den (po–pá)');
+    inp.value='';
     return;
   }
-  orders.slice().reverse().forEach(order => {
-    const el = document.createElement('div');
-    renderOrderItem(el, order);
-    container.appendChild(el);
+  document.querySelectorAll('#DG .date-btn').forEach(function(x){x.classList.remove('on');});
+  selectedDate=p[2]+'.'+p[1]+'.'+p[0];
+}
+function resetOrderForm(){
+  document.getElementById('qty-eggs').value=0;
+  document.getElementById('qty-box').value=0;
+  setSyrup(0,document.querySelector('.syrup-btn'));
+  document.querySelectorAll('#DG .date-btn').forEach(function(b,i){b.classList.toggle('on',i===0);});
+  document.getElementById('OD').value='';
+  selectedDate=buildDates._first;
+  updateSummary();
+}
+
+/* ===== Objednávka ===== */
+function getEggPrice(){return DISCOUNT_CUSTOMERS.indexOf(currentUser)>=0?EGG_PRICE_DISC:EGG_PRICE_STD;}
+function changeQty(type,delta){
+  var id=type==='eggs'?'qty-eggs':'qty-box';
+  var el=document.getElementById(id);
+  el.value=Math.max(0,(parseInt(el.value)||0)+delta);
+  updateSummary();
+}
+function setSyrup(liters,btn){
+  syrupLiters=liters;
+  document.querySelectorAll('.syrup-btn').forEach(function(b){b.classList.remove('on');});
+  if(btn)btn.classList.add('on');
+  updateSummary();
+}
+function getOrderState(){
+  var eggs=parseInt(document.getElementById('qty-eggs').value)||0;
+  var box=parseInt(document.getElementById('qty-box').value)||0;
+  var eggPrice=getEggPrice();
+  return {
+    eggs:eggs,box:box,sirup:syrupLiters,
+    eggTotal:eggs*eggPrice,boxTotal:box*BOX_PRICE,syrupTotal:Math.round(syrupLiters*SYRUP_PRICE),
+    total:eggs*eggPrice+box*BOX_PRICE+Math.round(syrupLiters*SYRUP_PRICE)
+  };
+}
+function updateSummary(){
+  var o=getOrderState();
+  var rows=document.getElementById('summary-rows');
+  var empty=document.getElementById('summary-empty');
+  var totalRow=document.getElementById('summary-total');
+  var items=[];
+  if(o.eggs>0)items.push(['Vajíčka · '+o.eggs+' ks',o.eggTotal]);
+  if(o.box>0)items.push(['Bedýnka · '+o.box+' ks',o.boxTotal]);
+  if(o.sirup>0)items.push(['Sirup · '+(''+o.sirup).replace('.',',')+' l',o.syrupTotal]);
+  if(items.length===0){
+    rows.innerHTML='';empty.style.display='block';totalRow.style.display='none';
+  }else{
+    empty.style.display='none';
+    rows.innerHTML=items.map(function(it){return '<div class="sum-row"><span>'+it[0]+'</span><span>'+it[1]+' Kč</span></div>';}).join('');
+    document.getElementById('total-price').textContent=o.total+' Kč';
+    totalRow.style.display='flex';
+  }
+  document.getElementById('btn-order').disabled=o.total===0;
+}
+function openConfirm(){
+  var o=getOrderState();
+  if(o.total===0){showToast('Přidej alespoň jeden produkt');return;}
+  if(!selectedDate){showToast('Vyber termín doručení');return;}
+  pendingOrder={eggs:o.eggs,box:o.box,sirup:o.sirup,datumCZ:selectedDate,total:o.total};
+  var html='';
+  if(o.eggs>0)html+='<div class="sum-row"><span>Vajíčka · '+o.eggs+' ks</span><span>'+o.eggTotal+' Kč</span></div>';
+  if(o.box>0)html+='<div class="sum-row"><span>Bedýnka · '+o.box+' ks</span><span>'+o.boxTotal+' Kč</span></div>';
+  if(o.sirup>0)html+='<div class="sum-row"><span>Sirup · '+(''+o.sirup).replace('.',',')+' l</span><span>'+o.syrupTotal+' Kč</span></div>';
+  html+='<div class="sum-row" style="font-size:12px;color:var(--text2);padding-top:6px;"><span>Doručení</span><span>'+selectedDate+'</span></div>';
+  html+='<div class="sum-row total"><span>Celkem</span><span>'+o.total+' Kč</span></div>';
+  document.getElementById('dialog-summary').innerHTML=html;
+  document.getElementById('confirm-dialog').style.display='flex';
+}
+function closeConfirm(){
+  document.getElementById('confirm-dialog').style.display='none';
+  pendingOrder=null;
+}
+function confirmAndSubmit(){
+  if(!pendingOrder)return;
+  var o=pendingOrder;
+  pendingOrder=null;
+  document.getElementById('confirm-dialog').style.display='none';
+  var btn=document.getElementById('btn-order');
+  btn.disabled=true;
+  btn.textContent='Odesílám…';
+  api({action:'addRequest',jmeno:currentUser,datum:o.datumCZ,vajicka:o.eggs,bedynka:o.box,sirup:o.sirup}).then(function(d){
+    btn.textContent='Odeslat objednávku';
+    if(d&&d.status==='ok'){
+      showToast('✓ Objednávka odeslána, čeká na potvrzení');
+      resetOrderForm();
+      switchTab('history');
+    }else{
+      btn.disabled=false;
+      showToast('Objednávka se neuložila, zkus to znovu');
+    }
+  }).catch(function(){
+    btn.textContent='Odeslat objednávku';
+    btn.disabled=false;
+    showToast('Chyba spojení, zkus to znovu');
   });
 }
 
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2800);
+/* ===== Moje objednávky ===== */
+function loadHistory(){
+  var container=document.getElementById('history-content');
+  container.innerHTML='<div class="skel"></div><div class="skel"></div>';
+  api({action:'getMyRequests',jmeno:currentUser}).then(function(data){
+    renderHistory(Array.isArray(data)?data:[]);
+  }).catch(function(){
+    container.innerHTML='<div class="empty">Objednávky se nepodařilo načíst.</div>';
+  });
+}
+function renderHistory(orders){
+  var container=document.getElementById('history-content');
+  if(orders.length===0){
+    container.innerHTML='<div class="empty">Zatím žádné objednávky.<br>Objednej svou první zásilku!</div>';
+    return;
+  }
+  var eggPrice=getEggPrice();
+  container.innerHTML=orders.slice().reverse().map(function(o){
+    var badge=
+      o.stav==='potvrzeno'?'<span class="badge conf">Potvrzeno</span>':
+      o.stav==='navržen jiný termín'?'<span class="badge sugg">Navržen jiný termín</span>':
+      o.stav==='zrušeno'?'<span class="badge canc">Zrušeno</span>':
+      '<span class="badge pend">Čeká na potvrzení</span>';
+    var rows='';
+    if(o.vajicka>0)rows+='<div class="sum-row"><span>Vajíčka · '+o.vajicka+' ks</span><span>'+(o.vajicka*eggPrice)+' Kč</span></div>';
+    if(o.bedynka>0)rows+='<div class="sum-row"><span>Bedýnka · '+o.bedynka+' ks</span><span>'+(o.bedynka*490)+' Kč</span></div>';
+    if(o.sirup>0)rows+='<div class="sum-row"><span>Sirup · '+(''+o.sirup).replace('.',',')+' l</span><span>'+Math.round(o.sirup*190)+' Kč</span></div>';
+    var sugg='',actions='';
+    if(o.stav==='navržen jiný termín'&&o.navrzenyTermin){
+      sugg='<div class="sugg-box">Původní termín nevychází. Navrhujeme doručení <strong>'+esc(formatDatum(o.navrzenyTermin))+'</strong> – vyhovuje ti?</div>';
+      actions='<div class="ord-actions">'+
+        '<button class="ord-btn ob-ok" onclick="acceptSugg('+o.radek+')">Přijmout termín</button>'+
+        '<button class="ord-btn ob-no" onclick="cancelOrder('+o.radek+')">Zrušit objednávku</button>'+
+      '</div>';
+    }else if(o.stav==='čeká na potvrzení'&&o.radek){
+      actions='<div class="ord-actions"><button class="ord-btn ob-no" onclick="cancelOrder('+o.radek+')">Zrušit objednávku</button></div>';
+    }
+    return '<div class="card">'+
+      '<div class="ord-head"><div class="ord-meta">objednáno '+esc(formatDatum(o.datumPozadavku))+'<br>doručit '+esc(formatDatum(o.datumDoruceni))+'</div>'+badge+'</div>'+
+      rows+
+      '<div class="sum-row total"><span>Celkem</span><span>'+o.celkem+' Kč</span></div>'+
+      sugg+actions+'</div>';
+  }).join('');
+}
+function acceptSugg(radek){
+  api({action:'acceptSuggested',radek:radek}).then(function(d){
+    if(d&&d.status==='ok'){showToast('✓ Termín přijat, objednávka potvrzena');loadHistory();}
+    else showToast('Nepodařilo se potvrdit'+(d&&d.error?': '+d.error:''));
+  }).catch(function(){showToast('Chyba spojení');});
+}
+function cancelOrder(radek){
+  if(!confirm('Opravdu chceš zrušit tuto objednávku?'))return;
+  api({action:'rejectRequest',radek:radek}).then(function(d){
+    if(d&&d.status==='ok'){showToast('Objednávka zrušena');loadHistory();}
+    else showToast('Zrušení se nepodařilo');
+  }).catch(function(){showToast('Chyba spojení');});
 }
 </script>
 </body>
