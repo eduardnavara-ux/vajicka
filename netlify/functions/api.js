@@ -7,6 +7,10 @@ const HEADER_ROW = 2;
 const FIRST_COL = 2;
 const DATA_START_ROW = 4;
 const NTFY_TOPIC = 'dvurpoddubem-objednavky';
+// VAPID klíče pro web push – nastav v Netlify env (VAPID_PUBLIC, VAPID_PRIVATE)
+const VAPID_PUBLIC = process.env.VAPID_PUBLIC || '';
+const VAPID_PRIVATE = process.env.VAPID_PRIVATE || '';
+const VAPID_SUBJECT = 'mailto:dvurpoddubem@email.cz';
 
 async function getSheets() {
   const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY);
@@ -323,6 +327,167 @@ async function setSklad(sheets, produkt, dostupne, od, popis) {
   }
 }
 
+// ════════════════════════════════════════════════════
+// WEB PUSH (nativní, bez knihovny web-push)
+// ════════════════════════════════════════════════════
+const crypto = require('crypto');
+
+function b64urlEncode(buf) {
+  return Buffer.from(buf).toString('base64').replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function b64urlDecode(str) {
+  str = str.replace(/-/g,'+').replace(/_/g,'/');
+  while (str.length % 4) str += '=';
+  return Buffer.from(str, 'base64');
+}
+
+// VAPID JWT (ES256) pro autorizaci u push služby
+function vapidJWT(audience) {
+  const header = b64urlEncode(JSON.stringify({ typ: 'JWT', alg: 'ES256' }));
+  const payload = b64urlEncode(JSON.stringify({
+    aud: audience,
+    exp: Math.floor(Date.now()/1000) + 12*3600,
+    sub: VAPID_SUBJECT
+  }));
+  const unsigned = header + '.' + payload;
+  // privátní klíč (32B raw) → PKCS8 pro Node sign
+  const privBuf = b64urlDecode(VAPID_PRIVATE);
+  const pubBuf = b64urlDecode(VAPID_PUBLIC); // 65B uncompressed
+  const jwk = {
+    kty: 'EC', crv: 'P-256',
+    d: b64urlEncode(privBuf),
+    x: b64urlEncode(pubBuf.slice(1, 33)),
+    y: b64urlEncode(pubBuf.slice(33, 65))
+  };
+  const keyObj = crypto.createPrivateKey({ key: jwk, format: 'jwk' });
+  const der = crypto.sign('sha256', Buffer.from(unsigned), { key: keyObj, dsaEncoding: 'ieee-p1363' });
+  return unsigned + '.' + b64urlEncode(der);
+}
+
+// HKDF (SHA-256)
+function hkdf(salt, ikm, info, length) {
+  const prk = crypto.createHmac('sha256', salt).update(ikm).digest();
+  const out = crypto.createHmac('sha256', prk).update(Buffer.concat([info, Buffer.from([1])])).digest();
+  return out.slice(0, length);
+}
+
+// Zašifruje payload dle RFC 8291 (aes128gcm)
+function encryptPayload(payloadStr, p256dhB64, authB64) {
+  const clientPub = b64urlDecode(p256dhB64);     // 65B
+  const auth = b64urlDecode(authB64);            // 16B
+  const salt = crypto.randomBytes(16);
+
+  const ecdh = crypto.createECDH('prime256v1');
+  ecdh.generateKeys();
+  const serverPub = ecdh.getPublicKey();         // 65B
+  const sharedSecret = ecdh.computeSecret(clientPub);
+
+  // PRK_key + IKM dle RFC 8291
+  const authInfo = Buffer.concat([Buffer.from('WebPush: info\0'), clientPub, serverPub]);
+  const ikm = hkdf(auth, sharedSecret, authInfo, 32);
+
+  const keyInfo = Buffer.concat([Buffer.from('Content-Encoding: aes128gcm\0')]);
+  const cek = hkdf(salt, ikm, keyInfo, 16);
+  const nonceInfo = Buffer.concat([Buffer.from('Content-Encoding: nonce\0')]);
+  const nonce = hkdf(salt, ikm, nonceInfo, 12);
+
+  const payload = Buffer.from(payloadStr, 'utf8');
+  const padded = Buffer.concat([payload, Buffer.from([0x02])]); // delimiter, no padding
+  const cipher = crypto.createCipheriv('aes-128-gcm', cek, nonce);
+  const encrypted = Buffer.concat([cipher.update(padded), cipher.final(), cipher.getAuthTag()]);
+
+  // aes128gcm header: salt(16) | rs(4=4096) | idlen(1=65) | serverPub(65)
+  const header = Buffer.concat([
+    salt,
+    Buffer.from([0,0,0x10,0x00]),
+    Buffer.from([serverPub.length]),
+    serverPub
+  ]);
+  return Buffer.concat([header, encrypted]);
+}
+
+function sendOnePush(sub, payloadStr) {
+  return new Promise((resolve) => {
+    try {
+      if (!VAPID_PUBLIC || !VAPID_PRIVATE) return resolve({ ok:false, gone:false });
+      const url = new URL(sub.endpoint);
+      const audience = url.origin;
+      const body = encryptPayload(payloadStr, sub.p256dh, sub.auth);
+      const jwt = vapidJWT(audience);
+      const https = require('https');
+      const req = https.request({
+        hostname: url.hostname,
+        path: url.pathname + url.search,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/octet-stream',
+          'Content-Encoding': 'aes128gcm',
+          'Content-Length': body.length,
+          'TTL': '86400',
+          'Urgency': 'high',
+          'Authorization': 'vapid t=' + jwt + ', k=' + VAPID_PUBLIC
+        }
+      }, (res) => {
+        // 404/410 = subscription zaniklo → smazat
+        const gone = res.statusCode === 404 || res.statusCode === 410;
+        res.on('data', ()=>{}); res.on('end', ()=> resolve({ ok: res.statusCode>=200&&res.statusCode<300, gone }));
+      });
+      req.on('error', () => resolve({ ok:false, gone:false }));
+      req.write(body); req.end();
+    } catch(e) { resolve({ ok:false, gone:false }); }
+  });
+}
+
+// ── Úložiště odběratelů: list Push ──
+// A: jmeno, B: endpoint, C: p256dh, D: auth
+async function getPushData(sheets) {
+  try { return await getSheetData(sheets, 'Push'); }
+  catch {
+    await sheets.spreadsheets.batchUpdate({ spreadsheetId: SPREADSHEET_ID, requestBody: { requests: [{ addSheet: { properties: { title: 'Push' } } }] } });
+    const hdr = [['Jméno','Endpoint','p256dh','auth']];
+    await sheets.spreadsheets.values.update({ spreadsheetId: SPREADSHEET_ID, range: 'Push!A1:D1', valueInputOption: 'USER_ENTERED', requestBody: { values: hdr } });
+    return hdr;
+  }
+}
+
+async function savePushSub(sheets, jmeno, endpoint, p256dh, auth) {
+  const data = await getPushData(sheets);
+  // duplikát endpointu? aktualizuj jméno; jinak přidej
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][1] === endpoint) {
+      await sheets.spreadsheets.values.update({ spreadsheetId: SPREADSHEET_ID, range: `Push!A${i+1}:D${i+1}`, valueInputOption: 'USER_ENTERED', requestBody: { values: [[jmeno, endpoint, p256dh, auth]] } });
+      return;
+    }
+  }
+  await sheets.spreadsheets.values.append({ spreadsheetId: SPREADSHEET_ID, range: 'Push!A:D', valueInputOption: 'USER_ENTERED', requestBody: { values: [[jmeno, endpoint, p256dh, auth]] } });
+}
+
+async function getSubsFor(sheets, jmeno) {
+  const data = await getPushData(sheets);
+  const subs = [];
+  for (let i = 1; i < data.length; i++) {
+    if (!data[i][1]) continue;
+    if (jmeno && data[i][0] !== jmeno) continue;
+    subs.push({ row: i+1, jmeno: data[i][0], endpoint: data[i][1], p256dh: data[i][2], auth: data[i][3] });
+  }
+  return subs;
+}
+
+async function pushToCustomer(sheets, jmeno, title, body, tag) {
+  if (!VAPID_PUBLIC) return;
+  const subs = await getSubsFor(sheets, jmeno);
+  const payload = JSON.stringify({ title, body, tag: tag||'dpd', url: '/zakaznik' });
+  const goneRows = [];
+  for (const s of subs) {
+    const r = await sendOnePush(s, payload);
+    if (r.gone) goneRows.push(s.row);
+  }
+  // smaž zaniklé (od konce, ať nesedne indexace)
+  for (const row of goneRows.sort((a,b)=>b-a)) {
+    try { await sheets.spreadsheets.values.clear({ spreadsheetId: SPREADSHEET_ID, range: `Push!A${row}:D${row}` }); } catch(e){}
+  }
+}
+
 const hdrs = { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' };
 
 exports.handler = async function(event) {
@@ -400,7 +565,23 @@ exports.handler = async function(event) {
         result = mapSklad(await getSkladData(sheets)); break;
       }
       case 'setSklad': {
-        await setSklad(sheets, (p.produkt||'').toLowerCase(), p.dostupne==='ano'||p.dostupne==='true'||p.dostupne==='1', p.od||'', p.popis||'');
+        const produkt = (p.produkt||'').toLowerCase();
+        const becomingAvailable = p.dostupne==='ano'||p.dostupne==='true'||p.dostupne==='1';
+        // zjisti předchozí stav, ať pushneme jen při přechodu nedostupné→dostupné
+        let wasUnavailable = false;
+        try { const prev = mapSklad(await getSkladData(sheets)); wasUnavailable = prev[produkt] && prev[produkt].dostupne===false; } catch(e){}
+        await setSklad(sheets, produkt, becomingAvailable, p.od||'', p.popis||'');
+        if (becomingAvailable && wasUnavailable && (produkt==='bedynka'||produkt==='sirup')) {
+          const nazev = produkt==='bedynka' ? 'Bedýnky' : 'Sirup';
+          await pushToCustomer(sheets, null, 'Dvůr Pod Dubem', nazev + ' jsou opět skladem – můžeš objednat!', 'sklad');
+        }
+        result = { status: 'ok' }; break;
+      }
+      case 'vapidKey': {
+        result = { key: VAPID_PUBLIC }; break;
+      }
+      case 'subscribe': {
+        await savePushSub(sheets, p.jmeno||'', p.endpoint||'', p.p256dh||'', p.auth||'');
         result = { status: 'ok' }; break;
       }
       case 'history': {
@@ -471,6 +652,7 @@ exports.handler = async function(event) {
         const isCounter = nd && nd !== '' && nd !== pd;
         if (isCounter) {
           await sheets.spreadsheets.values.update({ spreadsheetId: SPREADSHEET_ID, range: `Požadavky!I${radek}:J${radek}`, valueInputOption: 'USER_ENTERED', requestBody: { values: [['navržen jiný termín', nd]] } });
+          await pushToCustomer(sheets, row[1], 'Dvůr Pod Dubem', 'Máš návrh termínu doručení na ' + nd + ' – otevři appku a potvrď ho.', 'navrh');
         } else {
           const datum = nd||pd;
           const v=parseInt((row[4]||'0').toString().replace(/\s/g,''))||0;
@@ -481,6 +663,7 @@ exports.handler = async function(event) {
           if(b>0) await zpracujObjednavku(sheets,row[1],b,datum,'bedynka');
           if(s>0) await zpracujObjednavku(sheets,row[1],s,datum,'sirup');
           await sheets.spreadsheets.values.update({ spreadsheetId: SPREADSHEET_ID, range: `Požadavky!I${radek}:J${radek}`, valueInputOption: 'USER_ENTERED', requestBody: { values: [['potvrzeno','']] } });
+          await pushToCustomer(sheets, row[1], 'Dvůr Pod Dubem', 'Tvoje objednávka je potvrzená na ' + datum + '. Děkujeme!', 'potvrzeno');
         }
         result = { status: 'ok' }; break;
       }
