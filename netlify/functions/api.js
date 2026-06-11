@@ -52,27 +52,25 @@ function parseDate(val) {
   return isNaN(d) ? null : d;
 }
  
-function sendNtfy(jmeno, datum, vajicka, bedynka, sirup) {
+async function sendNtfy(jmeno, datum, vajicka, bedynka, sirup) {
   try {
-    const https = require('https');
     let msg = '';
     if (vajicka > 0) msg += vajicka + ' ks vajíček  ';
     if (bedynka > 0) msg += bedynka + 'x bedýnka  ';
     if (sirup > 0) msg += sirup + 'l sirupu  ';
     msg += '· doručení ' + datum;
-    // JSON publish – na rozdíl od HTTP hlaviček zvládá diakritiku i emoji v titulku
-    const body = Buffer.from(JSON.stringify({
-      topic: NTFY_TOPIC,
-      title: '🛒 ' + jmeno + ' – nová objednávka',
-      message: msg,
-      priority: 5,
-      tags: ['egg']
-    }));
-    const req = https.request({
-      hostname: 'ntfy.sh', port: 443, path: '/', method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Content-Length': body.length }
+    // JSON publish – zvládá diakritiku i emoji; await zajistí dokončení před koncem funkce
+    await fetch('https://ntfy.sh/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        topic: NTFY_TOPIC,
+        title: '🛒 ' + jmeno + ' – nová objednávka',
+        message: msg,
+        priority: 5,
+        tags: ['egg']
+      })
     });
-    req.on('error', () => {}); req.write(body); req.end();
   } catch (e) { /* notifikace nesmí shodit objednávku */ }
 }
  
@@ -277,7 +275,6 @@ const hdrs = { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin'
  
 exports.handler = async function(event) {
   const p = event.queryStringParameters || {};
-  if (p.action === 'addRequest') sendNtfy(p.jmeno, p.datum, parseInt(p.vajicka)||0, parseInt(p.bedynka)||0, parseFloat(p.sirup)||0);
   try {
     const sheets = await getSheets();
     let result;
@@ -391,6 +388,7 @@ exports.handler = async function(event) {
         const celkem = v*ep+b*490+Math.round(s*190);
         const dn = new Date(); const ds = dn.getDate()+'.'+(dn.getMonth()+1)+'.'+dn.getFullYear();
         await sheets.spreadsheets.values.append({ spreadsheetId: SPREADSHEET_ID, range: 'Požadavky!A:J', valueInputOption: 'USER_ENTERED', requestBody: { values: [[id,p.jmeno,ds,p.datum,v,b,s,celkem,'čeká na potvrzení','']] } });
+        await sendNtfy(p.jmeno, p.datum, v, b, s);
         result = { status: 'ok' }; break;
       }
       case 'listRequests': {
