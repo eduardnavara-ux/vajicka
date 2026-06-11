@@ -6,7 +6,6 @@ const SUMA_ROW = 30;
 const HEADER_ROW = 2;
 const FIRST_COL = 2;
 const DATA_START_ROW = 4;
-const NTFY_TOPIC = 'dvurpoddubem-objednavky';
 // VAPID klíče pro web push – nastav v Netlify env (VAPID_PUBLIC, VAPID_PRIVATE)
 const VAPID_PUBLIC = process.env.VAPID_PUBLIC || '';
 const VAPID_PRIVATE = process.env.VAPID_PRIVATE || '';
@@ -54,28 +53,6 @@ function parseDate(val) {
   }
   const d = new Date(s);
   return isNaN(d) ? null : d;
-}
-
-async function sendNtfy(jmeno, datum, vajicka, bedynka, sirup) {
-  try {
-    let msg = '';
-    if (vajicka > 0) msg += vajicka + ' ks vajíček  ';
-    if (bedynka > 0) msg += bedynka + 'x bedýnka  ';
-    if (sirup > 0) msg += sirup + 'l sirupu  ';
-    msg += '· doručení ' + datum;
-    // JSON publish – zvládá diakritiku i emoji; await zajistí dokončení před koncem funkce
-    await fetch('https://ntfy.sh/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        topic: NTFY_TOPIC,
-        title: '🛒 ' + jmeno + ' – nová objednávka',
-        message: msg,
-        priority: 5,
-        tags: ['egg']
-      })
-    });
-  } catch (e) { /* notifikace nesmí shodit objednávku */ }
 }
 
 async function getSheetData(sheets, sheetName) {
@@ -476,7 +453,8 @@ async function getSubsFor(sheets, jmeno) {
 async function pushToCustomer(sheets, jmeno, title, body, tag) {
   if (!VAPID_PUBLIC) return;
   const subs = await getSubsFor(sheets, jmeno);
-  const payload = JSON.stringify({ title, body, tag: tag||'dpd', url: '/zakaznik' });
+  const targetUrl = (jmeno === '__admin__') ? '/' : '/zakaznik';
+  const payload = JSON.stringify({ title, body, tag: tag||'dpd', url: targetUrl });
   const goneRows = [];
   for (const s of subs) {
     const r = await sendOnePush(s, payload);
@@ -630,7 +608,12 @@ exports.handler = async function(event) {
         const celkem = v*ep+b*490+Math.round(s*190);
         const dn = new Date(); const ds = dn.getDate()+'.'+(dn.getMonth()+1)+'.'+dn.getFullYear();
         await sheets.spreadsheets.values.append({ spreadsheetId: SPREADSHEET_ID, range: 'Požadavky!A:J', valueInputOption: 'USER_ENTERED', requestBody: { values: [[id,p.jmeno,ds,p.datum,v,b,s,celkem,'čeká na potvrzení','']] } });
-        await sendNtfy(p.jmeno, p.datum, v, b, s);
+        // Push adminům o nové objednávce
+        var produkty = [];
+        if (v > 0) produkty.push(v + ' ks vajíček');
+        if (b > 0) produkty.push(b + ' ks bedýnek');
+        if (s > 0) produkty.push(s + ' l sirupu');
+        await pushToCustomer(sheets, '__admin__', '🛒 Nová objednávka – ' + p.jmeno, produkty.join(', ') + ' · doručit ' + p.datum + ' · ' + celkem + ' Kč', 'objednavka');
         result = { status: 'ok' }; break;
       }
       case 'listRequests': {
