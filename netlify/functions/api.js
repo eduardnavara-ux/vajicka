@@ -1,5 +1,5 @@
 const { google } = require('googleapis');
-
+ 
 const SPREADSHEET_ID = '1ORfd4FhxKsJIuk22WvdoW6sLNpRNBFK39q3yt5YAj8Q';
 const DISCOUNT_NAMES = ['Danča', 'Kristýna', 'Renata', 'Andrea', 'Marcela', 'Dáša'];
 const SUMA_ROW = 30;
@@ -7,19 +7,19 @@ const HEADER_ROW = 2;
 const FIRST_COL = 2;
 const DATA_START_ROW = 4;
 const NTFY_TOPIC = 'dvurpoddubem-objednavky';
-
+ 
 async function getSheets() {
   const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY);
   const auth = new google.auth.GoogleAuth({ credentials, scopes: ['https://www.googleapis.com/auth/spreadsheets'] });
   return google.sheets({ version: 'v4', auth });
 }
-
+ 
 function colLetter(n) {
   let s = '';
   while (n > 0) { s = String.fromCharCode(64 + (n - 1) % 26 + 1) + s; n = Math.floor((n - 1) / 26); }
   return s;
 }
-
+ 
 function fmtDate(val) {
   if (!val) return '';
   const s = val.toString().trim();
@@ -37,7 +37,7 @@ function fmtDate(val) {
   if (!isNaN(d)) return d.getUTCDate() + '.' + (d.getUTCMonth() + 1) + '.' + d.getUTCFullYear();
   return s;
 }
-
+ 
 function parseDate(val) {
   if (!val) return null;
   const s = val.toString().trim();
@@ -51,7 +51,7 @@ function parseDate(val) {
   const d = new Date(s);
   return isNaN(d) ? null : d;
 }
-
+ 
 function sendNtfy(jmeno, datum, vajicka, bedynka, sirup) {
   const https = require('https');
   let msg = '';
@@ -66,7 +66,7 @@ function sendNtfy(jmeno, datum, vajicka, bedynka, sirup) {
   });
   req.on('error', () => {}); req.write(body); req.end();
 }
-
+ 
 async function getSheetData(sheets, sheetName) {
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
@@ -75,7 +75,7 @@ async function getSheetData(sheets, sheetName) {
   });
   return res.data.values || [];
 }
-
+ 
 async function getSheetColors(sheets, sheetName) {
   const res = await sheets.spreadsheets.get({
     spreadsheetId: SPREADSHEET_ID, ranges: [`${sheetName}!A:Z`],
@@ -83,7 +83,7 @@ async function getSheetColors(sheets, sheetName) {
   });
   return res.data.sheets?.[0]?.data?.[0]?.rowData || [];
 }
-
+ 
 function getCustomers(headers) {
   const c = [];
   for (let i = FIRST_COL - 1; i < headers.length; i++) {
@@ -92,12 +92,20 @@ function getCustomers(headers) {
   }
   return c;
 }
-
+ 
+// Detekce barev buněk (oranžová #F4A623 = čekající, zelená #93C47D = doručeno)
+function isOrange(bg) {
+  return !!(bg && bg.red > 0.9 && bg.green > 0.6 && bg.green < 0.72 && bg.blue < 0.2);
+}
+function isGreen(bg) {
+  return !!(bg && bg.red > 0.45 && bg.red < 0.7 && bg.green > 0.7 && bg.green < 0.85 && bg.blue > 0.38 && bg.blue < 0.6);
+}
+ 
 async function getSheetId(sheets, sheetName) {
   const res = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID });
   return res.data.sheets.find(s => s.properties.title === sheetName)?.properties?.sheetId;
 }
-
+ 
 async function getOrCreateCustomerCol(sheets, sheetName, jmeno) {
   const data = await getSheetData(sheets, sheetName);
   const headers = data[HEADER_ROW - 1] || [];
@@ -124,7 +132,7 @@ async function getOrCreateCustomerCol(sheets, sheetName, jmeno) {
   await updatePrehled(sheets, sheetName);
   return newCol;
 }
-
+ 
 async function updatePrehled(sheets, sheetName) {
   const data = await getSheetData(sheets, sheetName);
   const customers = getCustomers(data[HEADER_ROW - 1] || []);
@@ -146,7 +154,7 @@ async function updatePrehled(sheets, sheetName) {
     ]}
   });
 }
-
+ 
 async function zpracujObjednavku(sheets, jmeno, kusy, datum, produkt) {
   const sn = { vajicka: 'Vajíčka', bedynka: 'Bedýnky', sirup: 'Sirup' }[produkt];
   const col = await getOrCreateCustomerCol(sheets, sn, jmeno);
@@ -158,7 +166,7 @@ async function zpracujObjednavku(sheets, jmeno, kusy, datum, produkt) {
     if (!cellVal || cellVal === '') { targetRow = r; break; }
   }
   if (targetRow === -1) targetRow = SUMA_ROW - 1;
-  
+ 
   await sheets.spreadsheets.values.batchUpdate({
     spreadsheetId: SPREADSHEET_ID,
     requestBody: { valueInputOption: 'USER_ENTERED', data: [
@@ -176,7 +184,66 @@ async function zpracujObjednavku(sheets, jmeno, kusy, datum, produkt) {
     }}]}
   });
 }
-
+ 
+// Čekající objednávky (oranžové buňky) jednoho produktu – používá 'list' i 'init'
+async function listProduct(sheets, produkt) {
+  const sn = { vajicka: 'Vajíčka', bedynka: 'Bedýnky', sirup: 'Sirup' }[produkt];
+  const [data, colorRows] = await Promise.all([getSheetData(sheets, sn), getSheetColors(sheets, sn)]);
+  const customers = getCustomers(data[HEADER_ROW - 1] || []);
+  const res = [];
+  for (let i = DATA_START_ROW - 1; i < data.length; i++) {
+    const dc = data[i][0]; if (!dc) continue;
+    if (typeof dc === 'string' && isNaN(Date.parse(dc)) && !dc.match(/^\d/)) continue;
+    const ds = fmtDate(dc);
+    if (!ds) continue;
+    for (const c of customers) {
+      const val = data[i][c.col]; if (!val || val === '') continue;
+      const bg = colorRows[i]?.values?.[c.col]?.userEnteredFormat?.backgroundColor;
+      if (isOrange(bg)) res.push({ radek: i + 1, sloupec: c.col + 1, jmeno: c.jmeno, kusy: val, datum: ds });
+    }
+  }
+  return res;
+}
+ 
+// Historie všech objednávek (oranžové i zelené buňky) napříč produkty
+async function historyAll(sheets) {
+  const produkty = ['vajicka', 'bedynka', 'sirup'];
+  const sn = { vajicka: 'Vajíčka', bedynka: 'Bedýnky', sirup: 'Sirup' };
+  const fetched = await Promise.all(produkty.map(p =>
+    Promise.all([getSheetData(sheets, sn[p]), getSheetColors(sheets, sn[p])])
+  ));
+  const out = [];
+  produkty.forEach((p, idx) => {
+    const [data, colorRows] = fetched[idx];
+    const customers = getCustomers(data[HEADER_ROW - 1] || []);
+    for (let i = DATA_START_ROW - 1; i < data.length; i++) {
+      const dc = data[i][0]; if (!dc) continue;
+      if (typeof dc === 'string' && isNaN(Date.parse(dc)) && !dc.match(/^\d/)) continue;
+      const ds = fmtDate(dc);
+      if (!ds) continue;
+      const d = parseDate(dc);
+      const ts = d ? d.getTime() : 0;
+      for (const c of customers) {
+        const val = data[i][c.col]; if (!val || val === '') continue;
+        const bg = colorRows[i]?.values?.[c.col]?.userEnteredFormat?.backgroundColor;
+        const orange = isOrange(bg), green = isGreen(bg);
+        if (!orange && !green) continue;
+        out.push({ produkt: p, jmeno: c.jmeno, kusy: val, datum: ds, dorucen: green, ts });
+      }
+    }
+  });
+  out.sort((a, b) => b.ts - a.ts);
+  return out.slice(0, 200).map(o => ({ produkt: o.produkt, jmeno: o.jmeno, kusy: o.kusy, datum: o.datum, dorucen: o.dorucen }));
+}
+ 
+function mapRequests(data) {
+  return data.length <= 1 ? [] : data.slice(1).map((r, i) => ({
+    radek: i + 2, id: r[0], jmeno: r[1], datumPozadavku: fmtDate(r[2]), datumDoruceni: fmtDate(r[3]),
+    vajicka: r[4] || 0, bedynka: r[5] || 0, sirup: r[6] || 0, celkem: r[7] || 0,
+    stav: r[8] || 'čeká na potvrzení', navrzenyTermin: fmtDate(r[9])
+  }));
+}
+ 
 async function getPozadavkyData(sheets) {
   try { return await getSheetData(sheets, 'Požadavky'); }
   catch {
@@ -186,7 +253,7 @@ async function getPozadavkyData(sheets) {
     return hdr;
   }
 }
-
+ 
 async function getZakazniciData(sheets) {
   try { return await getSheetData(sheets, 'Zákazníci'); }
   catch {
@@ -196,9 +263,9 @@ async function getZakazniciData(sheets) {
     return rows;
   }
 }
-
+ 
 const hdrs = { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' };
-
+ 
 exports.handler = async function(event) {
   const p = event.queryStringParameters || {};
   if (p.action === 'addRequest') sendNtfy(p.jmeno, p.datum, parseInt(p.vajicka)||0, parseInt(p.bedynka)||0, parseFloat(p.sirup)||0);
@@ -251,24 +318,26 @@ exports.handler = async function(event) {
         result = { status: 'ok' }; break;
       }
       case 'list': {
-        const sn = { vajicka: 'Vajíčka', bedynka: 'Bedýnky', sirup: 'Sirup' }[p.produkt||'vajicka'];
-        const data = await getSheetData(sheets, sn);
-        const colorRows = await getSheetColors(sheets, sn);
-        const customers = getCustomers(data[HEADER_ROW-1]||[]);
-        const res = [];
-        for (let i = DATA_START_ROW-1; i < data.length; i++) {
-          const dc = data[i][0]; if (!dc) continue;
-          if (typeof dc === 'string' && isNaN(Date.parse(dc)) && !dc.match(/^\d/)) continue;
-          const ds = fmtDate(dc);
-          if (!ds) continue;
-          for (const c of customers) {
-            const val = data[i][c.col]; if (!val || val === '') continue;
-            const bg = colorRows[i]?.values?.[c.col]?.userEnteredFormat?.backgroundColor;
-            const isOrange = bg && bg.red > 0.9 && bg.green > 0.6 && bg.green < 0.72 && bg.blue < 0.2;
-            if (isOrange) res.push({ radek: i+1, sloupec: c.col+1, jmeno: c.jmeno, kusy: val, datum: ds });
-          }
-        }
-        result = res; break;
+        result = await listProduct(sheets, p.produkt||'vajicka'); break;
+      }
+      case 'init': {
+        // Vše pro start appky v jednom volání
+        const [vajicka, bedynka, sirup, reqData, zakData] = await Promise.all([
+          listProduct(sheets, 'vajicka'),
+          listProduct(sheets, 'bedynka'),
+          listProduct(sheets, 'sirup'),
+          getPozadavkyData(sheets),
+          getZakazniciData(sheets)
+        ]);
+        result = {
+          customers: zakData.length <= 1 ? [] : zakData.slice(1).map(r => ({ jmeno: r[0], maPin: r[1] !== '' && r[1] != null })),
+          lists: { vajicka, bedynka, sirup },
+          requests: mapRequests(reqData).filter(r => r.stav !== 'zrušeno')
+        };
+        break;
+      }
+      case 'history': {
+        result = await historyAll(sheets); break;
       }
       case 'cashflow': {
         const mesice = {};
@@ -277,32 +346,32 @@ exports.handler = async function(event) {
           const s = d.toString().trim();
           // Přeskoč textové záhlavíčky jako "Květen 2026"
           if (!s.match(/^\d/)) return null;
-          const x = parseDate(s); 
-          if (!x || isNaN(x)) return null; 
-          return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0'); 
+          const x = parseDate(s);
+          if (!x || isNaN(x)) return null;
+          return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0');
         };
-        const im = m => { if (!mesice[m]) mesice[m] = { trzba:0, naklady:0, vajicka:0, bedynky:0, sirup:0 }; };
+        const im = m => { if (!mesice[m]) mesice[m] = { trzba:0, naklady:0, vajicka:0, bedynky:0, sirup:0, tV:0, tB:0, tS:0 }; };
         const dV = await getSheetData(sheets,'Vajíčka'); const zV = getCustomers(dV[HEADER_ROW-1]||[]);
         for (let i=DATA_START_ROW-1;i<dV.length;i++) {
           const d=dV[i][0]; if(!d) continue;
           const m=gm(d); if(!m) continue; im(m);
-          zV.forEach(z=>{const v=parseInt((dV[i][z.col]||'').toString().replace(/\s/g,''))||0;if(v>0){mesice[m].trzba+=v*(DISCOUNT_NAMES.includes(z.jmeno)?9:10);mesice[m].vajicka+=v;}});
+          zV.forEach(z=>{const v=parseInt((dV[i][z.col]||'').toString().replace(/\s/g,''))||0;if(v>0){const t=v*(DISCOUNT_NAMES.includes(z.jmeno)?9:10);mesice[m].trzba+=t;mesice[m].tV+=t;mesice[m].vajicka+=v;}});
           const dz=dV[i][13],cz=dV[i][14]; if(dz&&cz){const mz=gm(dz);if(mz){im(mz);mesice[mz].naklady+=parseFloat((cz||'').toString().replace(/\s/g,'').replace(',','.'))||0;}}
         }
         const dB = await getSheetData(sheets,'Bedýnky'); const zB = getCustomers(dB[HEADER_ROW-1]||[]);
         for (let i=DATA_START_ROW-1;i<dB.length;i++) {
           const d=dB[i][0]; if(!d) continue;
           const m=gm(d); if(!m) continue; im(m);
-          zB.forEach(z=>{const v=parseInt((dB[i][z.col]||'').toString().replace(/\s/g,''))||0;if(v>0){mesice[m].trzba+=v*490;mesice[m].bedynky+=v;}});
+          zB.forEach(z=>{const v=parseInt((dB[i][z.col]||'').toString().replace(/\s/g,''))||0;if(v>0){mesice[m].trzba+=v*490;mesice[m].tB+=v*490;mesice[m].bedynky+=v;}});
         }
         const dS = await getSheetData(sheets,'Sirup'); const zS = getCustomers(dS[HEADER_ROW-1]||[]);
         for (let i=DATA_START_ROW-1;i<dS.length;i++) {
           const d=dS[i][0]; if(!d) continue;
           const m=gm(d); if(!m) continue; im(m);
-          zS.forEach(z=>{const v=parseInt((dS[i][z.col]||'').toString().replace(/\s/g,''))||0;if(v>0){mesice[m].trzba+=v*190;mesice[m].sirup+=v;}});
+          zS.forEach(z=>{const v=parseInt((dS[i][z.col]||'').toString().replace(/\s/g,''))||0;if(v>0){mesice[m].trzba+=v*190;mesice[m].tS+=v*190;mesice[m].sirup+=v;}});
         }
         const nz=['','Leden','Únor','Březen','Duben','Květen','Červen','Červenec','Srpen','Září','Říjen','Listopad','Prosinec'];
-        result = Object.keys(mesice).sort().map(m=>{const pts=m.split('-');return{klic:m,nazev:nz[parseInt(pts[1])]+' '+pts[0],trzba:Math.round(mesice[m].trzba),naklady:Math.round(mesice[m].naklady),zisk:Math.round(mesice[m].trzba-mesice[m].naklady),vajicka:mesice[m].vajicka,bedynky:mesice[m].bedynky,sirup:mesice[m].sirup};});
+        result = Object.keys(mesice).sort().map(m=>{const pts=m.split('-');return{klic:m,nazev:nz[parseInt(pts[1])]+' '+pts[0],trzba:Math.round(mesice[m].trzba),naklady:Math.round(mesice[m].naklady),zisk:Math.round(mesice[m].trzba-mesice[m].naklady),vajicka:mesice[m].vajicka,bedynky:mesice[m].bedynky,sirup:mesice[m].sirup,trzbaVajicka:Math.round(mesice[m].tV),trzbaBedynky:Math.round(mesice[m].tB),trzbaSirup:Math.round(mesice[m].tS)};});
         break;
       }
       case 'addRequest': {
@@ -317,18 +386,18 @@ exports.handler = async function(event) {
       }
       case 'listRequests': {
         const data = await getPozadavkyData(sheets);
-        result = data.length<=1?[]:data.slice(1).map((r,i)=>({radek:i+2,id:r[0],jmeno:r[1],datumPozadavku:fmtDate(r[2]),datumDoruceni:fmtDate(r[3]),vajicka:r[4]||0,bedynka:r[5]||0,sirup:r[6]||0,celkem:r[7]||0,stav:r[8]||'čeká na potvrzení',navrzenyTermin:fmtDate(r[9])})).filter(r=>r.stav!=='zrušeno');
+        result = mapRequests(data).filter(r=>r.stav!=='zrušeno');
         break;
       }
       case 'getMyRequests': {
         const data = await getPozadavkyData(sheets);
-        result = data.length<=1?[]:data.slice(1).map((r,i)=>({radek:i+2,id:r[0],jmeno:r[1],datumPozadavku:fmtDate(r[2]),datumDoruceni:fmtDate(r[3]),vajicka:r[4]||0,bedynka:r[5]||0,sirup:r[6]||0,celkem:r[7]||0,stav:r[8]||'čeká na potvrzení',navrzenyTermin:fmtDate(r[9])})).filter(r=>r.jmeno===p.jmeno);
+        result = mapRequests(data).filter(r=>r.jmeno===p.jmeno);
         break;
       }
       case 'confirmRequest': {
         const data = await getPozadavkyData(sheets);
         const radek = parseInt(p.radek);
-        const row = data[radek-1]; 
+        const row = data[radek-1];
         if(!row){result={status:'error',error:'Not found row '+radek+' in '+data.length};break;}
         const pd = fmtDate(row[3]), nd = fmtDate(p.navrzenyDatum);
         const isCounter = nd && nd !== '' && nd !== pd;
