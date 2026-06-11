@@ -307,7 +307,11 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
         <p style="font-family:'Fraunces',serif;font-size:19px;font-weight:700;margin-bottom:4px;">QR platba</p>
         <p style="font-size:13px;color:var(--text2);margin-bottom:18px;">Načti kód svou bankovní appkou</p>
         <div id="qr-canvas" style="display:inline-block;padding:14px;background:#fff;border-radius:16px;border:1px solid var(--border);margin-bottom:18px;"></div>
-        <p style="font-size:11px;color:var(--text3);margin-bottom:20px;">Kód neobsahuje částku – zadej ji ručně podle domluvy</p>
+        <p style="font-size:11px;color:var(--text3);margin-bottom:16px;">Kód neobsahuje částku – zadej ji ručně podle domluvy</p>
+        <div style="text-align:left;background:var(--cr);border-radius:12px;padding:13px 15px;margin-bottom:18px;">
+          <p style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:7px;">Jak zaplatit</p>
+          <p style="font-size:13px;color:var(--br);line-height:1.7;margin:0;">1. Otevři svou bankovní appku<br>2. Zvol „Platba QR kódem"<br>3. Namiř foťák na tento kód</p>
+        </div>
         <div style="border-top:1px solid var(--border);padding-top:18px;">
           <p style="font-size:12px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;">Číslo účtu</p>
           <div style="display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;">
@@ -335,7 +339,6 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script>
 'use strict';
 
@@ -542,14 +545,20 @@ function switchTab(name){
 
 function generateQR(){
   var spayd='SPD*1.0*ACC:CZ5508000000002335551073*CC:CZK';
-  var canvas=document.createElement('canvas');
-  document.getElementById('qr-canvas').innerHTML='';
-  document.getElementById('qr-canvas').appendChild(canvas);
-  if(typeof QRCode!=='undefined'){
-    QRCode.toCanvas(canvas,spayd,{width:200,margin:1,color:{dark:'#2C1500',light:'#ffffff'}},function(err){
-      if(!err)qrGenerated=true;
-    });
-  }
+  var box=document.getElementById('qr-canvas');
+  var src='https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=0&data='+encodeURIComponent(spayd);
+  box.innerHTML='<img src="'+src+'" width="220" height="220" alt="QR platba" '+
+    'style="display:block;width:220px;height:220px;" '+
+    'onload="qrOk()" onerror="qrFail()">';
+  qrGenerated=true;
+}
+function qrOk(){}
+function qrFail(){
+  qrGenerated=false;
+  document.getElementById('qr-canvas').innerHTML=
+    '<div style="width:220px;min-height:160px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--text2);font-size:13px;padding:16px;">'+
+    '<span>QR se nepodařilo načíst.</span>'+
+    '<span>Zadej platbu ručně podle čísla účtu níže.</span></div>';
 }
 
 function copyAccount(){
