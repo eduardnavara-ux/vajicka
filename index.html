@@ -74,7 +74,11 @@ button{font-family:'Instrument Sans',sans-serif;cursor:pointer;}
 .qty-unit{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--text2);font-weight:500;pointer-events:none;}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 input[type=number]{-moz-appearance:textfield;appearance:textfield;}
-.dates-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:18px;}
+.dates-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:9px;}
+.other-date{display:flex;align-items:center;gap:9px;margin-bottom:18px;}
+.other-date label{font-size:12px;color:var(--text2);white-space:nowrap;}
+.other-date input{flex:1;border:1.5px solid var(--border2);border-radius:11px;padding:9px 12px;font-size:14px;font-family:'Instrument Sans',sans-serif;color:var(--br);background:var(--card);outline:none;min-width:0;}
+.other-date input:focus{border-color:var(--or);}
 .date-btn{padding:clamp(9px,2.8vw,12px) 2px;border:1.5px solid var(--border2);border-radius:12px;background:var(--card);text-align:center;transition:all .15s;user-select:none;line-height:1.3;}
 .date-btn:active{transform:scale(.93);}
 .date-btn .dn{font-size:clamp(12px,3.5vw,14px);font-weight:600;color:var(--br);display:block;}
@@ -386,6 +390,7 @@ function buildPanels(){
         '</div>'+
         '<div class="flabel">Doručit dne</div>'+
         '<div id="DG_'+s+'" class="dates-grid"></div>'+
+        '<div class="other-date"><label for="OD_'+s+'">Jiné datum</label><input type="date" id="OD_'+s+'" onchange="sOD('+s+',this)"></div>'+
         '<button class="submit-btn" onclick="odeslat('+s+')" id="SB_'+s+'">Přidat objednávku</button>'+
         '<div class="msg" id="MSG_'+s+'"></div>'+
       '</div>'+
@@ -425,6 +430,9 @@ function buildDates(){
     }
     dg.innerHTML=btns.join('');
     state[s].datum=dateOptions[s][0]||null;
+    var od=document.getElementById('OD_'+s);
+    var t=new Date(today);t.setDate(t.getDate()+1);
+    od.min=t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
   }
 }
 
@@ -443,8 +451,21 @@ function sC(s,b,n){
   else{document.querySelectorAll('#CB_'+s+' .cust-btn').forEach(function(x){x.classList.remove('on');});b.classList.add('on');state[s].jmeno=n;}
 }
 function sD(s,b,ds){
+  document.getElementById('OD_'+s).value='';
   if(b.classList.contains('on')){b.classList.remove('on');state[s].datum=null;}
   else{document.querySelectorAll('#DG_'+s+' .date-btn').forEach(function(x){x.classList.remove('on');});b.classList.add('on');state[s].datum=ds;}
+}
+function sOD(s,inp){
+  if(!inp.value){if(!document.querySelector('#DG_'+s+' .date-btn.on'))state[s].datum=null;return;}
+  var p=inp.value.split('-');
+  var d=new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2]));
+  if(d.getDay()===0||d.getDay()===6){
+    showToast('Vyber prosím všední den (po–pá)');
+    inp.value='';
+    return;
+  }
+  document.querySelectorAll('#DG_'+s+' .date-btn').forEach(function(x){x.classList.remove('on');});
+  state[s].datum=p[2]+'.'+p[1]+'.'+p[0];
 }
 function mS(s,t,m){var e=document.getElementById('MSG_'+s);e.className='msg '+t;e.innerHTML=m;}
 
@@ -473,6 +494,7 @@ function odeslat(s){
 }
 function resetDates(s){
   document.querySelectorAll('#DG_'+s+' .date-btn').forEach(function(b,i){b.classList.toggle('on',i===0);});
+  document.getElementById('OD_'+s).value='';
   state[s].datum=dateOptions[s][0]||null;
 }
 
@@ -626,6 +648,11 @@ function renderRequests(){
         '<input type="date" id="suggest-date-'+req.radek+'">'+
         '<button class="sugg-send" onclick="sendSuggest('+req.radek+')">Odeslat návrh</button>'+
       '</div>';
+    } else if(req.stav==='navržen jiný termín'){
+      actions='<div class="req-actions">'+
+        '<button class="req-btn rb-ok" onclick="acceptSugg('+req.radek+')">Zapsat navržený termín</button>'+
+        '<button class="req-btn rb-no" onclick="cancelReq('+req.radek+')">Zrušit</button>'+
+      '</div>';
     }
     var badge=req.stav==='čeká na potvrzení'
       ?'<span class="badge pend">Čeká</span>'
@@ -665,10 +692,22 @@ function sendSuggest(radek){
   var dateEl=document.getElementById('suggest-date-'+radek);
   if(!dateEl.value){showToast('Vyber datum');return;}
   var parts=dateEl.value.split('-');
+  var d=new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]));
+  if(d.getDay()===0||d.getDay()===6){showToast('Vyber prosím všední den (po–pá)');dateEl.value='';return;}
   var datumCZ=parts[2]+'.'+parts[1]+'.'+parts[0];
   apiFetch({action:'confirmRequest',radek:radek,navrzenyDatum:datumCZ},function(err,d){
     if(!err&&d&&d.status==='ok'){showToast('Návrh termínu odeslán');refreshRequests();}
     else showToast('Odeslání se nepodařilo');
+  });
+}
+function acceptSugg(radek){
+  apiFetch({action:'acceptSuggested',radek:radek},function(err,d){
+    if(!err&&d&&d.status==='ok'){
+      showToast('✓ Zapsáno s navrženým termínem');
+      store.history=null;
+      refreshRequests();
+      for(var s=0;s<3;s++)refreshList(s);
+    } else showToast('Zápis se nepodařil'+(d&&d.error?': '+d.error:''));
   });
 }
 function cancelReq(radek){
@@ -865,4 +904,3 @@ loadInit();
 </script>
 </body>
 </html>
-
