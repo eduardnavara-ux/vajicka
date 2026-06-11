@@ -199,6 +199,12 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 .sklad-status.off{background:#F1EFE8;color:#5F5E5A;}
 .sklad-save{width:100%;margin-top:12px;padding:12px;background:var(--or);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;transition:transform .15s;}
 .sklad-save:active{transform:scale(.97);}
+.apush-banner{display:flex;align-items:center;gap:12px;background:var(--or-soft);border:1px solid #F2D5C2;border-radius:16px;padding:13px 15px;margin:0 0 14px;}
+.apush-txt{flex:1;min-width:0;}
+.apush-txt strong{display:block;font-size:14px;color:var(--or-dark);}
+.apush-txt span{display:block;font-size:12px;color:var(--text2);margin-top:1px;line-height:1.4;}
+.apush-btn{background:var(--or);color:#fff;border:none;border-radius:11px;padding:10px 18px;font-size:14px;font-weight:600;flex-shrink:0;}
+.apush-btn:active{transform:scale(.95);}
 #TOAST{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(90px);background:var(--br);color:var(--cr);padding:12px 20px;border-radius:24px;font-size:14px;font-weight:500;transition:transform .3s ease;z-index:2000;white-space:nowrap;box-shadow:0 4px 18px rgba(44,21,0,.25);}
 </style>
 </head>
@@ -240,6 +246,14 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 </div>
 
 <div class="main" id="MAIN">
+
+  <div id="ADMIN_PUSH_BANNER" class="apush-banner" style="display:none;">
+    <div class="apush-txt">
+      <strong>Zapni si upozornění na objednávky</strong>
+      <span>Dáme ti vědět, hned jak přijde nová objednávka.</span>
+    </div>
+    <button class="apush-btn" onclick="enableAdminPush()">Zapnout</button>
+  </div>
 
   <!-- PRODUKTOVÉ PANELY 0–2 (generovány skriptem) -->
   <div class="panel on" id="PANEL_0"></div>
@@ -1006,17 +1020,25 @@ function urlBase64ToUint8Array(base64){
 function initAdminPush(){
   if(!pushSupported())return;
   navigator.serviceWorker.register('/sw.js').catch(function(){});
-  if(Notification.permission==='granted'){ subscribeAdminPush(); return; }
+  if(Notification.permission==='granted'){ subscribeAdminPush(true); return; }
   if(Notification.permission==='default'){
-    // automaticky se zeptá při otevření admin appky
-    Notification.requestPermission().then(function(perm){
-      if(perm==='granted')subscribeAdminPush();
-    });
+    // iOS vyžaduje kliknutí uživatele → ukážeme tlačítko/banner
+    var b=document.getElementById('ADMIN_PUSH_BANNER');
+    if(b)b.style.display='flex';
   }
 }
-function subscribeAdminPush(){
+function enableAdminPush(){
+  var b=document.getElementById('ADMIN_PUSH_BANNER');
+  if(b)b.style.display='none';
+  if(!pushSupported()){showToast('Tento prohlížeč notifikace nepodporuje');return;}
+  Notification.requestPermission().then(function(perm){
+    if(perm==='granted')subscribeAdminPush(false);
+    else showToast('Notifikace nepovoleny');
+  });
+}
+function subscribeAdminPush(silent){
   apiFetch({action:'vapidKey'},function(err,res){
-    if(err||!res||!res.key)return;
+    if(err||!res||!res.key){if(!silent)showToast('Notifikace nejsou nastaveny');return;}
     navigator.serviceWorker.ready.then(function(reg){
       return reg.pushManager.getSubscription().then(function(existing){
         if(existing)return existing;
@@ -1025,8 +1047,10 @@ function subscribeAdminPush(){
     }).then(function(sub){
       if(!sub)return;
       var json=sub.toJSON();
-      apiFetch({action:'subscribe',jmeno:'__admin__',endpoint:sub.endpoint,p256dh:json.keys.p256dh,auth:json.keys.auth},function(){});
-    }).catch(function(){});
+      apiFetch({action:'subscribe',jmeno:'__admin__',endpoint:sub.endpoint,p256dh:json.keys.p256dh,auth:json.keys.auth},function(){
+        if(!silent)showToast('✓ Upozornění na objednávky zapnuta');
+      });
+    }).catch(function(){if(!silent)showToast('Zapnutí se nepodařilo');});
   });
 }
 
