@@ -52,6 +52,13 @@ button{font-family:'Instrument Sans',sans-serif;cursor:pointer;}
 .or-divider{text-align:center;font-size:12px;color:var(--text3);margin:4px 0 16px;}
 .returning-tag{display:inline-flex;align-items:center;gap:6px;background:var(--gr-soft);color:var(--gr-dark);font-size:12px;font-weight:600;padding:5px 12px;border-radius:50px;margin-bottom:14px;}
 .returning-tag::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--gr);}
+.ac-wrap{position:relative;}
+.ac-list{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--card);border:1.5px solid var(--border2);border-radius:12px;box-shadow:0 8px 24px rgba(44,21,0,.12);overflow:hidden;z-index:20;display:none;max-height:240px;overflow-y:auto;}
+.ac-list.on{display:block;}
+.ac-item{padding:12px 14px;font-size:15px;color:var(--br);cursor:pointer;border-bottom:1px solid var(--border);}
+.ac-item:last-child{border-bottom:none;}
+.ac-item:active,.ac-item.sel{background:var(--or-soft);color:var(--or-dark);}
+.ac-item .hl{font-weight:700;color:var(--or-dark);}
 .btn-primary{width:100%;padding:14px;background:var(--or);color:#fff;border:none;border-radius:13px;font-family:'Fraunces',serif;font-size:16px;font-weight:700;transition:transform .15s;box-shadow:0 4px 14px rgba(212,86,10,.22);}
 .btn-primary:active{transform:scale(.97);}
 .btn-back{width:100%;margin-top:8px;padding:10px;background:none;border:none;color:var(--text2);font-size:14px;}
@@ -193,8 +200,11 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 
       <div class="login-step on" id="step-name">
         <div class="fgroup">
-          <label class="flabel" for="name-select">Vyber své jméno</label>
-          <select id="name-select" onchange="onNameSelect()"><option value="">— načítám… —</option></select>
+          <label class="flabel" for="name-input">Zadej své jméno</label>
+          <div class="ac-wrap">
+            <input type="text" id="name-input" placeholder="Začni psát jméno…" autocomplete="off" oninput="onNameType()" onkeydown="onNameKey(event)">
+            <div class="ac-list" id="ac-list"></div>
+          </div>
         </div>
 
         <!-- Stávající zákazník: PIN rovnou pod jménem -->
@@ -208,14 +218,9 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
           <div class="login-error" id="error-pin"></div>
         </div>
 
-        <!-- Nový zákazník: zadání jména -->
-        <div id="new-name-block">
-          <div class="or-divider">nebo</div>
-          <div class="fgroup">
-            <label class="flabel" for="name-new">Nový zákazník – zadej jméno</label>
-            <input type="text" id="name-new" placeholder="Tvoje jméno" oninput="onNewNameInput()">
-          </div>
-          <button class="btn-primary" onclick="handleStepName()">Pokračovat</button>
+        <!-- Nový zákazník: nabídka registrace -->
+        <div id="new-name-block" style="display:none;">
+          <button class="btn-primary" id="register-btn" onclick="handleStepName()">Zaregistrovat se jako <span id="register-name"></span></button>
         </div>
         <div class="login-error" id="error-name"></div>
       </div>
@@ -394,6 +399,7 @@ function api(params){
   return fetch(API+'?'+qs).then(function(r){return r.json();});
 }
 function esc(s){return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function escJs(s){return (s||'').toString().replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
 function showToast(msg){
   var t=document.getElementById('TOAST');
   if(!t){t=document.createElement('div');t.id='TOAST';document.body.appendChild(t);}
@@ -433,64 +439,111 @@ function showScreen(name){
   document.getElementById('screen-'+name).classList.add('on');
 }
 
-/* ===== Přihlášení ===== */
+/* ===== Přihlášení (našeptávač jmen) ===== */
 function loadCustomerList(){
   api({action:'getCustomers'}).then(function(d){
     customerList=Array.isArray(d)?d:[];
-    populateSelect();
-  }).catch(function(){customerList=[];populateSelect();});
-}
-function populateSelect(){
-  var sel=document.getElementById('name-select');
-  sel.innerHTML='<option value="">— vyber —</option>';
-  customerList.forEach(function(c){
-    var o=document.createElement('option');
-    o.value=c.jmeno;o.textContent=c.jmeno;
-    sel.appendChild(o);
-  });
+  }).catch(function(){customerList=[];});
 }
 function showStep(id){
   document.querySelectorAll('.login-step').forEach(function(s){s.classList.remove('on');});
   document.getElementById(id).classList.add('on');
 }
-function onNameSelect(){
-  var sel=document.getElementById('name-select').value;
-  var inlinePin=document.getElementById('inline-pin');
-  var newBlock=document.getElementById('new-name-block');
-  if(!sel){
-    inlinePin.style.display='none';
-    newBlock.style.display='block';
-    document.getElementById('login-subtitle').textContent='Přihlas se pro objednávku';
+function normName(s){
+  return (s||'').toString().trim().toLowerCase();
+}
+var acIndex=-1; // zvýrazněná položka v nabídce (klávesnice)
+
+function onNameType(){
+  var val=document.getElementById('name-input').value;
+  var q=normName(val);
+  // psaní jména resetuje rozpracovaný stav
+  document.getElementById('inline-pin').style.display='none';
+  document.getElementById('new-name-block').style.display='none';
+  document.getElementById('login-subtitle').textContent='Přihlas se pro objednávku';
+  pendingName='';
+  acIndex=-1;
+
+  var list=document.getElementById('ac-list');
+  if(!q){list.classList.remove('on');list.innerHTML='';return;}
+
+  // od prvního písmene: nabídni jména ZAČÍNAJÍCÍ na q (prefix – lepší soukromí i intuice)
+  var matches=customerList.filter(function(c){return normName(c.jmeno).indexOf(q)===0;});
+  // přesná shoda → rovnou nabídni přihlášení/registraci, seznam neukazuj
+  var exact=customerList.find(function(c){return normName(c.jmeno)===q;});
+
+  if(matches.length===0){
+    // nikdo takový → nabídni registraci
+    list.classList.remove('on');list.innerHTML='';
+    offerRegister(val.trim());
     return;
   }
-  // vybráno jméno ze seznamu → vyčisti případné nové jméno
-  document.getElementById('name-new').value='';
-  var existing=customerList.find(function(c){return c.jmeno===sel;});
-  if(existing&&existing.maPin){
-    // stávající zákazník s PINem → rovnou pole na PIN
-    pendingName=sel;
-    document.getElementById('login-subtitle').textContent='Vítej zpět, '+sel+'!';
-    newBlock.style.display='none';
-    inlinePin.style.display='block';
-    document.getElementById('pin-input').value='';
-    setTimeout(function(){document.getElementById('pin-input').focus();},80);
-  }else{
-    // zákazník bez PINu (ještě se neregistroval) → ať si PIN vytvoří
-    pendingName=sel;
-    inlinePin.style.display='none';
-    newBlock.style.display='none';
-    document.getElementById('login-subtitle').textContent='Vytvoř si PIN: '+sel;
-    showStep('step-newpin');
+
+  if(exact){
+    list.classList.remove('on');list.innerHTML='';
+    pickName(exact.jmeno);
+    return;
+  }
+
+  // vykresli nabídku
+  list.innerHTML=matches.slice(0,8).map(function(c,i){
+    var nm=c.jmeno;
+    var html='<span class="hl">'+esc(nm.substring(0,q.length))+'</span>'+esc(nm.substring(q.length));
+    return '<div class="ac-item" data-name="'+esc(nm)+'" onclick="chooseName(\''+escJs(nm)+'\')">'+html+'</div>';
+  }).join('');
+  list.classList.add('on');
+}
+
+function onNameKey(e){
+  var list=document.getElementById('ac-list');
+  var items=list.querySelectorAll('.ac-item');
+  if(e.key==='ArrowDown'&&items.length){e.preventDefault();acIndex=Math.min(items.length-1,acIndex+1);highlightAc(items);}
+  else if(e.key==='ArrowUp'&&items.length){e.preventDefault();acIndex=Math.max(0,acIndex-1);highlightAc(items);}
+  else if(e.key==='Enter'){
+    e.preventDefault();
+    if(acIndex>=0&&items[acIndex])chooseName(items[acIndex].getAttribute('data-name'));
+    else{
+      // bez výběru: zkus přesnou shodu, jinak registrace
+      var val=document.getElementById('name-input').value.trim();
+      var exact=customerList.find(function(c){return normName(c.jmeno)===normName(val);});
+      if(exact)chooseName(exact.jmeno);
+      else if(val)offerRegister(val);
+    }
   }
 }
-function onNewNameInput(){
-  // píše nové jméno → schovej PIN sekci pro vybraného zákazníka
-  var v=document.getElementById('name-new').value.trim();
-  if(v){
-    document.getElementById('name-select').value='';
-    document.getElementById('inline-pin').style.display='none';
-    document.getElementById('login-subtitle').textContent='Přihlas se pro objednávku';
+function highlightAc(items){
+  items.forEach(function(it,i){it.classList.toggle('sel',i===acIndex);});
+}
+function chooseName(nm){
+  document.getElementById('name-input').value=nm;
+  document.getElementById('ac-list').classList.remove('on');
+  document.getElementById('ac-list').innerHTML='';
+  pickName(nm);
+}
+function pickName(nm){
+  // jméno odpovídá existujícímu zákazníkovi
+  var existing=customerList.find(function(c){return normName(c.jmeno)===normName(nm);});
+  pendingName=existing?existing.jmeno:nm;
+  if(existing&&existing.maPin){
+    document.getElementById('login-subtitle').textContent='Vítej zpět, '+pendingName+'!';
+    document.getElementById('new-name-block').style.display='none';
+    document.getElementById('inline-pin').style.display='block';
+    document.getElementById('pin-input').value='';
+    setTimeout(function(){document.getElementById('pin-input').focus();},80);
+  }else if(existing){
+    // zaregistrovaný bez PINu → vytvoření PINu
+    document.getElementById('login-subtitle').textContent='Vytvoř si PIN: '+pendingName;
+    showStep('step-newpin');
+  }else{
+    offerRegister(nm);
   }
+}
+function offerRegister(nm){
+  if(!nm){document.getElementById('new-name-block').style.display='none';return;}
+  pendingName=nm;
+  document.getElementById('inline-pin').style.display='none';
+  document.getElementById('register-name').textContent='„'+nm+'"';
+  document.getElementById('new-name-block').style.display='block';
 }
 function showLoginError(stepId,msg){
   var el=document.getElementById('error-'+stepId);
@@ -498,19 +551,10 @@ function showLoginError(stepId,msg){
   setTimeout(function(){el.style.display='none';},3000);
 }
 function handleStepName(){
-  // pouze pro nové jméno napsané ručně
-  var newName=document.getElementById('name-new').value.trim();
-  if(!newName){showLoginError('name','Zadej své jméno, nebo ho vyber ze seznamu.');return;}
-  pendingName=newName;
-  var existing=customerList.find(function(c){return c.jmeno===newName;});
-  if(existing&&existing.maPin){
-    // jméno už existuje s PINem → nech ho přihlásit
-    document.getElementById('name-select').value=newName;
-    onNameSelect();
-  }else{
-    document.getElementById('login-subtitle').textContent='Registrace: '+newName;
-    showStep('step-newpin');
-  }
+  // registrace nového jména
+  if(!pendingName){showLoginError('name','Zadej své jméno.');return;}
+  document.getElementById('login-subtitle').textContent='Registrace: '+pendingName;
+  showStep('step-newpin');
 }
 function handleStepPin(){
   var pin=document.getElementById('pin-input').value.trim();
@@ -534,10 +578,11 @@ function goBackToName(){
   document.getElementById('pin-input').value='';
   document.getElementById('pin-new').value='';
   document.getElementById('pin-confirm').value='';
-  document.getElementById('name-select').value='';
-  document.getElementById('name-new').value='';
+  document.getElementById('name-input').value='';
+  document.getElementById('ac-list').classList.remove('on');
+  document.getElementById('ac-list').innerHTML='';
   document.getElementById('inline-pin').style.display='none';
-  document.getElementById('new-name-block').style.display='block';
+  document.getElementById('new-name-block').style.display='none';
   pendingName='';
   showStep('step-name');
 }
