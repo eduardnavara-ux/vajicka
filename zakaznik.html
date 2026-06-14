@@ -289,8 +289,8 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 
       <div id="push-banner" class="push-banner" style="display:none;">
         <div class="push-banner-txt">
-          <strong>Zapni si upozornění</strong>
-          <span>Dáme ti vědět o potvrzení objednávky i naskladnění.</span>
+          <strong>Buď u toho jako první 🐓</strong>
+          <span>Fotky zvířat ze dvora, čerstvé naskladnění bedýnek i potvrzení objednávky – pošleme ti upozornění.</span>
         </div>
         <button class="push-banner-btn" onclick="enablePush()">Zapnout</button>
         <button class="push-banner-x" onclick="dismissPushBanner()" aria-label="Skrýt">✕</button>
@@ -412,6 +412,18 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
     <div class="dialog-btns">
       <button class="db-cancel" onclick="closeConfirm()">Zpět</button>
       <button class="db-ok" onclick="confirmAndSubmit()">Odeslat</button>
+    </div>
+  </div>
+</div>
+
+<!-- Po objednávce: nabídka notifikací (nejsilnější moment) -->
+<div class="dialog-overlay" id="postorder-push" style="display:none;" onclick="if(event.target===this)postOrderPushNo()">
+  <div class="dialog-box">
+    <h3>Dáme ti vědět? 🔔</h3>
+    <p style="margin-bottom:16px;">Pošleme ti upozornění, jakmile <strong>potvrdíme tvou objednávku</strong> – a taky když naskladníme čerstvé bedýnky nebo přidáme fotky ze dvora.</p>
+    <div class="dialog-btns">
+      <button class="db-cancel" onclick="postOrderPushNo()">Teď ne</button>
+      <button class="db-ok" onclick="postOrderPushYes()">Zapnout</button>
     </div>
   </div>
 </div>
@@ -1026,7 +1038,14 @@ function confirmAndSubmit(){
     if(d&&d.status==='ok'){
       showToast('✓ Objednávka odeslána, čeká na potvrzení');
       resetOrderForm();
-      switchTab('history');
+      // Nejlepší moment na nabídku notifikací: hned po objednávce, když ji chce sledovat.
+      // Jen pokud je podporujeme a uživatel je ještě nepovolil ani natrvalo neodmítl.
+      if(pushSupported() && Notification.permission==='default'){
+        switchTab('history');
+        setTimeout(showPostOrderPush, 400);
+      }else{
+        switchTab('history');
+      }
     }else{
       btn.disabled=false;
       showToast('Objednávka se neuložila, zkus to znovu');
@@ -1036,6 +1055,21 @@ function confirmAndSubmit(){
     btn.disabled=false;
     showToast('Chyba spojení, zkus to znovu');
   });
+}
+
+// Kontextová nabídka notifikací po odeslání objednávky (silnější moment než banner při startu)
+function showPostOrderPush(){
+  var dlg=document.getElementById('postorder-push');
+  if(dlg)dlg.style.display='flex';
+}
+function postOrderPushYes(){
+  var dlg=document.getElementById('postorder-push');
+  if(dlg)dlg.style.display='none';
+  enablePush(); // vyvolá systémový dotaz (je to reakce na klik – funguje i na iOS)
+}
+function postOrderPushNo(){
+  var dlg=document.getElementById('postorder-push');
+  if(dlg)dlg.style.display='none';
 }
 
 /* ===== Moje objednávky ===== */
