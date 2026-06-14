@@ -64,6 +64,17 @@ async function getSheetData(sheets, sheetName) {
   return res.data.values || [];
 }
 
+// Najde skutečný řádek "Součet jedinec" (1-indexed) podle textu ve sloupci A.
+// Tím je součtový řádek nezávislý na konstantě SUMA_ROW – posouvá se s objednávkami.
+// Vrací -1, pokud řádek neexistuje.
+function findSumaRow(data) {
+  for (let r = 0; r < data.length; r++) {
+    const v = (data[r]?.[0] || '').toString().trim().toLowerCase();
+    if (v.indexOf('součet') === 0 || v.indexOf('soucet') === 0) return r + 1;
+  }
+  return -1;
+}
+
 async function getSheetColors(sheets, sheetName) {
   const res = await sheets.spreadsheets.get({
     spreadsheetId: SPREADSHEET_ID, ranges: [`${sheetName}!A:Z`],
@@ -144,12 +155,16 @@ async function getOrCreateCustomerCol(sheets, sheetName, jmeno) {
     requestBody: { requests: [{ insertDimension: { range: { sheetId, dimension: 'COLUMNS', startIndex: lastCustomerCol, endIndex: newCol }, inheritFromBefore: false } }] }
   });
   const col = colLetter(newCol);
+  // skutečný řádek součtu (po vložení sloupce je struktura stejná)
+  const dataAfter = await getSheetData(sheets, sheetName);
+  const sumaRow = findSumaRow(dataAfter);
+  const valData = [{ range: `${sheetName}!${col}${HEADER_ROW}`, values: [[jmeno]] }];
+  if (sumaRow > 0) {
+    valData.push({ range: `${sheetName}!${col}${sumaRow}`, values: [[`=SUM(${col}${DATA_START_ROW}:${col}${sumaRow - 1})`]] });
+  }
   await sheets.spreadsheets.values.batchUpdate({
     spreadsheetId: SPREADSHEET_ID,
-    requestBody: { valueInputOption: 'USER_ENTERED', data: [
-      { range: `${sheetName}!${col}${HEADER_ROW}`, values: [[jmeno]] },
-      { range: `${sheetName}!${col}${SUMA_ROW}`, values: [[`=SUM(${col}${DATA_START_ROW}:${col}${SUMA_ROW - 1})`]] }
-    ]}
+    requestBody: { valueInputOption: 'USER_ENTERED', data: valData }
   });
   await updatePrehled(sheets, sheetName);
   return newCol;
@@ -159,19 +174,21 @@ async function updatePrehled(sheets, sheetName) {
   const data = await getSheetData(sheets, sheetName);
   const customers = getCustomers(data[HEADER_ROW - 1] || []);
   if (customers.length === 0) return;
+  const sumaRow = findSumaRow(data);
+  if (sumaRow < 0) return; // bez součtového řádku přehled nepočítáme (žádné #REF)
   const fl = colLetter(customers[0].col + 1);
   const ll = colLetter(customers[customers.length - 1].col + 1);
   let trzba;
   if (sheetName === 'Vajíčka') {
     const disc = [], full = [];
-    customers.forEach(c => { const r = colLetter(c.col + 1) + SUMA_ROW; if (DISCOUNT_NAMES.includes(c.jmeno)) disc.push(r); else full.push(r); });
+    customers.forEach(c => { const r = colLetter(c.col + 1) + sumaRow; if (DISCOUNT_NAMES.includes(c.jmeno)) disc.push(r); else full.push(r); });
     trzba = (disc.length ? `(${disc.join('+')})*9` : '') + (full.length ? (disc.length ? '+' : '') + `(${full.join('+')})*10` : '');
-  } else if (sheetName === 'Bedýnky') trzba = `SUM(${fl}${SUMA_ROW}:${ll}${SUMA_ROW})*490`;
-  else trzba = `SUM(${fl}${SUMA_ROW}:${ll}${SUMA_ROW})*190`;
+  } else if (sheetName === 'Bedýnky') trzba = `SUM(${fl}${sumaRow}:${ll}${sumaRow})*490`;
+  else trzba = `SUM(${fl}${sumaRow}:${ll}${sumaRow})*190`;
   await sheets.spreadsheets.values.batchUpdate({
     spreadsheetId: SPREADSHEET_ID,
     requestBody: { valueInputOption: 'USER_ENTERED', data: [
-      { range: `${sheetName}!L3`, values: [[`=SUM(${fl}${SUMA_ROW}:${ll}${SUMA_ROW})`]] },
+      { range: `${sheetName}!L3`, values: [[`=SUM(${fl}${sumaRow}:${ll}${sumaRow})`]] },
       { range: `${sheetName}!L4`, values: [[`=${trzba}`]] }
     ]}
   });
@@ -180,14 +197,39 @@ async function updatePrehled(sheets, sheetName) {
 async function zpracujObjednavku(sheets, jmeno, kusy, datum, produkt) {
   const sn = { vajicka: 'Vajíčka', bedynka: 'Bedýnky', sirup: 'Sirup' }[produkt];
   const col = await getOrCreateCustomerCol(sheets, sn, jmeno);
-  const data = await getSheetData(sheets, sn);
-  // Hledej první prázdný řádek v datové oblasti (DATA_START_ROW až SUMA_ROW-1)
-  let targetRow = -1;
-  for (let r = DATA_START_ROW; r < SUMA_ROW; r++) {
-    const cellVal = data[r - 1]?.[0];
-    if (!cellVal || cellVal === '') { targetRow = r; break; }
+  let data = await getSheetData(sheets, sn);
+  let sumaRow = findSumaRow(data);
+  const MEZERA = 2; // požadovaný počet prázdných řádků mezi poslední objednávkou a součtem
+
+  // Najdi řádek poslední vyplněné objednávky (poslední datum ve sloupci A nad součtem)
+  const horniMez = sumaRow > 0 ? sumaRow - 1 : data.length;
+  let lastObjRow = DATA_START_ROW - 1; // pokud žádná objednávka není
+  for (let r = DATA_START_ROW; r <= horniMez; r++) {
+    const v = data[r - 1]?.[0];
+    if (v && v !== '') lastObjRow = r;
   }
-  if (targetRow === -1) targetRow = SUMA_ROW - 1;
+
+  // Cílový řádek = hned pod poslední objednávkou
+  let targetRow = lastObjRow + 1;
+
+  // Když součet existuje, zajisti, že po zápisu zůstane MEZERA prázdných řádků nad ním.
+  // Potřebné řádky = targetRow (zapsaná objednávka) + MEZERA musí být < sumaRow.
+  if (sumaRow > 0) {
+    const potrebnyPosledniVolny = targetRow + MEZERA; // řádek, který musí být ještě nad součtem
+    if (potrebnyPosledniVolny >= sumaRow) {
+      // vlož tolik řádků před součet, aby vznikla mezera
+      const kolikVlozit = potrebnyPosledniVolny - sumaRow + 1;
+      const sheetIdIns = await getSheetId(sheets, sn);
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: SPREADSHEET_ID,
+        requestBody: { requests: [{ insertDimension: {
+          range: { sheetId: sheetIdIns, dimension: 'ROWS', startIndex: sumaRow - 1, endIndex: sumaRow - 1 + kolikVlozit },
+          inheritFromBefore: false
+        } }] }
+      });
+      sumaRow += kolikVlozit; // součet se posunul dolů
+    }
+  }
 
   await sheets.spreadsheets.values.batchUpdate({
     spreadsheetId: SPREADSHEET_ID,
@@ -204,6 +246,27 @@ async function zpracujObjednavku(sheets, jmeno, kusy, datum, produkt) {
       cell: { userEnteredFormat: { backgroundColor: { red: 0.957, green: 0.651, blue: 0.137 } } },
       fields: 'userEnteredFormat.backgroundColor'
     }}]}
+  });
+  // Přepočítej součtové vzorce a přehled na aktuální pozici (dynamicky)
+  await prepocitejSoucet(sheets, sn);
+  await updatePrehled(sheets, sn);
+}
+
+// Přepíše vzorce v součtovém řádku "Součet jedinec" pro všechny sloupce zákazníků
+// na aktuální rozsah (DATA_START_ROW .. sumaRow-1). Drží součet správný i po vkládání řádků.
+async function prepocitejSoucet(sheets, sheetName) {
+  const data = await getSheetData(sheets, sheetName);
+  const sumaRow = findSumaRow(data);
+  if (sumaRow < 0) return;
+  const customers = getCustomers(data[HEADER_ROW - 1] || []);
+  if (customers.length === 0) return;
+  const updates = customers.map(c => {
+    const L = colLetter(c.col + 1);
+    return { range: `${sheetName}!${L}${sumaRow}`, values: [[`=SUM(${L}${DATA_START_ROW}:${L}${sumaRow - 1})`]] };
+  });
+  await sheets.spreadsheets.values.batchUpdate({
+    spreadsheetId: SPREADSHEET_ID,
+    requestBody: { valueInputOption: 'USER_ENTERED', data: updates }
   });
 }
 
