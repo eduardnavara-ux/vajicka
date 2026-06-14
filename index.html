@@ -205,6 +205,30 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 .apush-txt span{display:block;font-size:12px;color:var(--text2);margin-top:1px;line-height:1.4;}
 .apush-btn{background:var(--or);color:#fff;border:none;border-radius:11px;padding:10px 18px;font-size:14px;font-weight:600;flex-shrink:0;}
 .apush-btn:active{transform:scale(.95);}
+
+/* ===== AKTUALITY (admin) ===== */
+.akt-field{margin-bottom:14px;}
+.akt-field label{font-size:12px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:7px;}
+.akt-field input,.akt-field textarea{width:100%;border:1.5px solid var(--border2);border-radius:12px;padding:12px 14px;font-size:15px;font-family:'Instrument Sans',sans-serif;color:var(--br);background:var(--card);outline:none;transition:border-color .2s;}
+.akt-field input:focus,.akt-field textarea:focus{border-color:var(--or);box-shadow:0 0 0 3px rgba(212,86,10,.1);}
+.akt-field textarea{resize:vertical;min-height:90px;line-height:1.55;}
+.akt-photo-btn{width:100%;border:1.5px dashed var(--border2);border-radius:13px;padding:16px;background:var(--cr);color:var(--text2);font-size:14px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:9px;transition:all .15s;}
+.akt-photo-btn:active{transform:scale(.98);}
+.akt-photo-btn svg{width:19px;height:19px;}
+.akt-preview{margin-top:12px;position:relative;border-radius:14px;overflow:hidden;display:none;border:1px solid var(--border);}
+.akt-preview img{width:100%;display:block;max-height:260px;object-fit:cover;}
+.akt-preview-x{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;border:none;background:rgba(44,21,0,.6);color:#fff;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;}
+.akt-upload-status{font-size:13px;color:var(--or-dark);margin-top:10px;display:none;align-items:center;gap:8px;}
+.akt-upload-status.on{display:flex;}
+.akt-spin{width:15px;height:15px;border:2px solid var(--or-soft);border-top-color:var(--or);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.akt-current{background:var(--cr);border:1px solid var(--border);border-radius:16px;overflow:hidden;}
+.akt-current img{width:100%;display:block;max-height:200px;object-fit:cover;}
+.akt-current-body{padding:14px 16px;}
+.akt-current-body .d{font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+.akt-current-body .n{font-family:'Fraunces',serif;font-size:17px;font-weight:700;margin-bottom:5px;}
+.akt-current-body .t{font-size:14px;color:var(--br);line-height:1.55;white-space:pre-wrap;}
+
 #TOAST{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(90px);background:var(--br);color:var(--cr);padding:12px 20px;border-radius:24px;font-size:14px;font-weight:500;transition:transform .3s ease;z-index:2000;white-space:nowrap;box-shadow:0 4px 18px rgba(44,21,0,.25);}
 </style>
 </head>
@@ -242,6 +266,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
     <button class="tab" onclick="setTab(3)">Cashflow</button>
     <button class="tab" onclick="setTab(4)">Objednávky<span class="tab-dot" id="TAB_DOT"></span></button>
     <button class="tab" onclick="setTab(5)">Sklad</button>
+    <button class="tab" onclick="setTab(6)">Aktuality</button>
   </div>
 </div>
 
@@ -302,6 +327,40 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
     </div>
   </div>
 
+  <!-- AKTUALITY -->
+  <div class="panel" id="PANEL_6">
+    <div class="card">
+      <div class="card-title">Nová aktualita <small>uvidí ji zákazníci</small></div>
+      <div class="akt-field">
+        <label for="AKT_NADPIS">Nadpis</label>
+        <input type="text" id="AKT_NADPIS" maxlength="80" placeholder="např. Čerstvá vajíčka tento týden">
+      </div>
+      <div class="akt-field">
+        <label for="AKT_TEXT">Text</label>
+        <textarea id="AKT_TEXT" maxlength="500" placeholder="Napiš, co je nového…"></textarea>
+      </div>
+      <div class="akt-field">
+        <label>Fotka (volitelně)</label>
+        <button class="akt-photo-btn" id="AKT_PHOTO_BTN" onclick="document.getElementById('AKT_FILE').click()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 16l5-5c.9-.9 2.1-.9 3 0l5 5"/><path d="M14 14l1-1c.9-.9 2.1-.9 3 0l3 3"/><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="9" r="1.5"/></svg>
+          <span id="AKT_PHOTO_LABEL">Vybrat fotku z telefonu</span>
+        </button>
+        <input type="file" id="AKT_FILE" accept="image/*" style="display:none" onchange="uploadAktFoto(this)">
+        <div class="akt-upload-status" id="AKT_UPLOAD_STATUS"><span class="akt-spin"></span><span>Nahrávám fotku…</span></div>
+        <div class="akt-preview" id="AKT_PREVIEW">
+          <button class="akt-preview-x" onclick="clearAktFoto()" aria-label="Odebrat fotku">✕</button>
+          <img id="AKT_PREVIEW_IMG" src="" alt="">
+        </div>
+      </div>
+      <button class="submit-btn" id="AKT_SUBMIT" onclick="publishAktualita()">Zveřejnit aktualitu</button>
+      <div class="msg" id="AKT_MSG"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Aktuálně zveřejněno</div>
+      <div id="AKT_CURRENT"><div class="skel" style="height:80px"></div></div>
+    </div>
+  </div>
+
 </div>
 
 <!-- Edit dialog -->
@@ -323,6 +382,8 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 
 /* ===== Konstanty a stav ===== */
 var API='/.netlify/functions/api';
+var CLOUDINARY_CLOUD='dxtlvckbt';
+var CLOUDINARY_PRESET='ml_default';
 var PRODUKTY=['vajicka','bedynka','sirup'];
 var PROD_NAZVY=['Vajíčka','Bedýnky','Sirup'];
 var PROD_NAZVY_MALE=['vajíčka','bedýnky','sirup'];
@@ -338,9 +399,10 @@ var state=[
   {jmeno:null,datum:null},
   {jmeno:null,datum:null}
 ];
-var store={customers:[],lists:{vajicka:null,bedynka:null,sirup:null},requests:null,cashflow:null,history:null,sklad:null};
+var store={customers:[],lists:{vajicka:null,bedynka:null,sirup:null},requests:null,cashflow:null,history:null,sklad:null,aktualita:undefined};
 var dateOptions=[[],[],[]];
 var histOpen=false;
+var aktFotoUrl='';
 
 /* ===== Splash ===== */
 function hideSplash(){
@@ -400,13 +462,14 @@ function showToast(msg){
 function setTab(i){
   curTab=i;
   var tabs=document.querySelectorAll('#TABS .tab');
-  for(var k=0;k<6;k++){
+  for(var k=0;k<7;k++){
     tabs[k].classList.toggle('on',k===i);
     document.getElementById('PANEL_'+k).classList.toggle('on',k===i);
   }
   if(i===3)loadCashflow();
   if(i===4){renderRequests();renderDelivAll();}
   if(i===5)renderSklad();
+  if(i===6)renderAktualita();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 var touchStartX=0,touchStartY=0;
@@ -416,7 +479,7 @@ document.getElementById('MAIN').addEventListener('touchend',function(e){
   var dy=e.changedTouches[0].clientY-touchStartY;
   if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*1.5){
     var next=curTab+(dx<0?1:-1);
-    if(next>=0&&next<=5)setTab(next);
+    if(next>=0&&next<=6)setTab(next);
   }
 },{passive:true});
 
@@ -926,6 +989,7 @@ function applyInit(data){
   store.lists=data.lists&&data.lists.vajicka!==undefined?data.lists:store.lists;
   store.requests=Array.isArray(data.requests)?data.requests:store.requests;
   if(data.sklad)store.sklad=data.sklad;
+  if(typeof data.aktualita!=='undefined')store.aktualita=data.aktualita;
   saveCache();
   renderAll();
 }
@@ -993,6 +1057,90 @@ function saveSkladItem(key,withDate){
     }else showToast('Uložení se nepodařilo');
   });
 }
+
+/* ===== Aktuality ===== */
+function uploadAktFoto(input){
+  var file=input.files&&input.files[0];
+  if(!file)return;
+  var status=document.getElementById('AKT_UPLOAD_STATUS');
+  var btn=document.getElementById('AKT_PHOTO_BTN');
+  status.classList.add('on');
+  btn.style.display='none';
+  var fd=new FormData();
+  fd.append('file',file);
+  fd.append('upload_preset',CLOUDINARY_PRESET);
+  fetch('https://api.cloudinary.com/v1_1/'+CLOUDINARY_CLOUD+'/image/upload',{method:'POST',body:fd})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      status.classList.remove('on');
+      if(d&&d.secure_url){
+        aktFotoUrl=d.secure_url;
+        document.getElementById('AKT_PREVIEW_IMG').src=aktFotoUrl;
+        document.getElementById('AKT_PREVIEW').style.display='block';
+      }else{
+        btn.style.display='flex';
+        showToast('Nahrání fotky selhalo'+(d&&d.error&&d.error.message?': '+d.error.message:''));
+      }
+    })
+    .catch(function(){
+      status.classList.remove('on');
+      btn.style.display='flex';
+      showToast('Chyba při nahrávání fotky');
+    });
+  input.value='';
+}
+function clearAktFoto(){
+  aktFotoUrl='';
+  document.getElementById('AKT_PREVIEW').style.display='none';
+  document.getElementById('AKT_PREVIEW_IMG').src='';
+  document.getElementById('AKT_PHOTO_BTN').style.display='flex';
+}
+function aktMsg(t,m){var e=document.getElementById('AKT_MSG');e.className='msg '+t;e.innerHTML=m;}
+function publishAktualita(){
+  var nadpis=document.getElementById('AKT_NADPIS').value.trim();
+  var text=document.getElementById('AKT_TEXT').value.trim();
+  if(!nadpis&&!text&&!aktFotoUrl){aktMsg('er','Vyplň aspoň nadpis nebo text');return;}
+  var btn=document.getElementById('AKT_SUBMIT');
+  btn.disabled=true;
+  aktMsg('ld','Zveřejňuji…');
+  apiFetch({action:'setAktualita',nadpis:nadpis,text:text,foto:aktFotoUrl},function(err,d){
+    btn.disabled=false;
+    if(!err&&d&&d.status==='ok'){
+      aktMsg('ok','✓ Aktualita zveřejněna a odeslána zákazníkům');
+      document.getElementById('AKT_NADPIS').value='';
+      document.getElementById('AKT_TEXT').value='';
+      clearAktFoto();
+      store.aktualita={datum:'dnes',nadpis:nadpis,text:text,foto:aktFotoUrl};
+      setTimeout(function(){loadAktualita();},600);
+    }else{
+      aktMsg('er','Nepodařilo se zveřejnit'+(d&&d.error?': '+d.error:''));
+    }
+  });
+}
+function loadAktualita(){
+  apiFetch({action:'getAktualita'},function(err,d){
+    store.aktualita=(!err&&d&&(d.nadpis||d.text||d.foto))?d:null;
+    renderAktualitaCurrent();
+  });
+}
+function renderAktualita(){
+  // při vstupu na záložku: pokud current ještě neznáme, načti
+  if(typeof store.aktualita==='undefined')loadAktualita();
+  else renderAktualitaCurrent();
+}
+function renderAktualitaCurrent(){
+  var box=document.getElementById('AKT_CURRENT');
+  var a=store.aktualita;
+  if(!a){box.innerHTML='<div class="empty">Zatím žádná aktualita nezveřejněna</div>';return;}
+  box.innerHTML='<div class="akt-current">'+
+    (a.foto?'<img src="'+esc(a.foto)+'" alt="">':'')+
+    '<div class="akt-current-body">'+
+      (a.datum?'<div class="d">'+esc(a.datum)+'</div>':'')+
+      (a.nadpis?'<div class="n">'+esc(a.nadpis)+'</div>':'')+
+      (a.text?'<div class="t">'+esc(a.text)+'</div>':'')+
+    '</div></div>';
+}
+
 function renderAll(){
   renderCustomers();
   for(var s=0;s<3;s++)renderList(s);
