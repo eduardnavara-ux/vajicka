@@ -228,6 +228,14 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 .akt-current-body .d{font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
 .akt-current-body .n{font-family:'Fraunces',serif;font-size:17px;font-weight:700;margin-bottom:5px;}
 .akt-current-body .t{font-size:14px;color:var(--br);line-height:1.55;white-space:pre-wrap;}
+.akt-actions{display:flex;gap:8px;margin-top:12px;}
+.akt-edit-btn{flex:1;padding:12px;background:var(--or-soft);color:var(--or-dark);border:none;border-radius:12px;font-size:14px;font-weight:600;transition:transform .15s;}
+.akt-edit-btn:active{transform:scale(.97);}
+.akt-clear-btn{flex:1;padding:12px;background:var(--rd-soft);color:var(--rd);border:none;border-radius:12px;font-size:14px;font-weight:600;transition:transform .15s;}
+.akt-clear-btn:active{transform:scale(.97);}
+.akt-clear-btn:disabled{opacity:.6;}
+.akt-cancel-edit{width:100%;margin-top:8px;padding:11px;background:none;border:1.5px solid var(--border2);color:var(--text2);border-radius:12px;font-size:14px;font-weight:500;transition:transform .15s;}
+.akt-cancel-edit:active{transform:scale(.98);}
 
 #TOAST{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(90px);background:var(--br);color:var(--cr);padding:12px 20px;border-radius:24px;font-size:14px;font-weight:500;transition:transform .3s ease;z-index:2000;white-space:nowrap;box-shadow:0 4px 18px rgba(44,21,0,.25);}
 </style>
@@ -330,7 +338,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   <!-- AKTUALITY -->
   <div class="panel" id="PANEL_6">
     <div class="card">
-      <div class="card-title">Nová aktualita <small>uvidí ji zákazníci</small></div>
+      <div class="card-title" id="AKT_FORM_TITLE">Nová aktualita <small>uvidí ji zákazníci</small></div>
       <div class="akt-field">
         <label for="AKT_NADPIS">Nadpis</label>
         <input type="text" id="AKT_NADPIS" maxlength="80" placeholder="např. Čerstvá vajíčka tento týden">
@@ -353,6 +361,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
         </div>
       </div>
       <button class="submit-btn" id="AKT_SUBMIT" onclick="publishAktualita()">Zveřejnit aktualitu</button>
+      <button class="akt-cancel-edit" id="AKT_CANCEL_EDIT" onclick="cancelEditAktualita()" style="display:none;">Zrušit úpravu</button>
       <div class="msg" id="AKT_MSG"></div>
     </div>
     <div class="card">
@@ -383,7 +392,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 /* ===== Konstanty a stav ===== */
 var API='/.netlify/functions/api';
 var CLOUDINARY_CLOUD='dxtlvckbt';
-var CLOUDINARY_PRESET='dvurpoddubem';
+var CLOUDINARY_PRESET='ml_default';
 var PRODUKTY=['vajicka','bedynka','sirup'];
 var PROD_NAZVY=['Vajíčka','Bedýnky','Sirup'];
 var PROD_NAZVY_MALE=['vajíčka','bedýnky','sirup'];
@@ -403,6 +412,7 @@ var store={customers:[],lists:{vajicka:null,bedynka:null,sirup:null},requests:nu
 var dateOptions=[[],[],[]];
 var histOpen=false;
 var aktFotoUrl='';
+var aktEditMode=false;
 
 /* ===== Splash ===== */
 function hideSplash(){
@@ -1102,18 +1112,23 @@ function publishAktualita(){
   if(!nadpis&&!text&&!aktFotoUrl){aktMsg('er','Vyplň aspoň nadpis nebo text');return;}
   var btn=document.getElementById('AKT_SUBMIT');
   btn.disabled=true;
-  aktMsg('ld','Zveřejňuji…');
-  apiFetch({action:'setAktualita',nadpis:nadpis,text:text,foto:aktFotoUrl},function(err,d){
+  var editing=aktEditMode;
+  aktMsg('ld',editing?'Ukládám změny…':'Zveřejňuji…');
+  apiFetch({action:editing?'editAktualita':'setAktualita',nadpis:nadpis,text:text,foto:aktFotoUrl},function(err,d){
     btn.disabled=false;
     if(!err&&d&&d.status==='ok'){
-      aktMsg('ok','✓ Aktualita zveřejněna a odeslána zákazníkům');
+      aktMsg('ok',editing?'✓ Změny uloženy':'✓ Aktualita zveřejněna a odeslána zákazníkům');
+      aktEditMode=false;
       document.getElementById('AKT_NADPIS').value='';
       document.getElementById('AKT_TEXT').value='';
       clearAktFoto();
+      document.getElementById('AKT_FORM_TITLE').innerHTML='Nová aktualita <small>uvidí ji zákazníci</small>';
+      document.getElementById('AKT_SUBMIT').textContent='Zveřejnit aktualitu';
+      document.getElementById('AKT_CANCEL_EDIT').style.display='none';
       store.aktualita={datum:'dnes',nadpis:nadpis,text:text,foto:aktFotoUrl};
       setTimeout(function(){loadAktualita();},600);
     }else{
-      aktMsg('er','Nepodařilo se zveřejnit'+(d&&d.error?': '+d.error:''));
+      aktMsg('er',(editing?'Nepodařilo se uložit':'Nepodařilo se zveřejnit')+(d&&d.error?': '+d.error:''));
     }
   });
 }
@@ -1138,7 +1153,57 @@ function renderAktualitaCurrent(){
       (a.datum?'<div class="d">'+esc(a.datum)+'</div>':'')+
       (a.nadpis?'<div class="n">'+esc(a.nadpis)+'</div>':'')+
       (a.text?'<div class="t">'+esc(a.text)+'</div>':'')+
-    '</div></div>';
+    '</div></div>'+
+    '<div class="akt-actions">'+
+      '<button class="akt-edit-btn" id="AKT_EDIT" onclick="startEditAktualita()">Upravit</button>'+
+      '<button class="akt-clear-btn" id="AKT_CLEAR" onclick="clearAktualita()">Skrýt zákazníkům</button>'+
+    '</div>';
+}
+function startEditAktualita(){
+  var a=store.aktualita;
+  if(!a)return;
+  aktEditMode=true;
+  document.getElementById('AKT_NADPIS').value=a.nadpis||'';
+  document.getElementById('AKT_TEXT').value=a.text||'';
+  if(a.foto){
+    aktFotoUrl=a.foto;
+    document.getElementById('AKT_PREVIEW_IMG').src=a.foto;
+    document.getElementById('AKT_PREVIEW').style.display='block';
+    document.getElementById('AKT_PHOTO_BTN').style.display='none';
+  }else{
+    clearAktFoto();
+  }
+  document.getElementById('AKT_FORM_TITLE').innerHTML='Upravit aktualitu <small>změny bez nového upozornění</small>';
+  document.getElementById('AKT_SUBMIT').textContent='Uložit změny';
+  document.getElementById('AKT_CANCEL_EDIT').style.display='block';
+  aktMsg('','');
+  document.getElementById('AKT_MSG').className='msg';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function cancelEditAktualita(){
+  aktEditMode=false;
+  document.getElementById('AKT_NADPIS').value='';
+  document.getElementById('AKT_TEXT').value='';
+  clearAktFoto();
+  document.getElementById('AKT_FORM_TITLE').innerHTML='Nová aktualita <small>uvidí ji zákazníci</small>';
+  document.getElementById('AKT_SUBMIT').textContent='Zveřejnit aktualitu';
+  document.getElementById('AKT_CANCEL_EDIT').style.display='none';
+  document.getElementById('AKT_MSG').className='msg';
+}
+function clearAktualita(){
+  if(!confirm('Opravdu skrýt aktualitu? Zákazníkům zmizí ze záložky Aktuality.'))return;
+  var btn=document.getElementById('AKT_CLEAR');
+  if(btn){btn.disabled=true;btn.textContent='Skrývám…';}
+  apiFetch({action:'clearAktualita'},function(err,d){
+    if(!err&&d&&d.status==='ok'){
+      store.aktualita=null;
+      renderAktualitaCurrent();
+      showToast('✓ Aktualita skryta');
+    }else{
+      if(btn){btn.disabled=false;btn.textContent='Skrýt aktualitu zákazníkům';}
+      showToast('Skrytí se nepodařilo');
+    }
+  });
 }
 
 function renderAll(){
