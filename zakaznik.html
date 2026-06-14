@@ -83,8 +83,8 @@ button{font-family:'Instrument Sans',sans-serif;cursor:pointer;}
 .push-banner-btn{background:var(--or);color:#fff;border:none;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:600;flex-shrink:0;}
 .push-banner-btn:active{transform:scale(.95);}
 .push-banner-x{position:absolute;top:7px;right:9px;background:none;border:none;color:var(--text3);font-size:13px;line-height:1;padding:2px;}
-.tabs{max-width:560px;margin:0 auto;display:flex;gap:7px;justify-content:center;padding:12px 0 14px;}
-.tab{border:1.5px solid var(--border2);background:var(--card);color:var(--text2);padding:8px 16px;border-radius:50px;font-size:14px;font-weight:500;transition:all .18s;}
+.tabs{max-width:560px;margin:0 auto;display:flex;gap:7px;justify-content:center;flex-wrap:wrap;padding:12px 0 14px;}
+.tab{border:1.5px solid var(--border2);background:var(--card);color:var(--text2);padding:8px 14px;border-radius:50px;font-size:14px;font-weight:500;transition:all .18s;}
 .tab.on{background:var(--or);border-color:var(--or);color:#fff;font-weight:600;}
 .tab:active{transform:scale(.95);}
 .main{padding:16px 14px calc(env(safe-area-inset-bottom,0px) + 40px);max-width:560px;margin:0 auto;width:100%;}
@@ -93,15 +93,22 @@ button{font-family:'Instrument Sans',sans-serif;cursor:pointer;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
 .card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:11px;}
 
-/* ===== AKTUALITA (nástěnka pro zákazníka) ===== */
-.akt-board{background:var(--card);border:1px solid var(--border);border-radius:18px;overflow:hidden;margin-bottom:11px;display:none;}
-.akt-board img{width:100%;display:block;max-height:230px;object-fit:cover;}
-.akt-board-body{padding:15px 16px;}
-.akt-board-tag{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--or-dark);background:var(--or-soft);padding:4px 11px;border-radius:50px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px;}
+/* ===== AKTUALITA (samostatná záložka) ===== */
+.akt-board{background:var(--card);border:1px solid var(--border);border-radius:18px;overflow:hidden;margin-bottom:11px;}
+.akt-board img{width:100%;display:block;object-fit:contain;background:#F4EBDF;cursor:zoom-in;}
+.akt-board-body{padding:16px 17px;}
+.akt-board-tag{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--or-dark);background:var(--or-soft);padding:4px 11px;border-radius:50px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;}
 .akt-board-tag svg{width:12px;height:12px;}
-.akt-board-nadpis{font-family:'Fraunces',serif;font-size:18px;font-weight:700;line-height:1.25;margin-bottom:6px;}
-.akt-board-text{font-size:14px;color:var(--br);line-height:1.6;white-space:pre-wrap;}
-.akt-board-datum{font-size:11px;color:var(--text3);margin-top:10px;}
+.akt-board-nadpis{font-family:'Fraunces',serif;font-size:20px;font-weight:700;line-height:1.25;margin-bottom:8px;}
+.akt-board-text{font-size:15px;color:var(--br);line-height:1.65;white-space:pre-wrap;}
+.akt-board-datum{font-size:11px;color:var(--text3);margin-top:12px;}
+.akt-empty{text-align:center;color:var(--text2);font-size:14px;padding:40px 20px;line-height:1.6;}
+/* lightbox */
+.akt-lightbox{position:fixed;inset:0;z-index:3000;background:rgba(20,10,0,.92);display:none;align-items:center;justify-content:center;padding:16px;}
+.akt-lightbox.on{display:flex;}
+.akt-lightbox img{max-width:100%;max-height:100%;border-radius:10px;object-fit:contain;}
+.akt-lightbox-x{position:absolute;top:calc(env(safe-area-inset-top,0px) + 14px);right:16px;width:42px;height:42px;border-radius:50%;border:none;background:rgba(255,255,255,.16);color:#fff;font-size:20px;line-height:1;display:flex;align-items:center;justify-content:center;}
+.akt-lightbox-x:active{transform:scale(.92);}
 
 /* ===== PRODUKTY ===== */
 .prod-row{display:flex;align-items:center;gap:12px;}
@@ -271,6 +278,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
       <button class="tab on" id="tabBtn-order" onclick="switchTab('order')">Objednat</button>
       <button class="tab" id="tabBtn-history" onclick="switchTab('history')">Moje objednávky</button>
       <button class="tab" id="tabBtn-payment" onclick="switchTab('payment')">Platba</button>
+      <button class="tab" id="tabBtn-aktuality" onclick="switchTab('aktuality')" style="display:none;">Aktuality</button>
     </div>
   </div>
 
@@ -278,20 +286,6 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 
     <!-- OBJEDNAT -->
     <div class="panel on" id="panel-order">
-
-      <!-- AKTUALITA / NÁSTĚNKA -->
-      <div class="akt-board" id="akt-board">
-        <img id="akt-board-img" src="" alt="" style="display:none;">
-        <div class="akt-board-body">
-          <span class="akt-board-tag">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
-            Aktuality z dvora
-          </span>
-          <div class="akt-board-nadpis" id="akt-board-nadpis" style="display:none;"></div>
-          <div class="akt-board-text" id="akt-board-text" style="display:none;"></div>
-          <div class="akt-board-datum" id="akt-board-datum" style="display:none;"></div>
-        </div>
-      </div>
 
       <div id="push-banner" class="push-banner" style="display:none;">
         <div class="push-banner-txt">
@@ -385,10 +379,31 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
       </div>
     </div>
 
+    <!-- AKTUALITY -->
+    <div class="panel" id="panel-aktuality">
+      <div class="akt-board" id="akt-board">
+        <img id="akt-board-img" src="" alt="" style="display:none;" onclick="openLightbox()">
+        <div class="akt-board-body">
+          <span class="akt-board-tag">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
+            Aktuality z dvora
+          </span>
+          <div class="akt-board-nadpis" id="akt-board-nadpis" style="display:none;"></div>
+          <div class="akt-board-text" id="akt-board-text" style="display:none;"></div>
+          <div class="akt-board-datum" id="akt-board-datum" style="display:none;"></div>
+        </div>
+      </div>
+      <div class="akt-empty" id="akt-empty" style="display:none;">Zatím tu nejsou žádné novinky.</div>
+    </div>
+
   </div>
 </div>
 
-<!-- Potvrzovací dialog -->
+<!-- Lightbox pro fotku aktuality -->
+<div class="akt-lightbox" id="akt-lightbox" onclick="closeLightbox()">
+  <button class="akt-lightbox-x" onclick="closeLightbox()" aria-label="Zavřít">✕</button>
+  <img id="akt-lightbox-img" src="" alt="">
+</div>
 <div class="dialog-overlay" id="confirm-dialog" style="display:none;" onclick="if(event.target===this)closeConfirm()">
   <div class="dialog-box">
     <h3>Potvrdit objednávku?</h3>
@@ -637,18 +652,33 @@ function showApp(){
   initPush();
 }
 
-/* ===== Aktualita / nástěnka ===== */
+/* ===== Aktualita (samostatná záložka) ===== */
+var aktualitaFoto='';
 function loadAktualita(){
   api({action:'getAktualita'}).then(function(a){
     renderAktualita((a&&(a.nadpis||a.text||a.foto))?a:null);
-  }).catch(function(){});
+  }).catch(function(){renderAktualita(null);});
 }
 function renderAktualita(a){
+  var tabBtn=document.getElementById('tabBtn-aktuality');
   var board=document.getElementById('akt-board');
-  if(!a){board.style.display='none';return;}
+  var empty=document.getElementById('akt-empty');
+  if(!a){
+    // žádná aktivní aktualita → záložku schovej
+    tabBtn.style.display='none';
+    board.style.display='none';
+    empty.style.display='none';
+    aktualitaFoto='';
+    // kdyby zákazník zrovna byl na záložce aktuality, vrať ho na Objednat
+    if(document.getElementById('panel-aktuality').classList.contains('on'))switchTab('order');
+    return;
+  }
+  tabBtn.style.display='';
+  board.style.display='block';
+  empty.style.display='none';
   var img=document.getElementById('akt-board-img');
-  if(a.foto){img.src=a.foto;img.style.display='block';}
-  else{img.style.display='none';img.src='';}
+  if(a.foto){img.src=a.foto;img.style.display='block';aktualitaFoto=a.foto;}
+  else{img.style.display='none';img.src='';aktualitaFoto='';}
   var nadpis=document.getElementById('akt-board-nadpis');
   if(a.nadpis){nadpis.textContent=a.nadpis;nadpis.style.display='block';}
   else nadpis.style.display='none';
@@ -658,7 +688,14 @@ function renderAktualita(a){
   var datum=document.getElementById('akt-board-datum');
   if(a.datum){datum.textContent=a.datum;datum.style.display='block';}
   else datum.style.display='none';
-  board.style.display='block';
+}
+function openLightbox(){
+  if(!aktualitaFoto)return;
+  document.getElementById('akt-lightbox-img').src=aktualitaFoto;
+  document.getElementById('akt-lightbox').classList.add('on');
+}
+function closeLightbox(){
+  document.getElementById('akt-lightbox').classList.remove('on');
 }
 
 /* ===== Web Push notifikace ===== */
