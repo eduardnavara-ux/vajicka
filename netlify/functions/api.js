@@ -304,6 +304,44 @@ async function setSklad(sheets, produkt, dostupne, od, popis) {
   }
 }
 
+// ── AKTUALITY (nástěnka pro zákazníky) ──
+// List Aktuality: A:Datum | B:Nadpis | C:Text | D:URL_fotky | E:Aktivní(ano/ne)
+async function getAktualitaData(sheets) {
+  try { return await getSheetData(sheets, 'Aktuality'); }
+  catch {
+    await sheets.spreadsheets.batchUpdate({ spreadsheetId: SPREADSHEET_ID, requestBody: { requests: [{ addSheet: { properties: { title: 'Aktuality' } } }] } });
+    const hdr = [['Datum','Nadpis','Text','URL_fotky','Aktivní']];
+    await sheets.spreadsheets.values.update({ spreadsheetId: SPREADSHEET_ID, range: 'Aktuality!A1:E1', valueInputOption: 'USER_ENTERED', requestBody: { values: hdr } });
+    return hdr;
+  }
+}
+
+async function getAktualita(sheets) {
+  const data = await getAktualitaData(sheets);
+  for (let i = data.length - 1; i >= 1; i--) {
+    const r = data[i] || [];
+    const aktivni = (r[4] || '').toString().trim().toLowerCase();
+    if (aktivni === 'ne') continue;
+    const nadpis = (r[1] || '').toString().trim();
+    const text = (r[2] || '').toString().trim();
+    const foto = (r[3] || '').toString().trim();
+    if (!nadpis && !text && !foto) continue;
+    return { datum: fmtDate(r[0]), nadpis, text, foto };
+  }
+  return null;
+}
+
+async function setAktualita(sheets, nadpis, text, fotoUrl) {
+  await getAktualitaData(sheets);
+  const dn = new Date();
+  const ds = dn.getDate() + '.' + (dn.getMonth() + 1) + '.' + dn.getFullYear();
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: SPREADSHEET_ID, range: 'Aktuality!A:E',
+    valueInputOption: 'USER_ENTERED',
+    requestBody: { values: [[ds, nadpis || '', text || '', fotoUrl || '', 'ano']] }
+  });
+}
+
 // ════════════════════════════════════════════════════
 // WEB PUSH (nativní, bez knihovny web-push)
 // ════════════════════════════════════════════════════
@@ -523,19 +561,21 @@ exports.handler = async function(event) {
       }
       case 'init': {
         // Vše pro start appky v jednom volání
-        const [vajicka, bedynka, sirup, reqData, zakData, skladData] = await Promise.all([
+        const [vajicka, bedynka, sirup, reqData, zakData, skladData, aktualita] = await Promise.all([
           listProduct(sheets, 'vajicka'),
           listProduct(sheets, 'bedynka'),
           listProduct(sheets, 'sirup'),
           getPozadavkyData(sheets),
           getZakazniciData(sheets),
-          getSkladData(sheets)
+          getSkladData(sheets),
+          getAktualita(sheets)
         ]);
         result = {
           customers: zakData.length <= 1 ? [] : zakData.slice(1).map(r => ({ jmeno: r[0], maPin: r[1] !== '' && r[1] != null })),
           lists: { vajicka, bedynka, sirup },
           requests: mapRequests(reqData).filter(r => r.stav !== 'zrušeno'),
-          sklad: mapSklad(skladData)
+          sklad: mapSklad(skladData),
+          aktualita
         };
         break;
       }
@@ -554,6 +594,21 @@ exports.handler = async function(event) {
           await pushToCustomer(sheets, null, 'Dvůr Pod Dubem', nazev + ' jsou opět skladem – můžeš objednat!', 'sklad');
         }
         result = { status: 'ok' }; break;
+      }
+      case 'getAktualita': {
+        result = await getAktualita(sheets);
+        break;
+      }
+      case 'setAktualita': {
+        const nadpis = p.nadpis || '';
+        const text = p.text || '';
+        const foto = p.foto || '';
+        await setAktualita(sheets, nadpis, text, foto);
+        const pushTitle = nadpis || 'Dvůr Pod Dubem 🌿';
+        const pushBody = text ? text.substring(0, 120) : 'Mrkni na novou aktualitu v appce!';
+        await pushToCustomer(sheets, null, pushTitle, pushBody, 'aktualita');
+        result = { status: 'ok' };
+        break;
       }
       case 'vapidKey': {
         result = { key: VAPID_PUBLIC }; break;
