@@ -92,7 +92,7 @@ function normHdr(s) {
 function findGrainData(data) {
   let dCol = -1, cCol = -1, hdrRow = -1;
   // projdi prvních ~6 řádků a najdi buňky "datum objednavky" a "cena zrni"
-  const maxScan = Math.min(data.length, 8);
+  const maxScan = Math.min(data.length, 12);
   for (let r = 0; r < maxScan && hdrRow === -1; r++) {
     const row = data[r] || [];
     for (let c = 0; c < row.length; c++) {
@@ -730,8 +730,12 @@ exports.handler = async function(event) {
           const m=gm(d); if(!m) continue; im(m);
           zV.forEach(z=>{const v=parseInt((dV[i][z.col]||'').toString().replace(/\s/g,''))||0;if(v>0){const t=v*(DISCOUNT_NAMES.includes(z.jmeno)?9:10);mesice[m].trzba+=t;mesice[m].tV+=t;mesice[m].vajicka+=v;}});
         }
-        // Náklady za zrní – hledá tabulku "Objednávky zrní" podle hlavičky (odolné vůči přidání zákazníků)
-        findGrainData(dV).forEach(g=>{
+        // Náklady za zrní – hledá tabulku "Objednávky zrní" podle hlavičky.
+        // Priorita: list Cashflow; když tam nic není, fallback na list Vajíčka.
+        let grain = [];
+        try { const dCF = await getSheetData(sheets,'Cashflow'); grain = findGrainData(dCF); } catch(e){}
+        if (!grain.length) grain = findGrainData(dV);
+        grain.forEach(g=>{
           const mz=gm(g.datum); if(!mz) return; im(mz);
           mesice[mz].naklady += parseFloat((g.cena||'').toString().replace(/[^\d.,-]/g,'').replace(',','.'))||0;
         });
