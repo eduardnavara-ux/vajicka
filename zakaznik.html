@@ -93,6 +93,16 @@ button{font-family:'Instrument Sans',sans-serif;cursor:pointer;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
 .card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:11px;}
 
+/* ===== AKTUALITA (nástěnka pro zákazníka) ===== */
+.akt-board{background:var(--card);border:1px solid var(--border);border-radius:18px;overflow:hidden;margin-bottom:11px;display:none;}
+.akt-board img{width:100%;display:block;max-height:230px;object-fit:cover;}
+.akt-board-body{padding:15px 16px;}
+.akt-board-tag{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--or-dark);background:var(--or-soft);padding:4px 11px;border-radius:50px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px;}
+.akt-board-tag svg{width:12px;height:12px;}
+.akt-board-nadpis{font-family:'Fraunces',serif;font-size:18px;font-weight:700;line-height:1.25;margin-bottom:6px;}
+.akt-board-text{font-size:14px;color:var(--br);line-height:1.6;white-space:pre-wrap;}
+.akt-board-datum{font-size:11px;color:var(--text3);margin-top:10px;}
+
 /* ===== PRODUKTY ===== */
 .prod-row{display:flex;align-items:center;gap:12px;}
 .pic{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
@@ -268,6 +278,21 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 
     <!-- OBJEDNAT -->
     <div class="panel on" id="panel-order">
+
+      <!-- AKTUALITA / NÁSTĚNKA -->
+      <div class="akt-board" id="akt-board">
+        <img id="akt-board-img" src="" alt="" style="display:none;">
+        <div class="akt-board-body">
+          <span class="akt-board-tag">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
+            Aktuality z dvora
+          </span>
+          <div class="akt-board-nadpis" id="akt-board-nadpis" style="display:none;"></div>
+          <div class="akt-board-text" id="akt-board-text" style="display:none;"></div>
+          <div class="akt-board-datum" id="akt-board-datum" style="display:none;"></div>
+        </div>
+      </div>
+
       <div id="push-banner" class="push-banner" style="display:none;">
         <div class="push-banner-txt">
           <strong>Zapni si upozornění</strong>
@@ -608,7 +633,32 @@ function showApp(){
   showScreen('app');
   updateSummary();
   loadSklad();
+  loadAktualita();
   initPush();
+}
+
+/* ===== Aktualita / nástěnka ===== */
+function loadAktualita(){
+  api({action:'getAktualita'}).then(function(a){
+    renderAktualita((a&&(a.nadpis||a.text||a.foto))?a:null);
+  }).catch(function(){});
+}
+function renderAktualita(a){
+  var board=document.getElementById('akt-board');
+  if(!a){board.style.display='none';return;}
+  var img=document.getElementById('akt-board-img');
+  if(a.foto){img.src=a.foto;img.style.display='block';}
+  else{img.style.display='none';img.src='';}
+  var nadpis=document.getElementById('akt-board-nadpis');
+  if(a.nadpis){nadpis.textContent=a.nadpis;nadpis.style.display='block';}
+  else nadpis.style.display='none';
+  var text=document.getElementById('akt-board-text');
+  if(a.text){text.textContent=a.text;text.style.display='block';}
+  else text.style.display='none';
+  var datum=document.getElementById('akt-board-datum');
+  if(a.datum){datum.textContent=a.datum;datum.style.display='block';}
+  else datum.style.display='none';
+  board.style.display='block';
 }
 
 /* ===== Web Push notifikace ===== */
