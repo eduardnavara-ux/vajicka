@@ -342,6 +342,47 @@ async function setAktualita(sheets, nadpis, text, fotoUrl) {
   });
 }
 
+// Vypne (skryje) všechny aktivní aktuality – sloupec E (Aktivní) → 'ne'
+async function clearAktualita(sheets) {
+  const data = await getAktualitaData(sheets);
+  const updates = [];
+  for (let i = 1; i < data.length; i++) {
+    const r = data[i] || [];
+    const aktivni = (r[4] || '').toString().trim().toLowerCase();
+    if (aktivni !== 'ne') {
+      const rowNum = i + 1; // 1-indexed, řádek 1 = hlavička
+      updates.push({ range: 'Aktuality!E' + rowNum, values: [['ne']] });
+    }
+  }
+  if (updates.length) {
+    await sheets.spreadsheets.values.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID,
+      requestBody: { valueInputOption: 'USER_ENTERED', data: updates }
+    });
+  }
+  return updates.length;
+}
+
+// Upraví poslední aktivní aktualitu – přepíše B/C/D (nadpis/text/foto), bez push
+async function editAktualita(sheets, nadpis, text, fotoUrl) {
+  const data = await getAktualitaData(sheets);
+  for (let i = data.length - 1; i >= 1; i--) {
+    const r = data[i] || [];
+    const aktivni = (r[4] || '').toString().trim().toLowerCase();
+    if (aktivni === 'ne') continue;
+    const hasContent = (r[1] || '').toString().trim() || (r[2] || '').toString().trim() || (r[3] || '').toString().trim();
+    if (!hasContent) continue;
+    const rowNum = i + 1; // 1-indexed
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID, range: 'Aktuality!B' + rowNum + ':D' + rowNum,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: { values: [[nadpis || '', text || '', fotoUrl || '']] }
+    });
+    return true;
+  }
+  return false; // nic aktivního k úpravě – fallback řeší volající
+}
+
 // ════════════════════════════════════════════════════
 // WEB PUSH (nativní, bez knihovny web-push)
 // ════════════════════════════════════════════════════
@@ -607,6 +648,23 @@ exports.handler = async function(event) {
         const pushTitle = nadpis || 'Dvůr Pod Dubem 🌿';
         const pushBody = text ? text.substring(0, 120) : 'Mrkni na novou aktualitu v appce!';
         await pushToCustomer(sheets, null, pushTitle, pushBody, 'aktualita');
+        result = { status: 'ok' };
+        break;
+      }
+      case 'clearAktualita': {
+        const cleared = await clearAktualita(sheets);
+        result = { status: 'ok', cleared };
+        break;
+      }
+      case 'editAktualita': {
+        const nadpis = p.nadpis || '';
+        const text = p.text || '';
+        const foto = p.foto || '';
+        const edited = await editAktualita(sheets, nadpis, text, foto);
+        if (!edited) {
+          // nebylo co upravit → založ jako novou (bez push)
+          await setAktualita(sheets, nadpis, text, foto);
+        }
         result = { status: 'ok' };
         break;
       }
