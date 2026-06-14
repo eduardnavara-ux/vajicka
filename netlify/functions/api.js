@@ -81,6 +81,40 @@ function getCustomers(headers) {
   return c;
 }
 
+// Normalizace textu hlavičky (bez diakritiky, malá písmena) – pro hledání tabulky zrní
+function normHdr(s) {
+  return (s || '').toString().trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+// Najde tabulku "Objednávky zrní" kdekoli v listu podle hlavičky a vrátí
+// pole { datum, cena }. Nezávislé na posunu sloupců (noví zákazníci).
+function findGrainData(data) {
+  let dCol = -1, cCol = -1, hdrRow = -1;
+  // projdi prvních ~6 řádků a najdi buňky "datum objednavky" a "cena zrni"
+  const maxScan = Math.min(data.length, 8);
+  for (let r = 0; r < maxScan && hdrRow === -1; r++) {
+    const row = data[r] || [];
+    for (let c = 0; c < row.length; c++) {
+      const h = normHdr(row[c]);
+      if (h === 'datum objednavky') dCol = c;
+      if (h === 'cena zrni') cCol = c;
+    }
+    if (dCol >= 0 && cCol >= 0) hdrRow = r;
+    else { dCol = -1; cCol = -1; } // hlavička musí být na stejném řádku
+  }
+  if (hdrRow === -1) return []; // tabulka nenalezena
+  const out = [];
+  for (let r = hdrRow + 1; r < data.length; r++) {
+    const row = data[r] || [];
+    const datum = row[dCol];
+    const cena = row[cCol];
+    if (!datum || cena === '' || cena === null || cena === undefined) continue;
+    out.push({ datum, cena });
+  }
+  return out;
+}
+
 // Detekce barev buněk (oranžová #F4A623 = čekající, zelená #93C47D = doručeno)
 function isOrange(bg) {
   return !!(bg && bg.red > 0.9 && bg.green > 0.6 && bg.green < 0.72 && bg.blue < 0.2);
@@ -695,8 +729,12 @@ exports.handler = async function(event) {
           const d=dV[i][0]; if(!d) continue;
           const m=gm(d); if(!m) continue; im(m);
           zV.forEach(z=>{const v=parseInt((dV[i][z.col]||'').toString().replace(/\s/g,''))||0;if(v>0){const t=v*(DISCOUNT_NAMES.includes(z.jmeno)?9:10);mesice[m].trzba+=t;mesice[m].tV+=t;mesice[m].vajicka+=v;}});
-          const dz=dV[i][13],cz=dV[i][14]; if(dz&&cz){const mz=gm(dz);if(mz){im(mz);mesice[mz].naklady+=parseFloat((cz||'').toString().replace(/\s/g,'').replace(',','.'))||0;}}
         }
+        // Náklady za zrní – hledá tabulku "Objednávky zrní" podle hlavičky (odolné vůči přidání zákazníků)
+        findGrainData(dV).forEach(g=>{
+          const mz=gm(g.datum); if(!mz) return; im(mz);
+          mesice[mz].naklady += parseFloat((g.cena||'').toString().replace(/[^\d.,-]/g,'').replace(',','.'))||0;
+        });
         const dB = await getSheetData(sheets,'Bedýnky'); const zB = getCustomers(dB[HEADER_ROW-1]||[]);
         for (let i=DATA_START_ROW-1;i<dB.length;i++) {
           const d=dB[i][0]; if(!d) continue;
