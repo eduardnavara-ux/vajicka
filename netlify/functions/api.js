@@ -642,6 +642,48 @@ async function pushToCustomer(sheets, jmeno, title, body, tag) {
   }
 }
 
+// ── Samooprava součtových vzorců ──
+// Pro jeden list přepíše buňky v řádku "Součet jedinec" na čistý =SUM(sloupec4:sloupec[suma-1]).
+// Bezpečnostní pravidla:
+//  - píše VÝHRADNĚ do součtového řádku, do žádné jiné buňky
+//  - když součtový řádek neexistuje (findSumaRow vrátí -1), list se PŘESKOČÍ (nic se nezapíše)
+//  - nemaže, nepřesouvá, nevkládá ani neodstraňuje řádky/sloupce
+//  - dryRun=true → jen vrátí seznam plánovaných změn, NIC nezapíše
+//  - když by počet zápisů přesáhl (počet zákazníků), zápis se odmítne (pojistka proti přemazání)
+async function fixSoucetSheet(sheets, sheetName, dryRun) {
+  const data = await getSheetData(sheets, sheetName);
+  const sumaRow = findSumaRow(data);
+  if (sumaRow < 0) {
+    return { list: sheetName, status: 'skipped', duvod: 'součtový řádek nenalezen', zmeny: [] };
+  }
+  const customers = getCustomers(data[HEADER_ROW - 1] || []);
+  if (customers.length === 0) {
+    return { list: sheetName, status: 'skipped', duvod: 'žádní zákazníci', zmeny: [] };
+  }
+  // Připrav plánované změny – jen součtové buňky zákaznických sloupců
+  const zmeny = customers.map(c => {
+    const L = colLetter(c.col + 1);
+    const cil = `${L}${sumaRow}`;
+    const vzorec = `=SUM(${L}${DATA_START_ROW}:${L}${sumaRow - 1})`;
+    const puvodni = (data[sumaRow - 1]?.[c.col] ?? '').toString();
+    return { jmeno: c.jmeno, bunka: cil, puvodni, novy: vzorec };
+  });
+  // Pojistka: počet zápisů nesmí překročit počet zákazníků (žádné přetečení mimo součtový řádek)
+  if (zmeny.length > customers.length) {
+    return { list: sheetName, status: 'error', duvod: 'příliš mnoho změn – přerušeno', zmeny: [] };
+  }
+  if (dryRun) {
+    return { list: sheetName, status: 'dry-run', sumaRow, zmeny };
+  }
+  const updates = zmeny.map(z => ({ range: `${sheetName}!${z.bunka}`, values: [[z.novy]] }));
+  await sheets.spreadsheets.values.batchUpdate({
+    spreadsheetId: SPREADSHEET_ID,
+    requestBody: { valueInputOption: 'USER_ENTERED', data: updates }
+  });
+  await updatePrehled(sheets, sheetName);
+  return { list: sheetName, status: 'zapsáno', sumaRow, pocetZmen: zmeny.length, zmeny };
+}
+
 const hdrs = { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' };
 
 exports.handler = async function(event) {
@@ -774,6 +816,20 @@ exports.handler = async function(event) {
       }
       case 'history': {
         result = await historyAll(sheets); break;
+      }
+      case 'fixSoucet': {
+        // Samooprava součtových vzorců na všech třech listech.
+        // BEZPEČNOST: defaultně dry-run (nic nezapíše). Reálný zápis jen s &zapis=1.
+        const zapis = p.zapis === '1' || p.zapis === 'true';
+        const dryRun = !zapis;
+        const listy = ['Vajíčka', 'Bedýnky', 'Sirup'];
+        const vystup = [];
+        for (const sn of listy) {
+          try { vystup.push(await fixSoucetSheet(sheets, sn, dryRun)); }
+          catch (e) { vystup.push({ list: sn, status: 'error', duvod: e.message, zmeny: [] }); }
+        }
+        result = { status: 'ok', rezim: dryRun ? 'dry-run (nic nezapsáno)' : 'zápis proveden', listy: vystup };
+        break;
       }
       case 'cashflow': {
         const mesice = {};
