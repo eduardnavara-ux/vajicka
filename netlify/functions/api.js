@@ -851,9 +851,15 @@ exports.handler = async function(event) {
         if(!row){result={status:'error',error:'Not found row '+radek+' in '+data.length};break;}
         const pd = fmtDate(row[3]), nd = fmtDate(p.navrzenyDatum);
         const isCounter = nd && nd !== '' && nd !== pd;
+        // Ochrana proti dvojímu zápisu: pokud je požadavek už potvrzený, do listů produktů nepřidávej znovu.
+        const stavRow = (row[8]||'').toString().trim().toLowerCase();
         if (isCounter) {
           await sheets.spreadsheets.values.update({ spreadsheetId: SPREADSHEET_ID, range: `Požadavky!I${radek}:J${radek}`, valueInputOption: 'USER_ENTERED', requestBody: { values: [['navržen jiný termín', nd]] } });
           await pushToCustomer(sheets, row[1], 'Dvůr Pod Dubem', 'Máš návrh termínu doručení na ' + nd + ' – otevři appku a potvrď ho.', 'navrh');
+        } else if (stavRow === 'potvrzeno') {
+          // Už potvrzeno (např. přes acceptSuggested) – nezapisuj duplicitně, jen pošli potvrzení.
+          const datum = nd||pd;
+          await pushToCustomer(sheets, row[1], 'Dvůr Pod Dubem', 'Tvoje objednávka je potvrzená na ' + datum + '. Děkujeme!', 'potvrzeno');
         } else {
           const datum = nd||pd;
           const v=parseInt((row[4]||'0').toString().replace(/\s/g,''))||0;
@@ -880,6 +886,11 @@ exports.handler = async function(event) {
         if(!row){result={status:'error',error:'Not found row '+radek};break;}
         const nd = fmtDate(row[9]);
         if(!nd){result={status:'error',error:'Žádný navržený termín'};break;}
+        // Ochrana proti dvojímu zápisu: pokud je požadavek už potvrzený, znovu nezapisuj.
+        const stavRow = (row[8]||'').toString().trim().toLowerCase();
+        if (stavRow === 'potvrzeno') {
+          result = { status: 'ok', skipped: 'already-confirmed' }; break;
+        }
         const v=parseInt((row[4]||'0').toString().replace(/\s/g,''))||0;
         const b=parseInt((row[5]||'0').toString().replace(/\s/g,''))||0;
         const s=parseFloat((row[6]||'0').toString().replace(/\s/g,'').replace(',','.'))||0;
@@ -888,6 +899,10 @@ exports.handler = async function(event) {
         if(s>0) await zpracujObjednavku(sheets,row[1],s,nd,'sirup');
         await sheets.spreadsheets.values.update({ spreadsheetId: SPREADSHEET_ID, range: `Požadavky!D${radek}`, valueInputOption: 'USER_ENTERED', requestBody: { values: [[nd]] } });
         await sheets.spreadsheets.values.update({ spreadsheetId: SPREADSHEET_ID, range: `Požadavky!I${radek}`, valueInputOption: 'USER_ENTERED', requestBody: { values: [['potvrzeno']] } });
+        // Notifikace adminovi o přijetí termínu
+        await pushToCustomer(sheets, '__admin__', '✅ Termín přijat – ' + row[1], row[1] + ' přijal/a termín ' + nd + '. Objednávka je potvrzená.', 'prijato');
+        // Notifikace zákazníkovi, že je objednávka potvrzená
+        await pushToCustomer(sheets, row[1], 'Dvůr Pod Dubem', 'Tvoje objednávka je potvrzená na ' + nd + '. Děkujeme!', 'potvrzeno');
         result = { status: 'ok' }; break;
       }
       case 'getCustomers': {
