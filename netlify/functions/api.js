@@ -326,7 +326,7 @@ function mapRequests(data) {
   return data.length <= 1 ? [] : data.slice(1).map((r, i) => ({
     radek: i + 2, id: r[0], jmeno: r[1], datumPozadavku: fmtDate(r[2]), datumDoruceni: fmtDate(r[3]),
     vajicka: r[4] || 0, bedynka: r[5] || 0, sirup: r[6] || 0, celkem: r[7] || 0,
-    stav: r[8] || 'čeká na potvrzení', navrzenyTermin: fmtDate(r[9])
+    stav: r[8] || 'čeká na potvrzení', navrzenyTermin: fmtDate(r[9]), zprava: (r[10] || '').toString()
   }));
 }
 
@@ -334,8 +334,8 @@ async function getPozadavkyData(sheets) {
   try { return await getSheetData(sheets, 'Požadavky'); }
   catch {
     await sheets.spreadsheets.batchUpdate({ spreadsheetId: SPREADSHEET_ID, requestBody: { requests: [{ addSheet: { properties: { title: 'Požadavky' } } }] } });
-    const hdr = [['ID','Zákazník','Datum požadavku','Datum doručení','Vajíčka','Bedýnka','Sirup','Celkem','Stav','Navržený termín']];
-    await sheets.spreadsheets.values.update({ spreadsheetId: SPREADSHEET_ID, range: 'Požadavky!A1:J1', valueInputOption: 'USER_ENTERED', requestBody: { values: hdr } });
+    const hdr = [['ID','Zákazník','Datum požadavku','Datum doručení','Vajíčka','Bedýnka','Sirup','Celkem','Stav','Navržený termín','Zpráva']];
+    await sheets.spreadsheets.values.update({ spreadsheetId: SPREADSHEET_ID, range: 'Požadavky!A1:K1', valueInputOption: 'USER_ENTERED', requestBody: { values: hdr } });
     return hdr;
   }
 }
@@ -939,8 +939,10 @@ exports.handler = async function(event) {
         // Ochrana proti dvojímu zápisu: pokud je požadavek už potvrzený, do listů produktů nepřidávej znovu.
         const stavRow = (row[8]||'').toString().trim().toLowerCase();
         if (isCounter) {
-          await sheets.spreadsheets.values.update({ spreadsheetId: SPREADSHEET_ID, range: `Požadavky!I${radek}:J${radek}`, valueInputOption: 'USER_ENTERED', requestBody: { values: [['navržen jiný termín', nd]] } });
-          await pushToCustomer(sheets, row[1], 'Dvůr Pod Dubem', 'Máš návrh termínu doručení na ' + nd + ' – otevři appku a potvrď ho.', 'navrh');
+          const zprava = (p.zprava || '').toString().substring(0, 200);
+          await sheets.spreadsheets.values.update({ spreadsheetId: SPREADSHEET_ID, range: `Požadavky!I${radek}:K${radek}`, valueInputOption: 'USER_ENTERED', requestBody: { values: [['navržen jiný termín', nd, zprava]] } });
+          const pushBody = 'Máš návrh termínu doručení na ' + nd + (zprava ? ' · „' + zprava + '"' : '') + ' – otevři appku a potvrď ho.';
+          await pushToCustomer(sheets, row[1], 'Dvůr Pod Dubem', pushBody, 'navrh');
         } else if (stavRow === 'potvrzeno') {
           // Už potvrzeno (např. přes acceptSuggested) – nezapisuj duplicitně, jen pošli potvrzení.
           const datum = nd||pd;
@@ -983,7 +985,7 @@ exports.handler = async function(event) {
         if(b>0) await zpracujObjednavku(sheets,row[1],b,nd,'bedynka');
         if(s>0) await zpracujObjednavku(sheets,row[1],s,nd,'sirup');
         await sheets.spreadsheets.values.update({ spreadsheetId: SPREADSHEET_ID, range: `Požadavky!D${radek}`, valueInputOption: 'USER_ENTERED', requestBody: { values: [[nd]] } });
-        await sheets.spreadsheets.values.update({ spreadsheetId: SPREADSHEET_ID, range: `Požadavky!I${radek}`, valueInputOption: 'USER_ENTERED', requestBody: { values: [['potvrzeno']] } });
+        await sheets.spreadsheets.values.update({ spreadsheetId: SPREADSHEET_ID, range: `Požadavky!I${radek}:K${radek}`, valueInputOption: 'USER_ENTERED', requestBody: { values: [['potvrzeno', '', '']] } });
         // Notifikace adminovi o přijetí termínu
         await pushToCustomer(sheets, '__admin__', '✅ Termín přijat – ' + row[1], row[1] + ' přijal/a termín ' + nd + '. Objednávka je potvrzená.', 'prijato');
         // Notifikace zákazníkovi, že je objednávka potvrzená
