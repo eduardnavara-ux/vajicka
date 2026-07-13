@@ -99,10 +99,10 @@ function normHdr(s) {
 }
 
 // Najde tabulku "Objednávky zrní" kdekoli v listu podle hlavičky a vrátí
-// pole { datum, cena }. Nezávislé na posunu sloupců (noví zákazníci).
+// pole { datum, cena, kg }. Nezávislé na posunu sloupců (noví zákazníci).
 function findGrainData(data) {
-  let dCol = -1, cCol = -1, hdrRow = -1;
-  // projdi prvních ~6 řádků a najdi buňky "datum objednavky" a "cena zrni"
+  let dCol = -1, cCol = -1, kCol = -1, hdrRow = -1;
+  // projdi prvních ~12 řádků a najdi buňky "datum objednavky" a "cena zrni"
   const maxScan = Math.min(data.length, 12);
   for (let r = 0; r < maxScan && hdrRow === -1; r++) {
     const row = data[r] || [];
@@ -110,9 +110,10 @@ function findGrainData(data) {
       const h = normHdr(row[c]);
       if (h === 'datum objednavky') dCol = c;
       if (h === 'cena zrni') cCol = c;
+      if (h === 'kg zrni') kCol = c;
     }
     if (dCol >= 0 && cCol >= 0) hdrRow = r;
-    else { dCol = -1; cCol = -1; } // hlavička musí být na stejném řádku
+    else { dCol = -1; cCol = -1; kCol = -1; } // hlavička musí být na stejném řádku
   }
   if (hdrRow === -1) return []; // tabulka nenalezena
   const out = [];
@@ -121,7 +122,7 @@ function findGrainData(data) {
     const datum = row[dCol];
     const cena = row[cCol];
     if (!datum || cena === '' || cena === null || cena === undefined) continue;
-    out.push({ datum, cena });
+    out.push({ datum, cena, kg: kCol >= 0 ? (row[kCol] ?? '') : '' });
   }
   return out;
 }
@@ -643,24 +644,25 @@ async function pushToCustomer(sheets, jmeno, title, body, tag) {
 }
 
 // ── Samooprava součtových vzorců ──
-// Pro jeden list přepíše buňky v řádku "Součet jedinec" na čistý =SUM(sloupec4:sloupec[suma-1]).
+// Pro jeden list přepíše buňky v řádku "Součet jedinec" na čistý =SUM(sloupec4:sloupec[suma-1])
+// a NAVÍC smaže chybové buňky (#REF!, #VALUE!...) v zákaznických sloupcích nad součtem.
 // Bezpečnostní pravidla:
-//  - píše VÝHRADNĚ do součtového řádku, do žádné jiné buňky
+//  - součtové vzorce píše VÝHRADNĚ do součtového řádku
+//  - maže POUZE buňky, jejichž hodnota je chyba (začíná '#'); legitimní objednávka je číslo, nikdy chyba
 //  - když součtový řádek neexistuje (findSumaRow vrátí -1), list se PŘESKOČÍ (nic se nezapíše)
-//  - nemaže, nepřesouvá, nevkládá ani neodstraňuje řádky/sloupce
+//  - nepřesouvá, nevkládá ani neodstraňuje řádky/sloupce
 //  - dryRun=true → jen vrátí seznam plánovaných změn, NIC nezapíše
-//  - když by počet zápisů přesáhl (počet zákazníků), zápis se odmítne (pojistka proti přemazání)
 async function fixSoucetSheet(sheets, sheetName, dryRun) {
   const data = await getSheetData(sheets, sheetName);
   const sumaRow = findSumaRow(data);
   if (sumaRow < 0) {
-    return { list: sheetName, status: 'skipped', duvod: 'součtový řádek nenalezen', zmeny: [] };
+    return { list: sheetName, status: 'skipped', duvod: 'součtový řádek nenalezen', zmeny: [], chybneBunky: [] };
   }
   const customers = getCustomers(data[HEADER_ROW - 1] || []);
   if (customers.length === 0) {
-    return { list: sheetName, status: 'skipped', duvod: 'žádní zákazníci', zmeny: [] };
+    return { list: sheetName, status: 'skipped', duvod: 'žádní zákazníci', zmeny: [], chybneBunky: [] };
   }
-  // Připrav plánované změny – jen součtové buňky zákaznických sloupců
+  // 1) Plánované přepisy součtových vzorců
   const zmeny = customers.map(c => {
     const L = colLetter(c.col + 1);
     const cil = `${L}${sumaRow}`;
@@ -668,20 +670,32 @@ async function fixSoucetSheet(sheets, sheetName, dryRun) {
     const puvodni = (data[sumaRow - 1]?.[c.col] ?? '').toString();
     return { jmeno: c.jmeno, bunka: cil, puvodni, novy: vzorec };
   });
-  // Pojistka: počet zápisů nesmí překročit počet zákazníků (žádné přetečení mimo součtový řádek)
-  if (zmeny.length > customers.length) {
-    return { list: sheetName, status: 'error', duvod: 'příliš mnoho změn – přerušeno', zmeny: [] };
+  // 2) Chybové buňky v zákaznických sloupcích (řádky pod hlavičkou až nad součtem).
+  //    Mažou se JEN hodnoty začínající '#' (chyby vzorců) – objednávky jsou čísla.
+  const chybneBunky = [];
+  for (let r = HEADER_ROW + 1; r < sumaRow; r++) {
+    for (const c of customers) {
+      const v = (data[r - 1]?.[c.col] ?? '').toString().trim();
+      if (v.charAt(0) === '#') {
+        chybneBunky.push({ jmeno: c.jmeno, bunka: `${colLetter(c.col + 1)}${r}`, hodnota: v });
+      }
+    }
   }
   if (dryRun) {
-    return { list: sheetName, status: 'dry-run', sumaRow, zmeny };
+    return { list: sheetName, status: 'dry-run', sumaRow, zmeny, chybneBunky };
   }
+  // Zápis součtových vzorců
   const updates = zmeny.map(z => ({ range: `${sheetName}!${z.bunka}`, values: [[z.novy]] }));
   await sheets.spreadsheets.values.batchUpdate({
     spreadsheetId: SPREADSHEET_ID,
     requestBody: { valueInputOption: 'USER_ENTERED', data: updates }
   });
+  // Smazání chybových buněk (values.clear – žádné mazání řádků)
+  for (const ch of chybneBunky) {
+    await sheets.spreadsheets.values.clear({ spreadsheetId: SPREADSHEET_ID, range: `${sheetName}!${ch.bunka}` });
+  }
   await updatePrehled(sheets, sheetName);
-  return { list: sheetName, status: 'zapsáno', sumaRow, pocetZmen: zmeny.length, zmeny };
+  return { list: sheetName, status: 'zapsáno', sumaRow, pocetZmen: zmeny.length, smazanoChyb: chybneBunky.length, zmeny, chybneBunky };
 }
 
 const hdrs = { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' };
@@ -818,7 +832,7 @@ exports.handler = async function(event) {
         result = await historyAll(sheets); break;
       }
       case 'fixSoucet': {
-        // Samooprava součtových vzorců na všech třech listech.
+        // Samooprava součtových vzorců + úklid chybových buněk (#REF!...) na všech třech listech.
         // BEZPEČNOST: defaultně dry-run (nic nezapíše). Reálný zápis jen s &zapis=1.
         const zapis = p.zapis === '1' || p.zapis === 'true';
         const dryRun = !zapis;
@@ -826,9 +840,24 @@ exports.handler = async function(event) {
         const vystup = [];
         for (const sn of listy) {
           try { vystup.push(await fixSoucetSheet(sheets, sn, dryRun)); }
-          catch (e) { vystup.push({ list: sn, status: 'error', duvod: e.message, zmeny: [] }); }
+          catch (e) { vystup.push({ list: sn, status: 'error', duvod: e.message, zmeny: [], chybneBunky: [] }); }
         }
         result = { status: 'ok', rezim: dryRun ? 'dry-run (nic nezapsáno)' : 'zápis proveden', listy: vystup };
+        break;
+      }
+      case 'grainOrders': {
+        // Objednávky zrní (datum, cena, kg) – pro rozklik "Náklady" v cashflow.
+        // Priorita: list Cashflow; fallback list Vajíčka (stejně jako v akci cashflow).
+        let grain = [];
+        try { const dCF = await getSheetData(sheets, 'Cashflow'); grain = findGrainData(dCF); } catch(e){}
+        if (!grain.length) {
+          try { const dV = await getSheetData(sheets, 'Vajíčka'); grain = findGrainData(dV); } catch(e){}
+        }
+        result = grain.map(g => ({
+          datum: fmtDate(g.datum),
+          cena: Math.round(parseFloat((g.cena||'').toString().replace(/[^\d.,-]/g,'').replace(',','.')) || 0),
+          kg: parseFloat((g.kg||'').toString().replace(',','.')) || 0
+        }));
         break;
       }
       case 'cashflow': {
@@ -989,4 +1018,3 @@ exports.handler = async function(event) {
     return { statusCode: 500, headers: hdrs, body: JSON.stringify({ status: 'error', error: err.message }) };
   }
 };
-
