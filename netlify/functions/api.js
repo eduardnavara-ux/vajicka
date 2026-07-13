@@ -326,7 +326,8 @@ function mapRequests(data) {
   return data.length <= 1 ? [] : data.slice(1).map((r, i) => ({
     radek: i + 2, id: r[0], jmeno: r[1], datumPozadavku: fmtDate(r[2]), datumDoruceni: fmtDate(r[3]),
     vajicka: r[4] || 0, bedynka: r[5] || 0, sirup: r[6] || 0, celkem: r[7] || 0,
-    stav: r[8] || 'čeká na potvrzení', navrzenyTermin: fmtDate(r[9]), zprava: (r[10] || '').toString()
+    stav: r[8] || 'čeká na potvrzení', navrzenyTermin: fmtDate(r[9]), zprava: (r[10] || '').toString(),
+    zaplaceno: (r[11] || '').toString().trim().toLowerCase() === 'ano'
   }));
 }
 
@@ -334,8 +335,8 @@ async function getPozadavkyData(sheets) {
   try { return await getSheetData(sheets, 'Požadavky'); }
   catch {
     await sheets.spreadsheets.batchUpdate({ spreadsheetId: SPREADSHEET_ID, requestBody: { requests: [{ addSheet: { properties: { title: 'Požadavky' } } }] } });
-    const hdr = [['ID','Zákazník','Datum požadavku','Datum doručení','Vajíčka','Bedýnka','Sirup','Celkem','Stav','Navržený termín','Zpráva']];
-    await sheets.spreadsheets.values.update({ spreadsheetId: SPREADSHEET_ID, range: 'Požadavky!A1:K1', valueInputOption: 'USER_ENTERED', requestBody: { values: hdr } });
+    const hdr = [['ID','Zákazník','Datum požadavku','Datum doručení','Vajíčka','Bedýnka','Sirup','Celkem','Stav','Navržený termín','Zpráva','Zaplaceno']];
+    await sheets.spreadsheets.values.update({ spreadsheetId: SPREADSHEET_ID, range: 'Požadavky!A1:L1', valueInputOption: 'USER_ENTERED', requestBody: { values: hdr } });
     return hdr;
   }
 }
@@ -963,6 +964,17 @@ exports.handler = async function(event) {
       }
       case 'rejectRequest': {
         await sheets.spreadsheets.values.update({ spreadsheetId: SPREADSHEET_ID, range: `Požadavky!I${parseInt(p.radek)}`, valueInputOption: 'USER_ENTERED', requestBody: { values: [['zrušeno']] } });
+        result = { status: 'ok' }; break;
+      }
+      case 'markPaid': {
+        // Zákazník označil objednávku jako zaplacenou → sloupec L = 'ano' + push adminovi
+        const data = await getPozadavkyData(sheets);
+        const radek = parseInt(p.radek);
+        const row = data[radek-1];
+        if(!row){result={status:'error',error:'Not found row '+radek};break;}
+        await sheets.spreadsheets.values.update({ spreadsheetId: SPREADSHEET_ID, range: `Požadavky!L${radek}`, valueInputOption: 'USER_ENTERED', requestBody: { values: [['ano']] } });
+        const celkem = (row[7]||'').toString();
+        await pushToCustomer(sheets, '__admin__', '💰 Zaplaceno – ' + row[1], row[1] + ' označil/a objednávku (' + celkem + ' Kč, doručení ' + fmtDate(row[3]) + ') jako zaplacenou.', 'platba');
         result = { status: 'ok' }; break;
       }
       case 'acceptSuggested': {
