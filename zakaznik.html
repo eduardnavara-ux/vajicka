@@ -180,6 +180,8 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 .ob-ok{background:var(--gr);color:#fff;}
 .ob-no{background:none;border:1.5px solid #F5C9C9;color:var(--rd);}
 .ob-pay{background:var(--or);color:#fff;}
+.ob-paid{background:var(--gr-soft);color:var(--gr-dark);cursor:default;}
+.ob-mark{background:none;border:1.5px solid var(--border2);color:var(--text2);flex:0 0 auto;padding-left:14px;padding-right:14px;}
 .empty{text-align:center;color:var(--text2);font-size:14px;padding:32px 16px;line-height:1.6;}
 .skel{height:90px;border-radius:18px;background:linear-gradient(90deg,var(--border) 25%,#F7EDDF 50%,var(--border) 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;margin-bottom:11px;}
 @keyframes shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
@@ -1171,8 +1173,15 @@ function renderHistory(orders){
     }else if(o.stav==='čeká na potvrzení'&&o.radek){
       actions='<div class="ord-actions"><button class="ord-btn ob-no" onclick="cancelOrder('+o.radek+')">Zrušit objednávku</button></div>';
     }else if(o.stav==='potvrzeno'){
-      var popis='Dvur Pod Dubem '+popisParts.join(', ')+' '+formatDatum(o.datumDoruceni);
-      actions='<div class="ord-actions"><button class="ord-btn ob-pay" onclick="payOrder('+(parseInt(o.celkem)||0)+',\''+escJs(popis)+'\')">Zaplatit '+o.celkem+' Kč</button></div>';
+      if(o.zaplaceno){
+        actions='<div class="ord-actions"><button class="ord-btn ob-paid" disabled>Zaplaceno ✓</button></div>';
+      }else{
+        var popis='Dvur Pod Dubem '+popisParts.join(', ')+' '+formatDatum(o.datumDoruceni);
+        actions='<div class="ord-actions">'+
+          '<button class="ord-btn ob-pay" onclick="payOrder('+(parseInt(o.celkem)||0)+',\''+escJs(popis)+'\')">Zaplatit '+o.celkem+' Kč</button>'+
+          '<button class="ord-btn ob-mark" onclick="markPaid('+o.radek+')">Už zaplaceno</button>'+
+        '</div>';
+      }
     }
     return '<div class="card">'+
       '<div class="ord-head"><div class="ord-meta">objednáno '+esc(formatDatum(o.datumPozadavku))+'<br>doručit '+esc(formatDatum(o.datumDoruceni))+'</div>'+badge+'</div>'+
@@ -1200,16 +1209,18 @@ function buildStats(orders){
   });
   var favDay=-1,favN=0;
   Object.keys(dayCount).forEach(function(k){if(dayCount[k]>favN){favN=dayCount[k];favDay=parseInt(k);}});
+  var tiles=[];
+  if(eggs>0)tiles.push(['Vajíčka',eggs,'ks celkem']);
+  if(boxes>0)tiles.push(['Bedýnky',boxes,'ks celkem']);
+  if(syrup>0)tiles.push(['Sirup',(''+syrup).replace('.',','),'l celkem']);
+  tiles.push(['Objednávky',valid.length,'celkem']);
+  tiles=tiles.slice(0,3);
   var stats='<div class="card"><p style="font-family:\'Fraunces\',serif;font-size:16px;font-weight:700;margin-bottom:12px;">Tvoje čísla 🌿</p>'+
-    '<div class="stats-grid">'+
-    '<div class="stat"><div class="lbl">Vajíčka</div><div class="val">'+eggs+'</div><div class="sub">ks celkem</div></div>'+
-    '<div class="stat"><div class="lbl">Objednávky</div><div class="val">'+valid.length+'</div><div class="sub">celkem</div></div>'+
-    '<div class="stat"><div class="lbl">Utraceno</div><div class="val">'+spent.toLocaleString('cs')+'</div><div class="sub">Kč</div></div>'+
+    '<div class="stats-grid" style="grid-template-columns:repeat('+tiles.length+',1fr);">'+
+    tiles.map(function(t){return '<div class="stat"><div class="lbl">'+t[0]+'</div><div class="val">'+t[1]+'</div><div class="sub">'+t[2]+'</div></div>';}).join('')+
     '</div>';
   var noteParts=[];
   if(favDay>=0&&favN>1)noteParts.push('Nejčastěji ti doručujeme v '+DNY_FULL[favDay]);
-  if(boxes>0)noteParts.push(boxes+'× bedýnka');
-  if(syrup>0)noteParts.push((''+syrup).replace('.',',')+' l sirupu');
   if(noteParts.length)stats+='<div class="stats-note">'+noteParts.join(' · ')+'</div>';
   stats+='</div>';
   return stats;
@@ -1225,6 +1236,13 @@ function cancelOrder(radek){
   api({action:'rejectRequest',radek:radek}).then(function(d){
     if(d&&d.status==='ok'){showToast('Objednávka zrušena');loadHistory();}
     else showToast('Zrušení se nepodařilo');
+  }).catch(function(){showToast('Chyba spojení');});
+}
+function markPaid(radek){
+  if(!confirm('Označit objednávku jako zaplacenou?'))return;
+  api({action:'markPaid',radek:radek}).then(function(d){
+    if(d&&d.status==='ok'){showToast('✓ Označeno jako zaplacené, díky!');loadHistory();}
+    else showToast('Nepodařilo se označit');
   }).catch(function(){showToast('Chyba spojení');});
 }
 </script>
