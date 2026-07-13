@@ -128,6 +128,8 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 .cf-stat .val{font-family:'Fraunces',serif;font-size:clamp(16px,4.6vw,20px);font-weight:900;}
 .cf-stat.hl .val{color:var(--gr-dark);}
 .cf-stat .sub{font-size:10px;color:var(--text3);margin-top:1px;}
+.cf-stat.clickable{cursor:pointer;transition:transform .15s;}
+.cf-stat.clickable:active{transform:scale(.95);}
 .bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
 .bar-row .m{width:58px;font-size:13px;color:var(--text2);flex-shrink:0;}
 .bar-track{flex:1;height:11px;background:var(--cr);border-radius:6px;overflow:hidden;}
@@ -139,6 +141,12 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 .prod-card .lbl{font-size:11px;font-weight:600;margin-bottom:3px;}
 .prod-card .val{font-family:'Fraunces',serif;font-size:clamp(15px,4.2vw,18px);font-weight:900;}
 .prod-card .sub{font-size:10.5px;color:var(--text2);margin-top:2px;line-height:1.45;}
+.grain-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:10px 2px;border-bottom:1px solid var(--border);font-size:14px;}
+.grain-row .gd{flex:1;}
+.grain-row .gk{color:var(--text2);font-size:13px;white-space:nowrap;}
+.grain-row .gc{font-weight:600;white-space:nowrap;}
+.grain-total{display:flex;justify-content:space-between;padding:12px 2px 2px;font-size:15px;font-weight:600;}
+.grain-total span:last-child{color:var(--or-dark);}
 
 /* ===== POŽADAVKY ===== */
 .req-card{background:var(--card);border:1.5px solid var(--border);border-radius:17px;padding:16px;margin-bottom:10px;}
@@ -386,6 +394,18 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
   </div>
 </div>
 
+<!-- Náklady dialog (objednávky zrní) -->
+<div id="NAKLADY_OVERLAY" class="edit-overlay" style="display:none;" onclick="if(event.target===this)closeNaklady()">
+  <div class="edit-dialog" style="max-width:360px;">
+    <h3>Objednávky zrní</h3>
+    <p>Náklady na krmivo vč. dopravy</p>
+    <div id="NAKLADY_LIST" style="max-height:55vh;overflow-y:auto;"></div>
+    <div class="edit-btns" style="margin-top:14px;">
+      <button class="eb-cancel" onclick="closeNaklady()">Zavřít</button>
+    </div>
+  </div>
+</div>
+
 <script>
 'use strict';
 
@@ -408,7 +428,7 @@ var state=[
   {jmeno:null,datum:null},
   {jmeno:null,datum:null}
 ];
-var store={customers:[],lists:{vajicka:null,bedynka:null,sirup:null},requests:null,cashflow:null,history:null,sklad:null,aktualita:undefined};
+var store={customers:[],lists:{vajicka:null,bedynka:null,sirup:null},requests:null,cashflow:null,history:null,sklad:null,aktualita:undefined,grain:null};
 var dateOptions=[[],[],[]];
 var histOpen=false;
 var aktFotoUrl='';
@@ -944,7 +964,7 @@ function renderCashflow(){
   document.getElementById('CF_SUMMARY').innerHTML=
     '<div class="cf-grid">'+
       '<div class="cf-stat"><div class="lbl">Tržby</div><div class="val">'+celkTrzba.toLocaleString('cs')+'</div><div class="sub">Kč</div></div>'+
-      '<div class="cf-stat"><div class="lbl">Náklady</div><div class="val">'+celkNaklady.toLocaleString('cs')+'</div><div class="sub">Kč</div></div>'+
+      '<div class="cf-stat clickable" onclick="showNaklady()" role="button" aria-label="Zobrazit objednávky zrní"><div class="lbl">Náklady ›</div><div class="val">'+celkNaklady.toLocaleString('cs')+'</div><div class="sub">Kč · klepni pro detail</div></div>'+
       '<div class="cf-stat hl"><div class="lbl">Zisk</div><div class="val">'+celkZisk.toLocaleString('cs')+'</div><div class="sub">Kč</div></div>'+
     '</div>';
 
@@ -979,6 +999,40 @@ function renderCashflow(){
     pCard('Sirup','#5A3C96',rS,tS,'l',rS!==null?rS:0)+
   '</div>'+(hasRev?'<div class="hint" style="margin-top:10px">Náklady (zrní) se odečítají od vajíček.</div>':'');
 }
+
+/* ===== Náklady: objednávky zrní (rozklik) ===== */
+function showNaklady(){
+  document.getElementById('NAKLADY_OVERLAY').style.display='flex';
+  if(store.grain){renderNaklady();return;}
+  var box=document.getElementById('NAKLADY_LIST');
+  box.innerHTML='<div class="skel" style="height:40px"></div><div class="skel" style="height:40px"></div>';
+  apiFetch({action:'grainOrders'},function(err,data){
+    if(err||!Array.isArray(data)){
+      box.innerHTML='<div class="empty">Nepodařilo se načíst objednávky zrní</div>';
+      return;
+    }
+    store.grain=data;
+    renderNaklady();
+  });
+}
+function renderNaklady(){
+  var box=document.getElementById('NAKLADY_LIST');
+  var g=store.grain||[];
+  if(g.length===0){box.innerHTML='<div class="empty">Zatím žádné objednávky zrní</div>';return;}
+  var total=0,totalKg=0;
+  var rows=g.slice().reverse().map(function(o){
+    total+=o.cena||0;
+    totalKg+=o.kg||0;
+    return '<div class="grain-row">'+
+      '<span class="gd">'+esc(o.datum)+'</span>'+
+      '<span class="gk">'+(o.kg?o.kg+' kg':'')+'</span>'+
+      '<span class="gc">'+(o.cena||0).toLocaleString('cs')+' Kč</span>'+
+    '</div>';
+  }).join('');
+  box.innerHTML=rows+
+    '<div class="grain-total"><span>Celkem'+(totalKg?' · '+totalKg+' kg':'')+'</span><span>'+total.toLocaleString('cs')+' Kč</span></div>';
+}
+function closeNaklady(){document.getElementById('NAKLADY_OVERLAY').style.display='none';}
 
 /* ===== Načtení dat: init + cache + fallback ===== */
 function saveCache(){
