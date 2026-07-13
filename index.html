@@ -798,6 +798,8 @@ function renderRequests(){
       '<div class="sugg-form" id="suggest-form-'+req.radek+'">'+
         '<label>Navrhni jiný termín doručení:</label>'+
         '<input type="date" id="suggest-date-'+req.radek+'">'+
+        '<label>Zpráva pro zákazníka (volitelně):</label>'+
+        '<input type="text" id="suggest-msg-'+req.radek+'" maxlength="120" placeholder="např. V úterý nejsem doma, šlo by to ve středu?">'+
         '<button class="sugg-send" onclick="sendSuggest('+req.radek+')">Odeslat návrh</button>'+
       '</div>';
     } else if(req.stav==='navržen jiný termín'){
@@ -847,7 +849,9 @@ function sendSuggest(radek){
   var d=new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]));
   if(d.getDay()===0||d.getDay()===6){showToast('Vyber prosím všední den (po–pá)');dateEl.value='';return;}
   var datumCZ=parts[2]+'.'+parts[1]+'.'+parts[0];
-  apiFetch({action:'confirmRequest',radek:radek,navrzenyDatum:datumCZ},function(err,d){
+  var msgEl=document.getElementById('suggest-msg-'+radek);
+  var zprava=msgEl?msgEl.value.trim():'';
+  apiFetch({action:'confirmRequest',radek:radek,navrzenyDatum:datumCZ,zprava:zprava},function(err,d){
     if(!err&&d&&d.status==='ok'){showToast('Návrh termínu odeslán');refreshRequests();}
     else showToast('Odeslání se nepodařilo');
   });
