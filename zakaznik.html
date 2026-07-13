@@ -173,14 +173,29 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 .ord-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:9px;}
 .ord-meta{font-size:12px;color:var(--text2);}
 .sugg-box{margin-top:10px;padding:11px 13px;background:var(--or-soft);border-radius:12px;font-size:13px;color:var(--or-dark);line-height:1.45;}
+.sugg-msg{margin-top:7px;font-style:italic;}
 .ord-actions{display:flex;gap:8px;margin-top:11px;}
 .ord-btn{flex:1;padding:11px 6px;border:none;border-radius:12px;font-size:13.5px;font-weight:600;transition:transform .15s;}
 .ord-btn:active{transform:scale(.96);}
 .ob-ok{background:var(--gr);color:#fff;}
 .ob-no{background:none;border:1.5px solid #F5C9C9;color:var(--rd);}
+.ob-pay{background:var(--or);color:#fff;}
 .empty{text-align:center;color:var(--text2);font-size:14px;padding:32px 16px;line-height:1.6;}
 .skel{height:90px;border-radius:18px;background:linear-gradient(90deg,var(--border) 25%,#F7EDDF 50%,var(--border) 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;margin-bottom:11px;}
 @keyframes shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+
+/* ===== STATISTIKA ===== */
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;}
+.stat{border-radius:14px;padding:12px 8px;background:var(--cr);text-align:center;}
+.stat .lbl{font-size:11px;color:var(--text2);font-weight:600;margin-bottom:3px;}
+.stat .val{font-family:'Fraunces',serif;font-size:18px;font-weight:900;}
+.stat .sub{font-size:10px;color:var(--text3);margin-top:1px;}
+.stats-note{font-size:12px;color:var(--text2);text-align:center;margin-top:10px;line-height:1.5;}
+
+/* ===== PUSH HINT (kontextový) ===== */
+.push-hint{display:flex;align-items:center;gap:10px;background:var(--or-soft);border-radius:12px;padding:10px 12px;margin-top:11px;font-size:13px;color:var(--or-dark);line-height:1.4;}
+.push-hint button{margin-left:auto;background:var(--or);color:#fff;border:none;border-radius:9px;padding:8px 13px;font-size:13px;font-weight:600;flex-shrink:0;}
+.push-hint button:active{transform:scale(.95);}
 
 /* ===== DIALOG / TOAST ===== */
 .dialog-overlay{position:fixed;inset:0;background:rgba(44,21,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:24px;}
@@ -361,12 +376,20 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
     <div class="panel" id="panel-payment">
       <div class="card" style="text-align:center;">
         <p style="font-family:'Fraunces',serif;font-size:19px;font-weight:700;margin-bottom:4px;">QR platba</p>
-        <p style="font-size:13px;color:var(--text2);margin-bottom:18px;">Načti kód svou bankovní appkou</p>
-        <div id="qr-canvas" style="display:inline-block;padding:14px;background:#fff;border-radius:16px;border:1px solid var(--border);margin-bottom:18px;"></div>
-        <p style="font-size:11px;color:var(--text3);margin-bottom:16px;">Kód neobsahuje částku – zadej ji ručně podle domluvy</p>
-        <div style="text-align:left;background:var(--cr);border-radius:12px;padding:13px 15px;margin-bottom:18px;">
-          <p style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:7px;">Jak zaplatit</p>
-          <p style="font-size:13px;color:var(--br);line-height:1.7;margin:0;">1. Otevři svou bankovní appku<br>2. Zvol „Platba QR kódem"<br>3. Namiř foťák na tento kód</p>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:14px;" id="qr-subtitle">Načti kód svou bankovní appkou</p>
+        <div id="qr-pay-info" style="display:none;background:var(--gr-soft);border-radius:12px;padding:10px 13px;margin-bottom:14px;">
+          <p style="font-size:13px;color:var(--gr-dark);font-weight:600;margin:0;" id="qr-pay-desc"></p>
+          <p style="font-family:'Fraunces',serif;font-size:24px;font-weight:900;color:var(--gr-dark);margin:3px 0 0;" id="qr-pay-amount"></p>
+        </div>
+        <div id="qr-canvas" style="display:inline-block;padding:14px;background:#fff;border-radius:16px;border:1px solid var(--border);margin-bottom:14px;"></div>
+        <p style="font-size:11px;color:var(--text3);margin-bottom:16px;" id="qr-note">Kód neobsahuje částku – zadej ji ručně podle domluvy</p>
+        <div style="text-align:left;background:var(--cr);border-radius:12px;padding:13px 15px;margin-bottom:12px;">
+          <p style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:7px;">Platíš z jiného zařízení</p>
+          <p style="font-size:13px;color:var(--br);line-height:1.7;margin:0;">1. Otevři bankovní appku v druhém telefonu<br>2. Zvol „Platba QR kódem"<br>3. Namiř foťák na tento kód</p>
+        </div>
+        <div style="text-align:left;background:var(--or-soft);border-radius:12px;padding:13px 15px;margin-bottom:18px;">
+          <p style="font-size:12px;font-weight:600;color:var(--or-dark);margin-bottom:7px;">Platíš z tohohle telefonu</p>
+          <p style="font-size:13px;color:var(--br);line-height:1.7;margin:0;">1. Podrž prst na QR kódu a ulož ho do Fotek<br>2. V bankovní appce zvol „Platba QR" → „načíst z galerie"<br>3. Vyber uložený kód – údaje se předvyplní</p>
         </div>
         <div style="border-top:1px solid var(--border);padding-top:18px;">
           <p style="font-size:12px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;">Číslo účtu</p>
@@ -436,6 +459,7 @@ var SESSION_KEY='dvur_session';
 var DISCOUNT_CUSTOMERS=['Danča','Kristýna','Renata','Andrea','Marcela','Dáša'];
 var EGG_PRICE_STD=10,EGG_PRICE_DISC=9,BOX_PRICE=490,SYRUP_PRICE=190;
 var DNY=['Ne','Po','Út','St','Čt','Pá','So'];
+var DNY_FULL=['neděli','pondělí','úterý','středu','čtvrtek','pátek','sobotu'];
 
 var currentUser=null;
 var syrupLiters=0;
@@ -445,6 +469,7 @@ var selectedDate=null;
 var pendingOrder=null;
 var sklad={sirup:{dostupne:true,od:'',popis:''},bedynka:{dostupne:true,od:'',popis:''},vajicka:{dostupne:true,od:'',popis:''}};
 var PHONE='724 973 922';
+var IBAN='CZ5508000000002335551073';
 
 function api(params){
   var qs=Object.keys(params).map(function(k){return k+'='+encodeURIComponent(params[k]);}).join('&');
@@ -850,8 +875,30 @@ function switchTab(name){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
-function generateQR(){
-  var spayd='SPD*1.0*ACC:CZ5508000000002335551073*CC:CZK';
+/* ===== QR platba ===== */
+// Bez parametrů = obecný QR (jen účet). S částkou a zprávou = QR pro konkrétní objednávku.
+function generateQR(amount,msg){
+  var spayd='SPD*1.0*ACC:'+IBAN+'*CC:CZK';
+  var payInfo=document.getElementById('qr-pay-info');
+  var note=document.getElementById('qr-note');
+  var subtitle=document.getElementById('qr-subtitle');
+  if(amount&&amount>0){
+    spayd+='*AM:'+amount.toFixed(2);
+    if(msg){
+      // SPAYD MSG: bez diakritiky, max 60 znaků
+      var cleanMsg=msg.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9 .,-]/g,'').substring(0,60);
+      spayd+='*MSG:'+cleanMsg;
+    }
+    document.getElementById('qr-pay-desc').textContent=msg||'Platba objednávky';
+    document.getElementById('qr-pay-amount').textContent=amount.toLocaleString('cs')+' Kč';
+    payInfo.style.display='block';
+    note.textContent='Částka i zpráva jsou v kódu předvyplněné';
+    subtitle.textContent='Plať přesně, bez opisování';
+  }else{
+    payInfo.style.display='none';
+    note.textContent='Kód neobsahuje částku – zadej ji ručně podle domluvy';
+    subtitle.textContent='Načti kód svou bankovní appkou';
+  }
   var box=document.getElementById('qr-canvas');
   var src='https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=0&data='+encodeURIComponent(spayd);
   box.innerHTML='<img src="'+src+'" width="220" height="220" alt="QR platba" '+
@@ -866,6 +913,11 @@ function qrFail(){
     '<div style="width:220px;min-height:160px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--text2);font-size:13px;padding:16px;">'+
     '<span>QR se nepodařilo načíst.</span>'+
     '<span>Zadej platbu ručně podle čísla účtu níže.</span></div>';
+}
+// Zaplatit konkrétní objednávku (z Moje objednávky)
+function payOrder(castka,popis){
+  generateQR(castka,popis);
+  switchTab('payment');
 }
 
 function copyAccount(){
@@ -1089,25 +1141,38 @@ function renderHistory(orders){
     return;
   }
   var eggPrice=getEggPrice();
-  container.innerHTML=orders.slice().reverse().map(function(o){
+  var html='';
+  // Kontextová nabídka push: jen když čeká objednávka a notifikace nejsou zapnuté
+  var hasPending=orders.some(function(o){return o.stav==='čeká na potvrzení'||o.stav==='navržen jiný termín';});
+  if(hasPending&&pushSupported()&&Notification.permission==='default'){
+    html+='<div class="push-hint">🔔 Chceš vědět hned, až objednávku potvrdíme?<button onclick="enablePush()">Zapnout</button></div>'+
+      '<div style="height:11px"></div>';
+  }
+  html+=orders.slice().reverse().map(function(o){
     var badge=
       o.stav==='potvrzeno'?'<span class="badge conf">Potvrzeno</span>':
       o.stav==='navržen jiný termín'?'<span class="badge sugg">Navržen jiný termín</span>':
       o.stav==='zrušeno'?'<span class="badge canc">Zrušeno</span>':
       '<span class="badge pend">Čeká na potvrzení</span>';
     var rows='';
-    if(o.vajicka>0)rows+='<div class="sum-row"><span>Vajíčka · '+o.vajicka+' ks</span><span>'+(o.vajicka*eggPrice)+' Kč</span></div>';
-    if(o.bedynka>0)rows+='<div class="sum-row"><span>Bedýnka · '+o.bedynka+' ks</span><span>'+(o.bedynka*490)+' Kč</span></div>';
-    if(o.sirup>0)rows+='<div class="sum-row"><span>Sirup · '+(''+o.sirup).replace('.',',')+' l</span><span>'+Math.round(o.sirup*190)+' Kč</span></div>';
+    var popisParts=[];
+    if(o.vajicka>0){rows+='<div class="sum-row"><span>Vajíčka · '+o.vajicka+' ks</span><span>'+(o.vajicka*eggPrice)+' Kč</span></div>';popisParts.push('vajicka '+o.vajicka+'ks');}
+    if(o.bedynka>0){rows+='<div class="sum-row"><span>Bedýnka · '+o.bedynka+' ks</span><span>'+(o.bedynka*490)+' Kč</span></div>';popisParts.push('bedynka '+o.bedynka+'ks');}
+    if(o.sirup>0){rows+='<div class="sum-row"><span>Sirup · '+(''+o.sirup).replace('.',',')+' l</span><span>'+Math.round(o.sirup*190)+' Kč</span></div>';popisParts.push('sirup '+o.sirup+'l');}
     var sugg='',actions='';
     if(o.stav==='navržen jiný termín'&&o.navrzenyTermin){
-      sugg='<div class="sugg-box">Původní termín nevychází. Navrhujeme doručení <strong>'+esc(formatDatum(o.navrzenyTermin))+'</strong> – vyhovuje ti?</div>';
+      sugg='<div class="sugg-box">Původní termín nevychází. Navrhujeme doručení <strong>'+esc(formatDatum(o.navrzenyTermin))+'</strong> – vyhovuje ti?'+
+        (o.zprava?'<div class="sugg-msg">„'+esc(o.zprava)+'"</div>':'')+
+        '</div>';
       actions='<div class="ord-actions">'+
         '<button class="ord-btn ob-ok" onclick="acceptSugg('+o.radek+')">Přijmout termín</button>'+
         '<button class="ord-btn ob-no" onclick="cancelOrder('+o.radek+')">Zrušit objednávku</button>'+
       '</div>';
     }else if(o.stav==='čeká na potvrzení'&&o.radek){
       actions='<div class="ord-actions"><button class="ord-btn ob-no" onclick="cancelOrder('+o.radek+')">Zrušit objednávku</button></div>';
+    }else if(o.stav==='potvrzeno'){
+      var popis='Dvur Pod Dubem '+popisParts.join(', ')+' '+formatDatum(o.datumDoruceni);
+      actions='<div class="ord-actions"><button class="ord-btn ob-pay" onclick="payOrder('+(parseInt(o.celkem)||0)+',\''+escJs(popis)+'\')">Zaplatit '+o.celkem+' Kč</button></div>';
     }
     return '<div class="card">'+
       '<div class="ord-head"><div class="ord-meta">objednáno '+esc(formatDatum(o.datumPozadavku))+'<br>doručit '+esc(formatDatum(o.datumDoruceni))+'</div>'+badge+'</div>'+
@@ -1115,6 +1180,39 @@ function renderHistory(orders){
       '<div class="sum-row total"><span>Celkem</span><span>'+o.celkem+' Kč</span></div>'+
       sugg+actions+'</div>';
   }).join('');
+  // Osobní statistika (tichá karta na konci)
+  html+=buildStats(orders);
+  container.innerHTML=html;
+}
+// Osobní statistika zákazníka – počítá se z jeho objednávek (bez zrušených)
+function buildStats(orders){
+  var valid=orders.filter(function(o){return o.stav!=='zrušeno';});
+  if(valid.length<2)return ''; // ukazuj až od druhé objednávky, ať to není prázdné
+  var eggs=0,boxes=0,syrup=0,spent=0;
+  var dayCount={};
+  valid.forEach(function(o){
+    eggs+=parseInt(o.vajicka)||0;
+    boxes+=parseInt(o.bedynka)||0;
+    syrup+=parseFloat(o.sirup)||0;
+    spent+=parseInt(o.celkem)||0;
+    var d=parseCZ(formatDatum(o.datumDoruceni));
+    if(d){var k=d.getDay();dayCount[k]=(dayCount[k]||0)+1;}
+  });
+  var favDay=-1,favN=0;
+  Object.keys(dayCount).forEach(function(k){if(dayCount[k]>favN){favN=dayCount[k];favDay=parseInt(k);}});
+  var stats='<div class="card"><p style="font-family:\'Fraunces\',serif;font-size:16px;font-weight:700;margin-bottom:12px;">Tvoje čísla 🌿</p>'+
+    '<div class="stats-grid">'+
+    '<div class="stat"><div class="lbl">Vajíčka</div><div class="val">'+eggs+'</div><div class="sub">ks celkem</div></div>'+
+    '<div class="stat"><div class="lbl">Objednávky</div><div class="val">'+valid.length+'</div><div class="sub">celkem</div></div>'+
+    '<div class="stat"><div class="lbl">Utraceno</div><div class="val">'+spent.toLocaleString('cs')+'</div><div class="sub">Kč</div></div>'+
+    '</div>';
+  var noteParts=[];
+  if(favDay>=0&&favN>1)noteParts.push('Nejčastěji ti doručujeme v '+DNY_FULL[favDay]);
+  if(boxes>0)noteParts.push(boxes+'× bedýnka');
+  if(syrup>0)noteParts.push((''+syrup).replace('.',',')+' l sirupu');
+  if(noteParts.length)stats+='<div class="stats-note">'+noteParts.join(' · ')+'</div>';
+  stats+='</div>';
+  return stats;
 }
 function acceptSugg(radek){
   api({action:'acceptSuggested',radek:radek}).then(function(d){
