@@ -123,12 +123,14 @@ function nextOrderId(orders) {
 }
 
 // Přidá jednu objednávku jako řádek. Vrací její ID.
+// Zápis na explicitní řádek – append umí posunout sloupce při špatné detekci tabulky.
 async function pridejObjednavku(sheets, jmeno, kusy, datum, produkt, requestId) {
   const data = await getOrdersData(sheets);
   const orders = mapOrders(data);
   const id = nextOrderId(orders);
-  await sheets.spreadsheets.values.append({
-    spreadsheetId: SPREADSHEET_ID, range: `${ORDERS_SHEET}!A:H`,
+  const targetRow = data.length + 1;
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SPREADSHEET_ID, range: `${ORDERS_SHEET}!A${targetRow}:H${targetRow}`,
     valueInputOption: 'USER_ENTERED',
     requestBody: { values: [[id, datum, jmeno, produkt, kusy, 'čeká', requestId || '', dnesCZ()]] }
   });
@@ -155,12 +157,20 @@ function cenaZa(jmeno, produkt, kusy) {
 // ════════════════════════════════════════════════════
 
 function mapRequests(data) {
-  return data.length <= 1 ? [] : data.slice(1).map((r, i) => ({
-    radek: i + 2, id: r[0], jmeno: r[1], datumPozadavku: fmtDate(r[2]), datumDoruceni: fmtDate(r[3]),
-    vajicka: r[4] || 0, bedynka: r[5] || 0, sirup: r[6] || 0, celkem: r[7] || 0,
-    stav: r[8] || 'čeká na potvrzení', navrzenyTermin: fmtDate(r[9]), zprava: (r[10] || '').toString(),
-    zaplaceno: (r[11] || '').toString().trim().toLowerCase() === 'ano'
-  }));
+  if (data.length <= 1) return [];
+  const out = [];
+  for (let i = 1; i < data.length; i++) {
+    const r = data[i] || [];
+    // Odolnost: přeskoč poškozené/prázdné řádky (bez ID i jména)
+    if ((r[0]===''||r[0]==null) && (r[1]===''||r[1]==null)) continue;
+    out.push({
+      radek: i + 1, id: r[0], jmeno: r[1], datumPozadavku: fmtDate(r[2]), datumDoruceni: fmtDate(r[3]),
+      vajicka: r[4] || 0, bedynka: r[5] || 0, sirup: r[6] || 0, celkem: r[7] || 0,
+      stav: r[8] || 'čeká na potvrzení', navrzenyTermin: fmtDate(r[9]), zprava: (r[10] || '').toString(),
+      zaplaceno: (r[11] || '').toString().trim().toLowerCase() === 'ano'
+    });
+  }
+  return out;
 }
 
 async function getPozadavkyData(sheets) {
@@ -752,10 +762,15 @@ exports.handler = async function(event) {
 
       case 'addRequest': {
         const data = await getPozadavkyData(sheets);
-        const id = data.length;
+        // ID = max existující +1 (odolné proti mazání řádků)
+        let maxId = 0;
+        for (let i = 1; i < data.length; i++) { const n = parseInt((data[i]||[])[0]); if (n > maxId) maxId = n; }
+        const id = maxId + 1;
+        // Explicitní cílový řádek – žádný append (ten umí posunout sloupce při špatné detekci tabulky)
+        const targetRow = data.length + 1;
         const v=parseInt(p.vajicka)||0, b=parseInt(p.bedynka)||0, s=parseFloat(p.sirup)||0;
         const celkem = cenaZa(p.jmeno,'vajicka',v) + cenaZa(p.jmeno,'bedynka',b) + cenaZa(p.jmeno,'sirup',s);
-        await sheets.spreadsheets.values.append({ spreadsheetId: SPREADSHEET_ID, range: 'Požadavky!A:L', valueInputOption: 'USER_ENTERED', requestBody: { values: [[id,p.jmeno,dnesCZ(),p.datum,v,b,s,celkem,'čeká na potvrzení','','','']] } });
+        await sheets.spreadsheets.values.update({ spreadsheetId: SPREADSHEET_ID, range: `Požadavky!A${targetRow}:L${targetRow}`, valueInputOption: 'USER_ENTERED', requestBody: { values: [[id,p.jmeno,dnesCZ(),p.datum,v,b,s,celkem,'čeká na potvrzení','','','']] } });
         var produkty = [];
         if (v > 0) produkty.push(v + ' ks vajíček');
         if (b > 0) produkty.push(b + ' ks bedýnek');
