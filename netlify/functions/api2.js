@@ -43,7 +43,8 @@ function colLetter(n) {
 function fmtDate(val) {
   if (!val) return '';
   const s = val.toString().trim();
-  if (s.match(/^\d{1,2}\.\d{1,2}\.\d{4}$/)) return s;
+  const m0 = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if (m0) return parseInt(m0[1]) + '.' + parseInt(m0[2]) + '.' + m0[3]; // kanonicky bez úvodních nul
   if (s.match(/^\d+$/) && parseInt(s) > 1000) {
     const date = new Date((parseInt(s) - 25569) * 86400 * 1000);
     if (!isNaN(date)) return date.getUTCDate() + '.' + (date.getUTCMonth() + 1) + '.' + date.getUTCFullYear();
@@ -514,7 +515,19 @@ async function migrace(sheets, zapis) {
         let stav = null;
         if (isGreen(bg)) stav = 'doručeno';
         else if (isOrange(bg)) stav = 'čeká';
-        else { varovani.push(p.sheet + ' ' + colLetter(c.col+1) + (i+1) + ': buňka bez stavové barvy (' + c.jmeno + ', ' + ds + ', ' + kusy + ') – přeskočeno'); continue; }
+        else {
+          // Bez stavové barvy: staré objednávky z doby před barevným systémem.
+          // Datum v minulosti → považuj za doručené (jinak by zmizely z tržeb).
+          const dObj = parseDate(ds);
+          const dnes = new Date(); dnes.setHours(0,0,0,0);
+          if (dObj && dObj.getTime() < dnes.getTime()) {
+            stav = 'doručeno';
+            varovani.push(p.sheet + ' ' + colLetter(c.col+1) + (i+1) + ': bez stavové barvy, datum v minulosti → převedeno jako doručeno (' + c.jmeno + ', ' + ds + ', ' + kusy + ')');
+          } else {
+            varovani.push(p.sheet + ' ' + colLetter(c.col+1) + (i+1) + ': bez stavové barvy a datum není v minulosti (' + c.jmeno + ', ' + ds + ', ' + kusy + ') – přeskočeno');
+            continue;
+          }
+        }
         radky.push({ datum: ds, jmeno: c.jmeno, produkt: p.key, kusy, stav });
       }
     }
