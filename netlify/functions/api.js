@@ -732,6 +732,48 @@ exports.handler = async function(event) {
           cell: { userEnteredFormat: { backgroundColor: { red: 0.957, green: 0.651, blue: 0.137 } } },
           fields: 'userEnteredFormat.backgroundColor'
         }}]}});
+        // ── Synchronizace do Požadavků ──
+        // Najdi odpovídající požadavek (stejné jméno + datum doručení, stav potvrzeno)
+        // a uprav v něm počet i Celkem. Jen při JEDNOZNAČNÉ shodě – jinak nesahat.
+        try {
+          const prodKey = p.produkt||'vajicka';
+          const prodColIdx = { vajicka: 4, bedynka: 5, sirup: 6 }[prodKey]; // E/F/G
+          const sheetData = await getSheetData(sheets, sn);
+          const jmeno = (sheetData[HEADER_ROW-1]||[])[col-1] || '';
+          const datumCell = fmtDate((sheetData[row-1]||[])[0] || '');
+          if (jmeno && datumCell) {
+            const reqData = await getPozadavkyData(sheets);
+            const matches = [];
+            for (let i = 1; i < reqData.length; i++) {
+              const r = reqData[i] || [];
+              const stav = (r[8]||'').toString().trim().toLowerCase();
+              if (stav !== 'potvrzeno') continue;
+              if ((r[1]||'').toString().trim() !== jmeno.toString().trim()) continue;
+              if (fmtDate(r[3]) !== datumCell) continue;
+              const qty = parseFloat((r[prodColIdx]||'0').toString().replace(',','.')) || 0;
+              if (qty <= 0) continue; // požadavek tento produkt neobsahuje
+              matches.push(i + 1); // 1-indexed řádek
+            }
+            if (matches.length === 1) {
+              const radekReq = matches[0];
+              const r = reqData[radekReq - 1];
+              const novaHodnota = prodKey === 'sirup' ? (parseFloat(p.kusy)||0) : (parseInt(p.kusy)||0);
+              const v = prodKey==='vajicka' ? novaHodnota : (parseInt((r[4]||'0').toString().replace(/\s/g,''))||0);
+              const b = prodKey==='bedynka' ? novaHodnota : (parseInt((r[5]||'0').toString().replace(/\s/g,''))||0);
+              const s = prodKey==='sirup'   ? novaHodnota : (parseFloat((r[6]||'0').toString().replace(/\s/g,'').replace(',','.'))||0);
+              const ep = DISCOUNT_NAMES.includes(jmeno) ? 9 : 10;
+              const celkem = v*ep + b*490 + Math.round(s*190);
+              const colL = colLetter(prodColIdx + 1); // E/F/G
+              await sheets.spreadsheets.values.batchUpdate({
+                spreadsheetId: SPREADSHEET_ID,
+                requestBody: { valueInputOption: 'USER_ENTERED', data: [
+                  { range: `Požadavky!${colL}${radekReq}`, values: [[novaHodnota]] },
+                  { range: `Požadavky!H${radekReq}`, values: [[celkem]] }
+                ]}
+              });
+            }
+          }
+        } catch(e) { console.log('edit sync Požadavky selhal: ' + e.message); }
         result = { status: 'ok' }; break;
       }
       case 'delete': {
