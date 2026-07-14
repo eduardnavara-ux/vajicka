@@ -324,6 +324,10 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
       <div id="REQ_LIST"><div class="skel" style="height:120px"></div></div>
     </div>
     <div class="card">
+      <div class="card-title">Platby <small id="PAY_COUNT"></small></div>
+      <div id="PAY_LIST"><div class="skel"></div></div>
+    </div>
+    <div class="card">
       <div class="card-title">K doručení <small>všechny produkty</small></div>
       <div id="DELIV_ALL"><div class="skel"></div><div class="skel"></div></div>
       <button class="hist-toggle" id="HIST_TOGGLE" onclick="toggleHistory()">
@@ -497,7 +501,7 @@ function setTab(i){
     document.getElementById('PANEL_'+k).classList.toggle('on',k===i);
   }
   if(i===3)loadCashflow();
-  if(i===4){renderRequests();renderDelivAll();}
+  if(i===4){renderRequests();renderPayments();renderDelivAll();}
   if(i===5)renderSklad();
   if(i===6)renderAktualita();
   window.scrollTo({top:0,behavior:'smooth'});
@@ -825,7 +829,7 @@ function renderRequests(){
 
 function refreshRequests(){
   apiFetch({action:'listRequests'},function(err,data){
-    if(!err&&Array.isArray(data)){store.requests=data;saveCache();updateBadge();renderRequests();}
+    if(!err&&Array.isArray(data)){store.requests=data;saveCache();updateBadge();renderRequests();renderPayments();}
   });
 }
 function confirmReq(radek){
@@ -870,6 +874,39 @@ function cancelReq(radek){
   if(!confirm('Opravdu zrušit tuto objednávku?'))return;
   apiFetch({action:'rejectRequest',radek:radek},function(err,d){
     if(!err&&d&&d.status==='ok'){showToast('Objednávka zrušena');refreshRequests();}
+  });
+}
+
+/* ===== Platby (potvrzené, nezaplacené objednávky) ===== */
+function renderPayments(){
+  var box=document.getElementById('PAY_LIST');
+  var cnt=document.getElementById('PAY_COUNT');
+  var reqs=store.requests;
+  if(reqs===null)return;
+  var unpaid=reqs.filter(function(r){return r.stav==='potvrzeno'&&!r.zaplaceno;});
+  if(unpaid.length===0){
+    box.innerHTML='<div class="empty">Vše zaplaceno 🎉</div>';
+    cnt.textContent='';
+    return;
+  }
+  var suma=unpaid.reduce(function(s,r){return s+(parseInt(r.celkem)||0);},0);
+  cnt.textContent='nezaplaceno '+suma.toLocaleString('cs')+' Kč';
+  box.innerHTML=unpaid.slice().reverse().map(function(r){
+    var c=avColor(r.jmeno);
+    return '<div class="hrow">'+
+      '<div class="avatar" style="background:'+c[0]+';color:'+c[1]+'">'+esc(r.jmeno.substring(0,2))+'</div>'+
+      '<div class="hrow-info"><strong>'+esc(r.jmeno)+'</strong><span>doručení '+esc(r.datumDoruceni)+'</span></div>'+
+      '<div class="hrow-qty">'+r.celkem+'<small>Kč</small></div>'+
+      '<button class="check-btn" aria-label="Označit jako zaplacené" onclick="adminMarkPaid('+r.radek+')">'+
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>'+
+      '</button></div>';
+  }).join('');
+}
+function adminMarkPaid(radek){
+  if(!confirm('Označit objednávku jako zaplacenou?'))return;
+  apiFetch({action:'markPaid',radek:radek},function(err,d){
+    if(!err&&d&&d.status==='ok'){showToast('✓ Označeno jako zaplacené');refreshRequests();}
+    else showToast('Nepodařilo se označit');
   });
 }
 
@@ -1269,6 +1306,7 @@ function renderAll(){
   for(var s=0;s<3;s++)renderList(s);
   updateBadge();
   renderRequests();
+  renderPayments();
   renderDelivAll();
 }
 function loadLegacy(){
