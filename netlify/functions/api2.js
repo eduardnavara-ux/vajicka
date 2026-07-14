@@ -542,14 +542,14 @@ async function migrace(sheets, zapis) {
   // Best-effort přiřazení RequestID z Požadavků (potvrzeno + shoda jméno/datum/produkt/množství)
   let pozadavky = [];
   try { pozadavky = mapRequests(await getPozadavkyData(sheets)); } catch(e){}
-  const pouzite = new Set();
+  const pouzite = new Set(); // klíč: requestId|produkt – jeden požadavek smí pokrýt více produktů
   radky.forEach(r => {
     const kand = pozadavky.filter(q =>
-      q.stav === 'potvrzeno' && !pouzite.has(q.id) &&
+      q.stav === 'potvrzeno' && !pouzite.has(q.id + '|' + r.produkt) &&
       q.jmeno === r.jmeno && q.datumDoruceni === r.datum &&
       Math.abs((parseFloat((q[{vajicka:'vajicka',bedynka:'bedynka',sirup:'sirup'}[r.produkt]]||'0').toString().replace(',','.'))||0) - r.kusy) < 0.001
     );
-    if (kand.length === 1) { r.requestId = kand[0].id; pouzite.add(kand[0].id); }
+    if (kand.length === 1) { r.requestId = kand[0].id; pouzite.add(kand[0].id + '|' + r.produkt); }
     else r.requestId = '';
   });
 
