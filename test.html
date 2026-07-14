@@ -325,10 +325,6 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
       <div id="REQ_LIST"><div class="skel" style="height:120px"></div></div>
     </div>
     <div class="card">
-      <div class="card-title">Platby <small id="PAY_COUNT"></small></div>
-      <div id="PAY_LIST"><div class="skel"></div></div>
-    </div>
-    <div class="card">
       <div class="card-title">K doručení <small>všechny produkty</small></div>
       <div id="DELIV_ALL"><div class="skel"></div><div class="skel"></div></div>
       <button class="hist-toggle" id="HIST_TOGGLE" onclick="toggleHistory()">
@@ -337,6 +333,10 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
         <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6-6"/></svg>
       </button>
       <div id="HIST_BODY"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Platby <small id="PAY_COUNT"></small></div>
+      <div id="PAY_LIST"><div class="skel"></div></div>
     </div>
   </div>
 
@@ -936,7 +936,10 @@ function renderDelivAll(){
       var d=parseCZ(it.datum);
       html+='<div class="day-label">'+(d?DNY_FULL[d.getDay()]+' '+d.getDate()+'. '+(d.getMonth()+1)+'.':it.datum)+'</div>';
     }
-    html+='<div class="hrow" style="cursor:pointer" onclick="dorucit(\''+it.produkt+'\','+it.id+',this,event)">'+prodIcon(it.produkt)+
+    html+='<div class="hrow" style="cursor:pointer" onclick="dorucit(\''+it.produkt+'\','+it.id+',this,event)" '+
+      'onmousedown="startLongPress(event,\''+it.produkt+'\','+it.id+',\''+escJs(it.jmeno)+'\','+it.kusy+',\''+it.datum+'\')" '+
+      'ontouchstart="startLongPress(event,\''+it.produkt+'\','+it.id+',\''+escJs(it.jmeno)+'\','+it.kusy+',\''+it.datum+'\')" '+
+      'onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()" ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()">'+prodIcon(it.produkt)+
       '<div class="hrow-info"><strong>'+esc(it.jmeno)+'</strong><span>'+PROD_NAZVY_MALE[it.s]+'</span></div>'+
       '<div class="hrow-qty">'+it.kusy+'<small>'+UNITS[it.s]+'</small></div>'+
       '<button class="check-btn" aria-label="Označit jako doručeno" onclick="dorucit(\''+it.produkt+'\','+it.id+',this.parentNode,event)">'+
