@@ -693,14 +693,31 @@ function showApp(){
   initPush();
   checkMyDot();
 }
-// Tečka na "Moje objednávky": ukáže se, když nějaká objednávka čeká na reakci zákazníka
+// Tečka na "Moje objednávky": ukáže se, když se od poslední návštěvy něco změnilo
+// (potvrzení, návrh termínu, zrušení). Porovnává stavy se snímkem v localStorage.
+function seenKey(){return 'dpd-seen-'+currentUser;}
+function snapshotOf(data){
+  var snap={};
+  (data||[]).forEach(function(o){if(o.id!==''&&o.id!=null)snap[o.id]=o.stav;});
+  return snap;
+}
 function checkMyDot(){
   api({action:'getMyRequests',jmeno:currentUser}).then(function(data){
     var dot=document.getElementById('HIST_DOT');
-    if(!dot)return;
-    var needsAction=Array.isArray(data)&&data.some(function(o){return o.stav==='navržen jiný termín';});
-    dot.style.display=needsAction?'block':'none';
+    if(!dot||!Array.isArray(data))return;
+    var seen={};
+    try{seen=JSON.parse(localStorage.getItem(seenKey()))||{};}catch(e){}
+    var changed=data.some(function(o){
+      if(o.id===''||o.id==null)return false;
+      return seen[o.id]!==undefined ? seen[o.id]!==o.stav : o.stav!=='čeká na potvrzení';
+    });
+    dot.style.display=changed?'block':'none';
   }).catch(function(){});
+}
+function markSeen(data){
+  try{localStorage.setItem(seenKey(),JSON.stringify(snapshotOf(data)));}catch(e){}
+  var dot=document.getElementById('HIST_DOT');
+  if(dot)dot.style.display='none';
 }
 
 /* ===== Aktualita (samostatná záložka) ===== */
@@ -1144,11 +1161,7 @@ function loadHistory(){
   container.innerHTML='<div class="skel"></div><div class="skel"></div>';
   api({action:'getMyRequests',jmeno:currentUser}).then(function(data){
     renderHistory(Array.isArray(data)?data:[]);
-    var dot=document.getElementById('HIST_DOT');
-    if(dot){
-      var needsAction=Array.isArray(data)&&data.some(function(o){return o.stav==='navržen jiný termín';});
-      dot.style.display=needsAction?'block':'none';
-    }
+    if(Array.isArray(data))markSeen(data);
   }).catch(function(){
     container.innerHTML='<div class="empty">Objednávky se nepodařilo načíst.</div>';
   });
