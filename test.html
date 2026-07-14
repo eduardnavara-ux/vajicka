@@ -327,6 +327,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
     <div class="card">
       <div class="card-title">K doručení <small>všechny produkty</small></div>
       <div id="DELIV_ALL"><div class="skel"></div><div class="skel"></div></div>
+      <div class="hint" id="DELIV_HINT" style="display:none">Klepnutím na ✓ označíš jako doručeno · podržením upravíš</div>
       <button class="hist-toggle" id="HIST_TOGGLE" onclick="toggleHistory()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v4l2 2"/><path d="M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5"/></svg>
         <span id="HIST_LABEL">Zobrazit historii objednávek</span>
@@ -894,9 +895,15 @@ function renderPayments(){
   cnt.textContent='nezaplaceno '+suma.toLocaleString('cs')+' Kč';
   box.innerHTML=unpaid.slice().reverse().map(function(r){
     var c=avColor(r.jmeno);
+    var parts=[];
+    var v=parseInt(r.vajicka)||0,b=parseInt(r.bedynka)||0,si=parseFloat(r.sirup)||0;
+    if(v>0)parts.push(v+' ks vajec');
+    if(b>0)parts.push(b+'× bedýnka');
+    if(si>0)parts.push((''+si).replace('.',',')+' l sirupu');
+    var rozpis=parts.join(' + ');
     return '<div class="hrow">'+
       '<div class="avatar" style="background:'+c[0]+';color:'+c[1]+'">'+esc(r.jmeno.substring(0,2))+'</div>'+
-      '<div class="hrow-info"><strong>'+esc(r.jmeno)+'</strong><span>doručení '+esc(r.datumDoruceni)+'</span></div>'+
+      '<div class="hrow-info"><strong>'+esc(r.jmeno)+'</strong><span>'+(rozpis?rozpis+' · ':'')+'doručení '+esc(r.datumDoruceni)+'</span></div>'+
       '<div class="hrow-qty">'+r.celkem+'<small>Kč</small></div>'+
       '<button class="check-btn" aria-label="Označit jako zaplacené" onclick="adminMarkPaid('+r.radek+')">'+
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>'+
@@ -924,7 +931,8 @@ function renderDelivAll(){
     }
   }
   if(store.lists.vajicka===null)return;
-  if(all.length===0){box.innerHTML='<div class="empty">Vše doručeno 🎉</div>';return;}
+  if(all.length===0){box.innerHTML='<div class="empty">Vše doručeno 🎉</div>';document.getElementById('DELIV_HINT').style.display='none';return;}
+  document.getElementById('DELIV_HINT').style.display='block';
   all.sort(function(a,b){
     var da=parseCZ(a.datum),db=parseCZ(b.datum);
     return (da?da.getTime():0)-(db?db.getTime():0);
