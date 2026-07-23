@@ -324,18 +324,19 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
       <div id="REQ_LIST"><div class="skel" style="height:120px"></div></div>
     </div>
     <div class="card">
-      <div class="card-title">Platby <small id="PAY_COUNT"></small></div>
-      <div id="PAY_LIST"><div class="skel"></div></div>
-    </div>
-    <div class="card">
       <div class="card-title">K doručení <small>všechny produkty</small></div>
       <div id="DELIV_ALL"><div class="skel"></div><div class="skel"></div></div>
+      <div class="hint" id="DELIV_HINT" style="display:none">Klepnutím na ✓ označíš jako doručeno · podržením upravíš</div>
       <button class="hist-toggle" id="HIST_TOGGLE" onclick="toggleHistory()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v4l2 2"/><path d="M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5"/></svg>
         <span id="HIST_LABEL">Zobrazit historii objednávek</span>
         <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6-6"/></svg>
       </button>
       <div id="HIST_BODY"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Platby <small id="PAY_COUNT"></small></div>
+      <div id="PAY_LIST"><div class="skel"></div></div>
     </div>
   </div>
 
@@ -414,7 +415,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 'use strict';
 
 /* ===== Konstanty a stav ===== */
-var API='/.netlify/functions/api';
+var API='/.netlify/functions/api2'; // row-based backend (list Objednávky)
 var CLOUDINARY_CLOUD='dxtlvckbt';
 var CLOUDINARY_PRESET='dvurpoddubem';
 var PRODUKTY=['vajicka','bedynka','sirup'];
@@ -670,26 +671,26 @@ function renderList(s){
     var d=parseCZ(it.datum);
     var dlabel=d?(DNY_FULL[d.getDay()].toLowerCase()+' '+d.getDate()+'. '+(d.getMonth()+1)+'.'):it.datum;
     return '<div class="hrow" style="cursor:pointer" '+
-      'onclick="dorucit(\''+PRODUKTY[s]+'\','+it.radek+','+it.sloupec+',this,event)" '+
-      'onmousedown="startLongPress(event,\''+PRODUKTY[s]+'\','+it.radek+','+it.sloupec+',\''+escJs(it.jmeno)+'\','+it.kusy+',\''+it.datum+'\')" '+
-      'ontouchstart="startLongPress(event,\''+PRODUKTY[s]+'\','+it.radek+','+it.sloupec+',\''+escJs(it.jmeno)+'\','+it.kusy+',\''+it.datum+'\')" '+
+      'onclick="dorucit(\''+PRODUKTY[s]+'\','+it.id+',this,event)" '+
+      'onmousedown="startLongPress(event,\''+PRODUKTY[s]+'\','+it.id+',\''+escJs(it.jmeno)+'\','+it.kusy+',\''+it.datum+'\')" '+
+      'ontouchstart="startLongPress(event,\''+PRODUKTY[s]+'\','+it.id+',\''+escJs(it.jmeno)+'\','+it.kusy+',\''+it.datum+'\')" '+
       'onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()" ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()">'+
       '<div class="avatar" style="background:'+c[0]+';color:'+c[1]+'">'+esc(it.jmeno.substring(0,2))+'</div>'+
       '<div class="hrow-info"><strong>'+esc(it.jmeno)+'</strong><span>'+dlabel+'</span></div>'+
       '<div class="hrow-qty">'+it.kusy+'<small>'+UNITS[s]+'</small></div>'+
-      '<button class="check-btn" aria-label="Označit jako doručeno" onclick="dorucit(\''+PRODUKTY[s]+'\','+it.radek+','+it.sloupec+',this.parentNode,event)">'+
+      '<button class="check-btn" aria-label="Označit jako doručeno" onclick="dorucit(\''+PRODUKTY[s]+'\','+it.id+',this.parentNode,event)">'+
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>'+
       '</button></div>';
   }).join('');
 }
 
-/* ===== Doručení (klik na ✓ → zmizí, v Sheets zezelená) ===== */
-function dorucit(produkt,r,c,el,ev){
+/* ===== Doručení (klik na ✓ → zmizí, stav v listu Objednávky = doručeno) ===== */
+function dorucit(produkt,id,el,ev){
   if(ev)ev.stopPropagation();
   cancelLongPress();
   if(lpActive){lpActive=false;return;}
   el.style.pointerEvents='none';el.style.opacity='0.55';
-  apiFetch({action:'done',radek:r,sloupec:c,produkt:produkt},function(err,d){
+  apiFetch({action:'done',id:id},function(err,d){
     if(!err&&d&&d.status==='ok'){
       el.classList.add('done');
       setTimeout(function(){
@@ -711,18 +712,18 @@ function dorucit(produkt,r,c,el,ev){
 
 /* ===== Long-press úprava ===== */
 var lpTimer=null,lpActive=false,editState={};
-function startLongPress(e,produkt,radek,sloupec,jmeno,kusy,datum){
+function startLongPress(e,produkt,id,jmeno,kusy,datum){
   lpActive=false;
   if(lpTimer)clearTimeout(lpTimer);
   lpTimer=setTimeout(function(){
     lpActive=true;
     if(navigator.vibrate)navigator.vibrate(40);
-    openEdit(produkt,radek,sloupec,jmeno,kusy,datum);
+    openEdit(produkt,id,jmeno,kusy,datum);
   },600);
 }
 function cancelLongPress(){if(lpTimer){clearTimeout(lpTimer);lpTimer=null;}}
-function openEdit(produkt,radek,sloupec,jmeno,kusy,datum){
-  editState={produkt:produkt,radek:radek,sloupec:sloupec};
+function openEdit(produkt,id,jmeno,kusy,datum){
+  editState={produkt:produkt,id:id};
   document.getElementById('EDIT_TITLE').textContent=jmeno+' · '+datum;
   document.getElementById('EDIT_DESC').textContent='Uprav počet ('+UNITS[PRODUKTY.indexOf(produkt)]+'):';
   document.getElementById('EDIT_INPUT').value=kusy;
@@ -733,7 +734,7 @@ function closeEdit(){document.getElementById('EDIT_OVERLAY').style.display='none
 function deleteItem(){
   if(!confirm('Opravdu smazat tuto objednávku?'))return;
   var s=PRODUKTY.indexOf(editState.produkt);
-  apiFetch({action:'delete',radek:editState.radek,sloupec:editState.sloupec,produkt:editState.produkt},function(err,d){
+  apiFetch({action:'delete',id:editState.id},function(err,d){
     if(!err&&d&&d.status==='ok'){store.history=null;refreshList(s);showToast('Objednávka smazána');}
     else showToast('Smazání se nepodařilo');
   });
@@ -743,7 +744,7 @@ function saveEdit(){
   var novyPocet=parseInt(document.getElementById('EDIT_INPUT').value);
   if(!novyPocet||novyPocet<1)return;
   var s=PRODUKTY.indexOf(editState.produkt);
-  apiFetch({action:'edit',radek:editState.radek,sloupec:editState.sloupec,produkt:editState.produkt,kusy:novyPocet},function(err,d){
+  apiFetch({action:'edit',id:editState.id,kusy:novyPocet},function(err,d){
     if(!err&&d&&d.status==='ok'){store.history=null;refreshList(s);showToast('Počet upraven');}
     else showToast('Úprava se nepodařila');
   });
@@ -893,9 +894,15 @@ function renderPayments(){
   cnt.textContent='nezaplaceno '+suma.toLocaleString('cs')+' Kč';
   box.innerHTML=unpaid.slice().reverse().map(function(r){
     var c=avColor(r.jmeno);
+    var parts=[];
+    var v=parseInt(r.vajicka)||0,b=parseInt(r.bedynka)||0,si=parseFloat(r.sirup)||0;
+    if(v>0)parts.push(v+' ks vajec');
+    if(b>0)parts.push(b+'× bedýnka');
+    if(si>0)parts.push((''+si).replace('.',',')+' l sirupu');
+    var rozpis=parts.join(' + ');
     return '<div class="hrow">'+
       '<div class="avatar" style="background:'+c[0]+';color:'+c[1]+'">'+esc(r.jmeno.substring(0,2))+'</div>'+
-      '<div class="hrow-info"><strong>'+esc(r.jmeno)+'</strong><span>doručení '+esc(r.datumDoruceni)+'</span></div>'+
+      '<div class="hrow-info"><strong>'+esc(r.jmeno)+'</strong><span>'+(rozpis?rozpis+' · ':'')+'doručení '+esc(r.datumDoruceni)+'</span></div>'+
       '<div class="hrow-qty">'+r.celkem+'<small>Kč</small></div>'+
       '<button class="check-btn" aria-label="Označit jako zaplacené" onclick="adminMarkPaid('+r.radek+')">'+
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>'+
@@ -918,12 +925,13 @@ function renderDelivAll(){
     var items=store.lists[PRODUKTY[s]];
     if(Array.isArray(items)){
       items.forEach(function(it){
-        all.push({produkt:PRODUKTY[s],s:s,radek:it.radek,sloupec:it.sloupec,jmeno:it.jmeno,kusy:it.kusy,datum:it.datum});
+        all.push({produkt:PRODUKTY[s],s:s,id:it.id,jmeno:it.jmeno,kusy:it.kusy,datum:it.datum});
       });
     }
   }
   if(store.lists.vajicka===null)return;
-  if(all.length===0){box.innerHTML='<div class="empty">Vše doručeno 🎉</div>';return;}
+  if(all.length===0){box.innerHTML='<div class="empty">Vše doručeno 🎉</div>';document.getElementById('DELIV_HINT').style.display='none';return;}
+  document.getElementById('DELIV_HINT').style.display='block';
   all.sort(function(a,b){
     var da=parseCZ(a.datum),db=parseCZ(b.datum);
     return (da?da.getTime():0)-(db?db.getTime():0);
@@ -935,10 +943,13 @@ function renderDelivAll(){
       var d=parseCZ(it.datum);
       html+='<div class="day-label">'+(d?DNY_FULL[d.getDay()]+' '+d.getDate()+'. '+(d.getMonth()+1)+'.':it.datum)+'</div>';
     }
-    html+='<div class="hrow" style="cursor:pointer" onclick="dorucit(\''+it.produkt+'\','+it.radek+','+it.sloupec+',this,event)">'+prodIcon(it.produkt)+
+    html+='<div class="hrow" style="cursor:pointer" onclick="dorucit(\''+it.produkt+'\','+it.id+',this,event)" '+
+      'onmousedown="startLongPress(event,\''+it.produkt+'\','+it.id+',\''+escJs(it.jmeno)+'\','+it.kusy+',\''+it.datum+'\')" '+
+      'ontouchstart="startLongPress(event,\''+it.produkt+'\','+it.id+',\''+escJs(it.jmeno)+'\','+it.kusy+',\''+it.datum+'\')" '+
+      'onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()" ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()">'+prodIcon(it.produkt)+
       '<div class="hrow-info"><strong>'+esc(it.jmeno)+'</strong><span>'+PROD_NAZVY_MALE[it.s]+'</span></div>'+
       '<div class="hrow-qty">'+it.kusy+'<small>'+UNITS[it.s]+'</small></div>'+
-      '<button class="check-btn" aria-label="Označit jako doručeno" onclick="dorucit(\''+it.produkt+'\','+it.radek+','+it.sloupec+',this.parentNode,event)">'+
+      '<button class="check-btn" aria-label="Označit jako doručeno" onclick="dorucit(\''+it.produkt+'\','+it.id+',this.parentNode,event)">'+
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg></button></div>';
   });
   box.innerHTML=html;
@@ -1077,11 +1088,11 @@ function closeNaklady(){document.getElementById('NAKLADY_OVERLAY').style.display
 
 /* ===== Načtení dat: init + cache + fallback ===== */
 function saveCache(){
-  try{sessionStorage.setItem('dpd-cache',JSON.stringify({customers:store.customers,lists:store.lists,requests:store.requests}));}catch(e){}
+  try{sessionStorage.setItem('dpd-cache-v2',JSON.stringify({customers:store.customers,lists:store.lists,requests:store.requests}));}catch(e){}
 }
 function loadCache(){
   try{
-    var c=JSON.parse(sessionStorage.getItem('dpd-cache'));
+    var c=JSON.parse(sessionStorage.getItem('dpd-cache-v2'));
     if(c&&c.customers&&c.lists){
       store.customers=c.customers;store.lists=c.lists;store.requests=c.requests||null;
       return true;
