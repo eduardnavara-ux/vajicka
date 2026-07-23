@@ -84,9 +84,10 @@ button{font-family:'Instrument Sans',sans-serif;cursor:pointer;}
 .push-banner-btn:active{transform:scale(.95);}
 .push-banner-x{position:absolute;top:7px;right:9px;background:none;border:none;color:var(--text3);font-size:13px;line-height:1;padding:2px;}
 .tabs{max-width:560px;margin:0 auto;display:flex;gap:7px;justify-content:center;flex-wrap:wrap;padding:12px 0 14px;}
-.tab{border:1.5px solid var(--border2);background:var(--card);color:var(--text2);padding:8px 14px;border-radius:50px;font-size:14px;font-weight:500;transition:all .18s;}
+.tab{border:1.5px solid var(--border2);background:var(--card);color:var(--text2);padding:8px 14px;border-radius:50px;font-size:14px;font-weight:500;transition:all .18s;position:relative;}
 .tab.on{background:var(--or);border-color:var(--or);color:#fff;font-weight:600;}
 .tab:active{transform:scale(.95);}
+.tab-dot{position:absolute;top:-3px;right:-3px;width:11px;height:11px;border-radius:50%;background:var(--or);border:2px solid var(--cr);display:none;}
 .main{padding:16px 14px calc(env(safe-area-inset-bottom,0px) + 40px);max-width:560px;margin:0 auto;width:100%;}
 .panel{display:none;}
 .panel.on{display:block;animation:fadeIn .25s ease;}
@@ -293,7 +294,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
     </div>
     <div class="tabs">
       <button class="tab on" id="tabBtn-order" onclick="switchTab('order')">Objednat</button>
-      <button class="tab" id="tabBtn-history" onclick="switchTab('history')">Moje objednávky</button>
+      <button class="tab" id="tabBtn-history" onclick="switchTab('history')">Moje objednávky<span class="tab-dot" id="HIST_DOT"></span></button>
       <button class="tab" id="tabBtn-payment" onclick="switchTab('payment')">Platba</button>
       <button class="tab" id="tabBtn-aktuality" onclick="switchTab('aktuality')" style="display:none;">Aktuality</button>
     </div>
@@ -456,7 +457,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 <script>
 'use strict';
 
-var API='/.netlify/functions/api';
+var API='/.netlify/functions/api2'; // row-based backend (list Objednávky)
 var SESSION_KEY='dvur_session';
 var DISCOUNT_CUSTOMERS=['Danča','Kristýna','Renata','Andrea','Marcela','Dáša'];
 var EGG_PRICE_STD=10,EGG_PRICE_DISC=9,BOX_PRICE=490,SYRUP_PRICE=190;
@@ -689,6 +690,33 @@ function showApp(){
   loadSklad();
   loadAktualita();
   initPush();
+  checkMyDot();
+}
+// Tečka na "Moje objednávky": ukáže se, když se od poslední návštěvy něco změnilo
+// (potvrzení, návrh termínu, zrušení). Porovnává stavy se snímkem v localStorage.
+function seenKey(){return 'dpd-seen-'+currentUser;}
+function snapshotOf(data){
+  var snap={};
+  (data||[]).forEach(function(o){if(o.id!==''&&o.id!=null)snap[o.id]=o.stav;});
+  return snap;
+}
+function checkMyDot(){
+  api({action:'getMyRequests',jmeno:currentUser}).then(function(data){
+    var dot=document.getElementById('HIST_DOT');
+    if(!dot||!Array.isArray(data))return;
+    var seen={};
+    try{seen=JSON.parse(localStorage.getItem(seenKey()))||{};}catch(e){}
+    var changed=data.some(function(o){
+      if(o.id===''||o.id==null)return false;
+      return seen[o.id]!==undefined ? seen[o.id]!==o.stav : o.stav!=='čeká na potvrzení';
+    });
+    dot.style.display=changed?'block':'none';
+  }).catch(function(){});
+}
+function markSeen(data){
+  try{localStorage.setItem(seenKey(),JSON.stringify(snapshotOf(data)));}catch(e){}
+  var dot=document.getElementById('HIST_DOT');
+  if(dot)dot.style.display='none';
 }
 
 /* ===== Aktualita (samostatná záložka) ===== */
@@ -1132,6 +1160,7 @@ function loadHistory(){
   container.innerHTML='<div class="skel"></div><div class="skel"></div>';
   api({action:'getMyRequests',jmeno:currentUser}).then(function(data){
     renderHistory(Array.isArray(data)?data:[]);
+    if(Array.isArray(data))markSeen(data);
   }).catch(function(){
     container.innerHTML='<div class="empty">Objednávky se nepodařilo načíst.</div>';
   });
