@@ -14,8 +14,8 @@ const { google } = require('googleapis');
 // ── PŘEPÍNAČE PROSTŘEDÍ ──
 const SPREADSHEET_ID_LIVE = '1ORfd4FhxKsJIuk22WvdoW6sLNpRNBFK39q3yt5YAj8Q';
 const SPREADSHEET_ID_TEST = '1CEG_-bfKRBTvNpzeZDZsN9D_HHbaH9m8USwrTKOR9gw';
-const SPREADSHEET_ID = SPREADSHEET_ID_TEST;   // ← fáze 1–3: TEST. Ostrý přechod: LIVE.
-const PUSH_ENABLED = false;                    // ← fáze 1–3: false. Ostrý přechod: true.
+const SPREADSHEET_ID = SPREADSHEET_ID_LIVE;   // ★ OSTRÝ PROVOZ – živý sheet
+const PUSH_ENABLED = true;                     // ★ OSTRÝ PROVOZ – push zapnutý
 
 const ORDERS_SHEET = 'Objednávky';
 const ORDERS_HDR = ['ID','Datum','Jméno','Produkt','Kusy','Stav','RequestID','Vytvořeno'];
