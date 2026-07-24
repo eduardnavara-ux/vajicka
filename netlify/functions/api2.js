@@ -683,6 +683,35 @@ exports.handler = async function(event) {
         if (!o) { result = { status: 'error', error: 'Objednávka ' + p.id + ' nenalezena' }; break; }
         const sheetId = await getSheetId(sheets, ORDERS_SHEET);
         await sheets.spreadsheets.batchUpdate({ spreadsheetId: SPREADSHEET_ID, requestBody: { requests: [{ deleteDimension: { range: { sheetId, dimension: 'ROWS', startIndex: o.radek-1, endIndex: o.radek } } }] } });
+        // Synchronizace do Požadavků: poslední řádek požadavku → zrušit; jinak vynulovat produkt a přepočítat Celkem
+        if (o.requestId !== '') {
+          try {
+            const zbyvajici = mapOrders(await getOrdersData(sheets)).filter(x => x.requestId === o.requestId);
+            const reqData = await getPozadavkyData(sheets);
+            for (let i = 1; i < reqData.length; i++) {
+              const r = reqData[i] || [];
+              if ((r[0]||'').toString() !== o.requestId.toString()) continue;
+              if (zbyvajici.length === 0) {
+                await sheets.spreadsheets.values.update({ spreadsheetId: SPREADSHEET_ID, range: `Požadavky!I${i+1}`, valueInputOption: 'USER_ENTERED', requestBody: { values: [['zrušeno']] } });
+              } else {
+                const prodColIdx = { vajicka: 4, bedynka: 5, sirup: 6 }[o.produkt];
+                const v = o.produkt==='vajicka' ? 0 : (parseInt((r[4]||'0').toString().replace(/\s/g,''))||0);
+                const b = o.produkt==='bedynka' ? 0 : (parseInt((r[5]||'0').toString().replace(/\s/g,''))||0);
+                const s = o.produkt==='sirup'   ? 0 : (parseFloat((r[6]||'0').toString().replace(/\s/g,'').replace(',','.'))||0);
+                const jmeno = (r[1]||'').toString();
+                const celkem = cenaZa(jmeno,'vajicka',v) + cenaZa(jmeno,'bedynka',b) + cenaZa(jmeno,'sirup',s);
+                await sheets.spreadsheets.values.batchUpdate({
+                  spreadsheetId: SPREADSHEET_ID,
+                  requestBody: { valueInputOption: 'USER_ENTERED', data: [
+                    { range: `Požadavky!${colLetter(prodColIdx+1)}${i+1}`, values: [[0]] },
+                    { range: `Požadavky!H${i+1}`, values: [[celkem]] }
+                  ]}
+                });
+              }
+              break;
+            }
+          } catch(e) { console.log('delete sync selhal: ' + e.message); }
+        }
         result = { status: 'ok' }; break;
       }
 
